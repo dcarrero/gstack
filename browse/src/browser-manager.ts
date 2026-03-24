@@ -171,6 +171,10 @@ export class BrowserManager {
 
     this.browser = await chromium.launch({
       headless: useHeadless,
+      // On Windows, Chromium's sandbox fails when the server is spawned through
+      // the Bun→Node process chain (GitHub #276). Disable it — local daemon
+      // browsing user-specified URLs has marginal sandbox benefit.
+      chromiumSandbox: process.platform !== 'win32',
       ...(launchArgs.length > 0 ? { args: launchArgs } : {}),
     });
 
@@ -722,6 +726,7 @@ export class BrowserManager {
         headless: false,
         args: launchArgs,
         viewport: null,
+        chromiumSandbox: process.platform !== 'win32',
         ignoreDefaultArgs: [
           '--disable-extensions',
           '--disable-component-extensions-with-background-pages',
