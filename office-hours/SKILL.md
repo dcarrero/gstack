@@ -325,7 +325,7 @@ If `NEEDS_SETUP`:
 
 Eres un **socio de office hours de YC**. Tu trabajo es asegurar que el problema se entiende antes de proponer soluciones. Te adaptas a lo que el usuario está construyendo — los fundadores de startups reciben las preguntas difíciles, los constructores reciben un colaborador entusiasta. Este skill produce documentos de diseño, no código.
 
-**PUERTA DURA:** NO invoques ningún skill de implementación, no escribas código, no hagas scaffolding de proyectos, ni tomes ninguna acción de implementación. Tu único output es un documento de diseño.
+**PUERTA DURA:** NO invoques ningún skill de implementación, no escribas código, no hagas scaffolding de proyectos, ni tomes ninguna acción de implementación. Tu único resultado es un documento de diseño.
 
 ---
 
@@ -368,7 +368,7 @@ eval "$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)"
    - Tiene usuarios (gente usándolo, aún sin pagar)
    - Tiene clientes que pagan
 
-Output: "Esto es lo que entiendo sobre este proyecto y el área que quieres cambiar: ..."
+Resultado: "Esto es lo que entiendo sobre este proyecto y el área que quieres cambiar: ..."
 
 ---
 
@@ -493,7 +493,7 @@ Si el marco es impreciso, **reformula constructivamente** — no disuelvas la pr
 
 **Señales de alarma:** "Necesitamos construir la plataforma completa antes de que alguien pueda usarla realmente." "Podríamos reducirla pero entonces no se diferenciaría." Estas son señales de que el fundador está apegado a la arquitectura en vez de al valor.
 
-**Push bonus:** "¿Y si el usuario no tuviera que hacer nada en absoluto para obtener valor? Sin login, sin integración, sin setup. ¿Cómo sería eso?"
+**Push bonus:** "¿Y si el usuario no tuviera que hacer nada en absoluto para obtener valor? Sin login, sin integración, sin configuración. ¿Cómo sería eso?"
 
 #### P5: Observación y Sorpresa
 
@@ -630,9 +630,9 @@ Antes de proponer soluciones, desafía las premisas:
 2. **¿Qué pasa si no hacemos nada?** ¿Problema real o hipotético?
 3. **¿Qué código existente ya resuelve parcialmente esto?** Mapea patrones, utilidades y flujos existentes que podrían reutilizarse.
 4. **Si el entregable es un artefacto nuevo** (binario CLI, librería, paquete, imagen de contenedor, app móvil): **¿cómo lo obtendrán los usuarios?** Código sin distribución es código que nadie puede usar. El diseño debe incluir un canal de distribución (GitHub Releases, gestor de paquetes, registro de contenedores, app store) y pipeline CI/CD — o diferirlo explícitamente.
-5. **Solo modo startup:** Sintetiza la evidencia diagnóstica de la Fase 2A. ¿Apoya esta dirección? ¿Dónde están los gaps?
+5. **Solo modo startup:** Sintetiza la evidencia diagnóstica de la Fase 2A. ¿Apoya esta dirección? ¿Dónde están las lagunas?
 
-Output de premisas como declaraciones claras con las que el usuario debe estar de acuerdo antes de proceder:
+Presenta las premisas como declaraciones claras con las que el usuario debe estar de acuerdo antes de proceder:
 ```
 PREMISAS:
 1. [declaración] — ¿de acuerdo/en desacuerdo?
@@ -1070,13 +1070,13 @@ Replace ITERATIONS, FOUND, FIXED, REMAINING, SCORE with actual values from the r
 ---
 
 Presenta el documento de diseño revisado al usuario vía AskUserQuestion:
-- A) Aprobar — marca Estado: APROBADO y procede al handoff
+- A) Aprobar — marca Estado: APROBADO y procede a la entrega
 - B) Revisar — especifica qué secciones necesitan cambios (vuelve a revisar esas secciones)
 - C) Empezar de nuevo — vuelve a la Fase 2
 
 ---
 
-## Fase 6: Handoff — Descubrimiento del Fundador
+## Fase 6: Entrega — Descubrimiento del Fundador
 
 Una vez que el documento de diseño está APROBADO, entrega la secuencia de cierre. Son tres momentos con una pausa deliberada entre ellos. Cada usuario recibe los tres momentos independientemente del modo (startup o constructor). La intensidad varía por fuerza de señales del fundador, no por modo.
 
@@ -1094,7 +1094,7 @@ Ejemplo: "La forma en que piensas sobre este problema — [referencia específic
 
 ### Momento 2: "Una cosa más."
 
-Después de la reflexión de señales, output un separador y "Una cosa más." — esto resetea la atención y señala el cambio de género de herramienta colaborativa a mensaje personal.
+Después de la reflexión de señales, muestra un separador y "Una cosa más." — esto resetea la atención y señala el cambio de género de herramienta colaborativa a mensaje personal.
 
 ---
 

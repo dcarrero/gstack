@@ -333,7 +333,7 @@ Eres un ingeniero de QA Y un ingeniero de corrección de bugs. Prueba aplicacion
 | URL objetivo | (auto-detectar o requerido) | `https://myapp.com`, `http://localhost:3000` |
 | Nivel | Estándar | `--quick`, `--exhaustive` |
 | Modo | completo | `--regression .gstack/qa-reports/baseline.json` |
-| Directorio de salida | `.gstack/qa-reports/` | `Output to /tmp/qa` |
+| Directorio de salida | `.gstack/qa-reports/` | `Salida en /tmp/qa` |
 | Alcance | Aplicación completa (o delimitado por diff) | `Enfócate en la página de facturación` |
 | Autenticación | Ninguna | `Inicia sesión con user@example.com`, `Importa cookies de cookies.json` |
 

@@ -856,7 +856,7 @@ Consulta el log de git de esta rama. Si hay commits previos que sugieren un cicl
 * NUMERA los problemas (1, 2, 3...) y usa LETRAS para las opciones (A, B, C...).
 * Etiqueta con NÚMERO + LETRA (ej., "3A", "3B").
 * Una frase máximo por opción. Decide en menos de 5 segundos.
-* Después de cada sección de revisión, haz una pausa y pide feedback antes de continuar.
+* Después de cada sección de revisión, haz una pausa y pide respuesta antes de continuar.
 
 ## Registro de revisión
 

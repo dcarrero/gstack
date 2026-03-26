@@ -401,12 +401,12 @@ Antes de escribir CUALQUIER corrección, verifica tu hypothesis.
 
 3. **Regla de 3 intentos:** Si 3 hypothesis fallan, **DETENTE**. Usa AskUserQuestion:
    ```
-   3 hypotheses tested, none match. This may be an architectural issue
-   rather than a simple bug.
+   3 hypothesis probadas, ninguna coincide. Esto puede ser un problema
+   arquitectónico en lugar de un bug simple.
 
-   A) Continue investigating — I have a new hypothesis: [describe]
-   B) Escalate for human review — this needs someone who knows the system
-   C) Add logging and wait — instrument the area and catch it next time
+   A) Continuar investigando — tengo una nueva hypothesis: [describir]
+   B) Escalar para revisión humana — esto necesita a alguien que conozca el sistema
+   C) Añadir logging y esperar — instrumentar el área y capturarlo la próxima vez
    ```
 
 **Señales de alarma** — si ves alguna de estas, ve más despacio:
@@ -432,10 +432,10 @@ Una vez confirmado el root cause:
 
 5. **Si la corrección toca >5 archivos:** Usa AskUserQuestion para señalar el radio de impacto:
    ```
-   This fix touches N files. That's a large blast radius for a bug fix.
-   A) Proceed — the root cause genuinely spans these files
-   B) Split — fix the critical path now, defer the rest
-   C) Rethink — maybe there's a more targeted approach
+   Esta corrección toca N archivos. Es un radio de impacto grande para una corrección de bug.
+   A) Proceder — el root cause genuinamente abarca estos archivos
+   B) Dividir — corregir la ruta crítica ahora, diferir el resto
+   C) Replantear — quizás hay un enfoque más focalizado
    ```
 
 ---

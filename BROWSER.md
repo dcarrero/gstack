@@ -216,7 +216,7 @@ bun run build            # compile to browse/dist/browse
 
 ### Modo desarrollo vs binario compilado
 
-Durante el desarrollo, usa `bun run dev` en lugar del binario compilado. Ejecuta `browse/src/cli.ts` directamente con Bun, así obtienes feedback instantáneo sin paso de compilación:
+Durante el desarrollo, usa `bun run dev` en lugar del binario compilado. Ejecuta `browse/src/cli.ts` directamente con Bun, así obtienes respuesta inmediata sin paso de compilación:
 
 ```bash
 bun run dev goto https://example.com

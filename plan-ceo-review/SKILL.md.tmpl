@@ -59,7 +59,7 @@ NO hagas ningún cambio de código. NO empieces la implementación. Tu único tr
 * La observabilidad no es opcional — las nuevas rutas de código necesitan logs, métricas o trazas.
 * La seguridad no es opcional — las nuevas rutas de código necesitan modelado de amenazas.
 * Los despliegues no son atómicos — planifica para estados parciales, rollbacks y feature flags.
-* Diagramas ASCII en comentarios del código para diseños complejos — Modelos (transiciones de estado), Servicios (pipelines), Controladores (flujo de peticiones), Concerns (comportamiento de mixins), Tests (setup no obvio).
+* Diagramas ASCII en comentarios del código para diseños complejos — Modelos (transiciones de estado), Servicios (pipelines), Controladores (flujo de peticiones), Concerns (comportamiento de mixins), Tests (preparación no obvia).
 * El mantenimiento de diagramas es parte del cambio — los diagramas obsoletos son peores que ninguno.
 
 ## Patrones Cognitivos — Cómo Piensan los Grandes CEOs
@@ -79,7 +79,7 @@ No son elementos de checklist. Son instintos de pensamiento — los movimientos 
 11. **Conciencia de tiempo de guerra** — Diagnostica correctamente tiempo de paz vs tiempo de guerra. Los hábitos de tiempo de paz matan a las empresas en tiempo de guerra (Horowitz).
 12. **Acumulación de coraje** — La confianza viene *de* tomar decisiones difíciles, no antes de ellas. "La lucha ES el trabajo."
 13. **La voluntad como estrategia** — Sé intencionalmente obstinado. El mundo cede ante personas que empujan lo suficientemente fuerte en una dirección durante suficiente tiempo. La mayoría de la gente se rinde demasiado pronto (Altman).
-14. **Obsesión por el apalancamiento** — Encuentra los inputs donde poco esfuerzo crea un output masivo. La tecnología es el apalancamiento definitivo — una persona con la herramienta correcta puede superar a un equipo de 100 sin ella (Altman).
+14. **Obsesión por el apalancamiento** — Encuentra los inputs donde poco esfuerzo crea un resultado masivo. La tecnología es el apalancamiento definitivo — una persona con la herramienta correcta puede superar a un equipo de 100 sin ella (Altman).
 15. **Jerarquía como servicio** — Cada decisión de interfaz responde "¿qué debería ver el usuario primero, segundo, tercero?" Respetando su tiempo, no embelleciendo píxeles.
 16. **Paranoia de casos límite (diseño)** — ¿Qué pasa si el nombre tiene 47 caracteres? ¿Cero resultados? ¿Falla la red a mitad de acción? ¿Usuario primerizo vs usuario avanzado? Los estados vacíos son funcionalidades, no ocurrencias tardías.
 17. **Sustracción por defecto** — "Tan poco diseño como sea posible" (Rams). Si un elemento de UI no se gana sus píxeles, elimínalo. La inflación de funcionalidades mata productos más rápido que las funcionalidades faltantes.
@@ -197,7 +197,7 @@ Alimenta el Cuestionamiento de Premisas (0A) y el Mapeo del Estado Ideal (0C). S
 3. ¿Qué pasaría si no hiciéramos nada? ¿Problema real o hipotético?
 
 ### 0B. Aprovechamiento del Código Existente
-1. ¿Qué código existente ya resuelve parcial o totalmente cada sub-problema? Mapea cada sub-problema a código existente. ¿Podemos capturar outputs de flujos existentes en lugar de construir flujos paralelos?
+1. ¿Qué código existente ya resuelve parcial o totalmente cada sub-problema? Mapea cada sub-problema a código existente. ¿Podemos capturar salidas de flujos existentes en lugar de construir flujos paralelos?
 2. ¿Este plan está reconstruyendo algo que ya existe? Si es así, explica por qué reconstruir es mejor que refactorizar.
 
 ### 0C. Mapeo del Estado Ideal
@@ -596,7 +596,7 @@ Si este plan tiene alcance significativo de UI, recomienda: "Considera ejecutar 
 {{CODEX_PLAN_REVIEW}}
 
 ## Auditoría de Diseño Post-Implementación (si se detectó alcance de UI)
-Después de la implementación, ejecuta `/design-review` en el sitio en vivo para detectar problemas visuales que solo pueden evaluarse con output renderizado.
+Después de la implementación, ejecuta `/design-review` en el sitio en vivo para detectar problemas visuales que solo pueden evaluarse con resultado renderizado.
 
 ## REGLA CRÍTICA — Cómo hacer preguntas
 Sigue el formato de AskUserQuestion del Preámbulo anterior. Reglas adicionales para revisiones de plan:
@@ -608,7 +608,7 @@ Sigue el formato de AskUserQuestion del Preámbulo anterior. Reglas adicionales 
 * Etiqueta con NÚMERO de tema + LETRA de opción (ej., "3A", "3B").
 * **Escape:** Si una sección no tiene temas, dilo y avanza. Si un tema tiene una solución obvia sin alternativas reales, indica qué harás y avanza — no desperdicies una pregunta en ello. Solo usa AskUserQuestion cuando haya una decisión genuina con compensaciones significativas.
 
-## Outputs Requeridos
+## Resultados Requeridos
 
 ### Sección "FUERA de alcance"
 Lista el trabajo considerado y explícitamente diferido, con un razonamiento de una línea para cada uno.
@@ -733,7 +733,7 @@ Antes de ejecutar este comando, sustituye los valores de placeholder del Resumen
 - **scope_proposed**: número de "Propuestas de alcance: ___ propuestas" en el resumen (0 para HOLD/REDUCTION)
 - **scope_accepted**: número de "Propuestas de alcance: ___ aceptadas" en el resumen (0 para HOLD/REDUCTION)
 - **scope_deferred**: número de elementos diferidos a TODOS.md de las decisiones de alcance (0 para HOLD/REDUCTION)
-- **COMMIT**: output de `git rev-parse --short HEAD`
+- **COMMIT**: salida de `git rev-parse --short HEAD`
 
 {{REVIEW_DASHBOARD}}
 
@@ -741,9 +741,9 @@ Antes de ejecutar este comando, sustituye los valores de placeholder del Resumen
 
 ## Próximos Pasos — Encadenamiento de Revisiones
 
-Después de mostrar el Dashboard de Preparación para Revisión, recomienda la(s) siguiente(s) revisión(es) basándote en lo que esta revisión CEO descubrió. Lee el output del dashboard para ver qué revisiones ya se han ejecutado y si están obsoletas.
+Después de mostrar el Dashboard de Preparación para Revisión, recomienda la(s) siguiente(s) revisión(es) basándote en lo que esta revisión CEO descubrió. Lee la salida del dashboard para ver qué revisiones ya se han ejecutado y si están obsoletas.
 
-**Recomienda /plan-eng-review si la revisión de ingeniería no está omitida globalmente** — verifica en el output del dashboard `skip_eng_review`. Si es `true`, la revisión de ingeniería está desactivada — no la recomiendes. En caso contrario, la revisión de ingeniería es la puerta de paso requerida para lanzar. Si esta revisión CEO expandió alcance, cambió la dirección arquitectónica o aceptó expansiones de alcance, enfatiza que se necesita una revisión de ingeniería nueva. Si ya existe una revisión de ingeniería en el dashboard pero el hash de commit muestra que es anterior a esta revisión CEO, nota que puede estar obsoleta y debería re-ejecutarse.
+**Recomienda /plan-eng-review si la revisión de ingeniería no está omitida globalmente** — verifica en la salida del dashboard `skip_eng_review`. Si es `true`, la revisión de ingeniería está desactivada — no la recomiendes. En caso contrario, la revisión de ingeniería es la puerta de paso requerida para lanzar. Si esta revisión CEO expandió alcance, cambió la dirección arquitectónica o aceptó expansiones de alcance, enfatiza que se necesita una revisión de ingeniería nueva. Si ya existe una revisión de ingeniería en el dashboard pero el hash de commit muestra que es anterior a esta revisión CEO, nota que puede estar obsoleta y debería re-ejecutarse.
 
 **Recomienda /plan-design-review si se detectó alcance de UI** — específicamente si la Sección 11 (Revisión de Diseño y UX) NO fue omitida, o si las expansiones de alcance aceptadas incluyeron funcionalidades de cara al usuario. Si una revisión de diseño existente está obsoleta (desviación de hash de commit), nótalo. En modo SCOPE REDUCTION, omite esta recomendación — la revisión de diseño probablemente no es relevante para recortes de alcance.
 
@@ -769,7 +769,7 @@ Si se promociona, copia el contenido del plan CEO a `docs/designs/{FEATURE}.md` 
 * NUMERA los temas (1, 2, 3...) y LETRAS para opciones (A, B, C...).
 * Etiqueta con NÚMERO + LETRA (ej., "3A", "3B").
 * Una oración máximo por opción.
-* Después de cada sección, pausa y espera feedback.
+* Después de cada sección, pausa y espera respuesta.
 * Usa **BRECHA CRÍTICA** / **ADVERTENCIA** / **OK** para escaneabilidad.
 
 ## Referencia Rápida de Modos

@@ -140,7 +140,7 @@ Cada skill alimenta al siguiente. `/office-hours` escribe un doc de diseño que 
 | `/freeze` | **Bloqueo de Edición** — restringe ediciones a un directorio. Previene cambios accidentales fuera del alcance. |
 | `/guard` | **Seguridad Completa** — `/careful` + `/freeze` en un solo comando. |
 | `/unfreeze` | **Desbloquear** — elimina el límite de `/freeze`. |
-| `/setup-deploy` | **Configurador de Deploy** — setup único para `/land-and-deploy`. |
+| `/setup-deploy` | **Configurador de Deploy** — configuración única para `/land-and-deploy`. |
 | `/gstack-upgrade` | **Auto-actualizador** — actualiza gstack a la última versión. |
 
 ## Sprints paralelos
@@ -159,7 +159,7 @@ gstack funciona bien con un sprint. Se pone interesante con diez ejecutándose a
 | [Filosofía del Constructor](ETHOS.md) | Filosofía: Completar sin Atajos, Buscar Antes de Construir |
 | [Arquitectura](ARCHITECTURE.md) | Decisiones de diseño e internos del sistema |
 | [Referencia del Navegador](BROWSER.md) | Referencia completa de comandos de `/browse` |
-| [Contribuir](CONTRIBUTING.md) | Setup de desarrollo, testing y modo contribuidor |
+| [Contribuir](CONTRIBUTING.md) | Configuración de desarrollo, testing y modo contribuidor |
 | [Changelog](CHANGELOG.md) | Novedades de cada versión |
 
 ## Privacidad y Telemetría

@@ -3,12 +3,12 @@ name: browse
 preamble-tier: 1
 version: 1.1.0
 description: |
-  Fast headless browser for QA testing and site dogfooding. Navigate any URL, interact with
-  elements, verify page state, diff before/after actions, take annotated screenshots, check
-  responsive layouts, test forms and uploads, handle dialogs, and assert element states.
-  ~100ms per command. Use when you need to test a feature, verify a deployment, dogfood a
-  user flow, or file a bug with evidence. Use when asked to "open in browser", "test the
-  site", "take a screenshot", or "dogfood this".
+  Navegador headless rapido para pruebas de QA y dogfooding de sitios. Navega a cualquier URL, interactua con
+  elementos, verifica el estado de la pagina, compara diferencias antes/despues de acciones, toma screenshots
+  anotados, comprueba layouts responsivos, prueba formularios y subidas de archivos, gestiona dialogos y
+  verifica estados de elementos. ~100ms por comando. Usalo cuando necesites probar una funcionalidad, verificar
+  un despliegue, hacer dogfooding de un flujo de usuario o reportar un bug con evidencia. Usalo cuando te pidan
+  "abrir en el navegador", "probar el sitio", "tomar un screenshot" o "hacer dogfooding de esto".
 allowed-tools:
   - Bash
   - Read
@@ -295,10 +295,10 @@ Then write a `## GSTACK REVIEW REPORT` section to the end of the plan file:
 file you are allowed to edit in plan mode. The plan file review report is part of the
 plan's living status.
 
-# browse: QA Testing & Dogfooding
+# browse: Pruebas de QA y Dogfooding
 
-Persistent headless Chromium. First call auto-starts (~3s), then ~100ms per command.
-State persists between calls (cookies, tabs, login sessions).
+Chromium headless persistente. La primera llamada se inicia automaticamente (~3s), luego ~100ms por comando.
+El estado persiste entre llamadas (cookies, pestanas, sesiones de login).
 
 ## SETUP (run this check BEFORE any browse command)
 
@@ -319,49 +319,49 @@ If `NEEDS_SETUP`:
 2. Run: `cd <SKILL_DIR> && ./setup`
 3. If `bun` is not installed: `curl -fsSL https://bun.sh/install | bash`
 
-## Core QA Patterns
+## Patrones principales de QA
 
-### 1. Verify a page loads correctly
+### 1. Verificar que una pagina carga correctamente
 ```bash
 $B goto https://yourapp.com
-$B text                          # content loads?
-$B console                       # JS errors?
-$B network                       # failed requests?
-$B is visible ".main-content"    # key elements present?
+$B text                          # carga el contenido?
+$B console                       # errores de JS?
+$B network                       # peticiones fallidas?
+$B is visible ".main-content"    # elementos clave presentes?
 ```
 
-### 2. Test a user flow
+### 2. Probar un flujo de usuario
 ```bash
 $B goto https://app.com/login
-$B snapshot -i                   # see all interactive elements
+$B snapshot -i                   # ver todos los elementos interactivos
 $B fill @e3 "user@test.com"
 $B fill @e4 "password"
-$B click @e5                     # submit
-$B snapshot -D                   # diff: what changed after submit?
-$B is visible ".dashboard"       # success state present?
+$B click @e5                     # enviar
+$B snapshot -D                   # diff: que cambio despues de enviar?
+$B is visible ".dashboard"       # estado de exito presente?
 ```
 
-### 3. Verify an action worked
+### 3. Verificar que una accion funciono
 ```bash
-$B snapshot                      # baseline
-$B click @e3                     # do something
-$B snapshot -D                   # unified diff shows exactly what changed
+$B snapshot                      # linea base
+$B click @e3                     # realizar una accion
+$B snapshot -D                   # el diff unificado muestra exactamente que cambio
 ```
 
-### 4. Visual evidence for bug reports
+### 4. Evidencia visual para reportes de bugs
 ```bash
-$B snapshot -i -a -o /tmp/annotated.png   # labeled screenshot
-$B screenshot /tmp/bug.png                # plain screenshot
-$B console                                # error log
+$B snapshot -i -a -o /tmp/annotated.png   # screenshot etiquetado
+$B screenshot /tmp/bug.png                # screenshot simple
+$B console                                # registro de errores
 ```
 
-### 5. Find all clickable elements (including non-ARIA)
+### 5. Encontrar todos los elementos clicables (incluyendo los que no tienen ARIA)
 ```bash
-$B snapshot -C                   # finds divs with cursor:pointer, onclick, tabindex
-$B click @c1                     # interact with them
+$B snapshot -C                   # encuentra divs con cursor:pointer, onclick, tabindex
+$B click @c1                     # interactuar con ellos
 ```
 
-### 6. Assert element states
+### 6. Verificar estados de elementos
 ```bash
 $B is visible ".modal"
 $B is enabled "#submit-btn"
@@ -372,62 +372,62 @@ $B is focused "#search-input"
 $B js "document.body.textContent.includes('Success')"
 ```
 
-### 7. Test responsive layouts
+### 7. Probar layouts responsivos
 ```bash
-$B responsive /tmp/layout        # mobile + tablet + desktop screenshots
-$B viewport 375x812              # or set specific viewport
+$B responsive /tmp/layout        # screenshots en movil + tablet + escritorio
+$B viewport 375x812              # o establecer un viewport especifico
 $B screenshot /tmp/mobile.png
 ```
 
-### 8. Test file uploads
+### 8. Probar subida de archivos
 ```bash
 $B upload "#file-input" /path/to/file.pdf
 $B is visible ".upload-success"
 ```
 
-### 9. Test dialogs
+### 9. Probar dialogos
 ```bash
-$B dialog-accept "yes"           # set up handler
-$B click "#delete-button"        # trigger dialog
-$B dialog                        # see what appeared
-$B snapshot -D                   # verify deletion happened
+$B dialog-accept "yes"           # configurar el manejador
+$B click "#delete-button"        # disparar el dialogo
+$B dialog                        # ver que aparecio
+$B snapshot -D                   # verificar que la eliminacion ocurrio
 ```
 
-### 10. Compare environments
+### 10. Comparar entornos
 ```bash
 $B diff https://staging.app.com https://prod.app.com
 ```
 
-### 11. Show screenshots to the user
-After `$B screenshot`, `$B snapshot -a -o`, or `$B responsive`, always use the Read tool on the output PNG(s) so the user can see them. Without this, screenshots are invisible.
+### 11. Mostrar screenshots al usuario
+Despues de `$B screenshot`, `$B snapshot -a -o` o `$B responsive`, usa siempre la herramienta Read sobre los PNG generados para que el usuario pueda verlos. Sin esto, los screenshots son invisibles.
 
-## User Handoff
+## Traspaso al usuario
 
-When you hit something you can't handle in headless mode (CAPTCHA, complex auth, multi-factor
-login), hand off to the user:
+Cuando te encuentres con algo que no puedes manejar en modo headless (CAPTCHA, autenticacion compleja, login
+con multiples factores), traspasa el control al usuario:
 
 ```bash
-# 1. Open a visible Chrome at the current page
+# 1. Abrir un Chrome visible en la pagina actual
 $B handoff "Stuck on CAPTCHA at login page"
 
-# 2. Tell the user what happened (via AskUserQuestion)
-#    "I've opened Chrome at the login page. Please solve the CAPTCHA
-#     and let me know when you're done."
+# 2. Informar al usuario de lo ocurrido (mediante AskUserQuestion)
+#    "He abierto Chrome en la pagina de login. Por favor resuelve el CAPTCHA
+#     y avisame cuando hayas terminado."
 
-# 3. When user says "done", re-snapshot and continue
+# 3. Cuando el usuario diga "listo", hacer un nuevo snapshot y continuar
 $B resume
 ```
 
-**When to use handoff:**
-- CAPTCHAs or bot detection
-- Multi-factor authentication (SMS, authenticator app)
-- OAuth flows that require user interaction
-- Complex interactions the AI can't handle after 3 attempts
+**Cuando usar el traspaso:**
+- CAPTCHAs o deteccion de bots
+- Autenticacion multifactor (SMS, app de autenticacion)
+- Flujos OAuth que requieren interaccion del usuario
+- Interacciones complejas que la IA no puede resolver tras 3 intentos
 
-The browser preserves all state (cookies, localStorage, tabs) across the handoff.
-After `resume`, you get a fresh snapshot of wherever the user left off.
+El navegador conserva todo el estado (cookies, localStorage, pestanas) durante el traspaso.
+Despues de `resume`, obtienes un snapshot nuevo desde donde el usuario lo dejo.
 
-## Snapshot Flags
+## Flags de snapshot
 
 The snapshot is your primary tool for understanding and interacting with pages.
 
@@ -464,7 +464,7 @@ $B click @c1       # cursor-interactive ref (from -C)
 
 Refs are invalidated on navigation — run `snapshot` again after `goto`.
 
-## Full Command List
+## Lista completa de comandos
 
 ### Navigation
 | Command | Description |
