@@ -2,11 +2,11 @@
 name: freeze
 version: 0.1.0
 description: |
-  Restrict file edits to a specific directory for the session. Blocks Edit and
-  Write outside the allowed path. Use when debugging to prevent accidentally
-  "fixing" unrelated code, or when you want to scope changes to one module.
-  Use when asked to "freeze", "restrict edits", "only edit this folder",
-  or "lock down edits".
+  Restringe las ediciones de archivos a un directorio específico durante la sesión.
+  Bloquea Edit y Write fuera de la ruta permitida. Úsalo al depurar para evitar
+  "arreglar" código no relacionado accidentalmente, o cuando quieras limitar los
+  cambios a un solo módulo. Úsalo cuando te pidan "congelar", "restringir ediciones",
+  "solo editar esta carpeta" o "bloquear ediciones".
 allowed-tools:
   - Bash
   - Read
@@ -25,32 +25,33 @@ hooks:
           statusMessage: "Checking freeze boundary..."
 ---
 
-# /freeze — Restrict Edits to a Directory
+# /freeze — Restringir ediciones a un directorio
 
-Lock file edits to a specific directory. Any Edit or Write operation targeting
-a file outside the allowed path will be **blocked** (not just warned).
+Bloquea las ediciones de archivos a un directorio específico. Cualquier operación
+Edit o Write dirigida a un archivo fuera de la ruta permitida será **bloqueada**
+(no solo advertida).
 
 ```bash
 mkdir -p ~/.gstack/analytics
 echo '{"skill":"freeze","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","repo":"'$(basename "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null || echo "unknown")'"}'  >> ~/.gstack/analytics/skill-usage.jsonl 2>/dev/null || true
 ```
 
-## Setup
+## Configuración
 
-Ask the user which directory to restrict edits to. Use AskUserQuestion:
+Pregunta al usuario a qué directorio desea restringir las ediciones. Usa AskUserQuestion:
 
-- Question: "Which directory should I restrict edits to? Files outside this path will be blocked from editing."
-- Text input (not multiple choice) — the user types a path.
+- Pregunta: "¿A qué directorio debo restringir las ediciones? Los archivos fuera de esta ruta serán bloqueados para edición."
+- Entrada de texto (no opción múltiple) — el usuario escribe una ruta.
 
-Once the user provides a directory path:
+Una vez que el usuario proporcione la ruta del directorio:
 
-1. Resolve it to an absolute path:
+1. Resuélvela a una ruta absoluta:
 ```bash
 FREEZE_DIR=$(cd "<user-provided-path>" 2>/dev/null && pwd)
 echo "$FREEZE_DIR"
 ```
 
-2. Ensure trailing slash and save to the freeze state file:
+2. Asegura la barra final y guarda en el archivo de estado de congelación:
 ```bash
 FREEZE_DIR="${FREEZE_DIR%/}/"
 STATE_DIR="${CLAUDE_PLUGIN_DATA:-$HOME/.gstack}"
@@ -59,22 +60,22 @@ echo "$FREEZE_DIR" > "$STATE_DIR/freeze-dir.txt"
 echo "Freeze boundary set: $FREEZE_DIR"
 ```
 
-Tell the user: "Edits are now restricted to `<path>/`. Any Edit or Write
-outside this directory will be blocked. To change the boundary, run `/freeze`
-again. To remove it, run `/unfreeze` or end the session."
+Informa al usuario: "Las ediciones están ahora restringidas a `<path>/`. Cualquier
+Edit o Write fuera de este directorio será bloqueado. Para cambiar el límite,
+ejecuta `/freeze` de nuevo. Para eliminarlo, ejecuta `/unfreeze` o finaliza la sesión."
 
-## How it works
+## Cómo funciona
 
-The hook reads `file_path` from the Edit/Write tool input JSON, then checks
-whether the path starts with the freeze directory. If not, it returns
-`permissionDecision: "deny"` to block the operation.
+El hook lee `file_path` del JSON de entrada de la herramienta Edit/Write, y luego
+comprueba si la ruta comienza con el directorio congelado. Si no, devuelve
+`permissionDecision: "deny"` para bloquear la operación.
 
-The freeze boundary persists for the session via the state file. The hook
-script reads it on every Edit/Write invocation.
+El límite de congelación persiste durante la sesión mediante el archivo de estado.
+El script del hook lo lee en cada invocación de Edit/Write.
 
-## Notes
+## Notas
 
-- The trailing `/` on the freeze directory prevents `/src` from matching `/src-old`
-- Freeze applies to Edit and Write tools only — Read, Bash, Glob, Grep are unaffected
-- This prevents accidental edits, not a security boundary — Bash commands like `sed` can still modify files outside the boundary
-- To deactivate, run `/unfreeze` or end the conversation
+- La `/` final en el directorio congelado evita que `/src` coincida con `/src-old`
+- La congelación se aplica solo a las herramientas Edit y Write — Read, Bash, Glob, Grep no se ven afectadas
+- Esto previene ediciones accidentales, no es un límite de seguridad — comandos Bash como `sed` aún pueden modificar archivos fuera del límite
+- Para desactivar, ejecuta `/unfreeze` o finaliza la conversación

@@ -25,19 +25,19 @@
 - [x] land-and-deploy/SKILL.md.tmpl
 - [x] retro/SKILL.md.tmpl
 
-### Pendiente — Skills de utilidad (prioridad baja)
-- [ ] careful/SKILL.md.tmpl
-- [ ] freeze/SKILL.md.tmpl
-- [ ] guard/SKILL.md.tmpl
-- [ ] unfreeze/SKILL.md.tmpl
-- [ ] canary/SKILL.md.tmpl
-- [ ] benchmark/SKILL.md.tmpl
-- [ ] document-release/SKILL.md.tmpl
-- [ ] codex/SKILL.md.tmpl
-- [ ] autoplan/SKILL.md.tmpl
-- [ ] setup-browser-cookies/SKILL.md.tmpl
-- [ ] setup-deploy/SKILL.md.tmpl
-- [ ] gstack-upgrade/SKILL.md.tmpl
+### Completado — Skills de utilidad
+- [x] careful/SKILL.md.tmpl
+- [x] freeze/SKILL.md.tmpl
+- [x] guard/SKILL.md.tmpl
+- [x] unfreeze/SKILL.md.tmpl
+- [x] canary/SKILL.md.tmpl
+- [x] benchmark/SKILL.md.tmpl
+- [x] document-release/SKILL.md.tmpl
+- [x] codex/SKILL.md.tmpl
+- [x] autoplan/SKILL.md.tmpl
+- [x] setup-browser-cookies/SKILL.md.tmpl
+- [x] setup-deploy/SKILL.md.tmpl
+- [x] gstack-upgrade/SKILL.md.tmpl
 
 ### Pendiente — Infraestructura compartida
 - [ ] Resolvers en scripts/resolvers/ (generan el {{PREAMBLE}} compartido)

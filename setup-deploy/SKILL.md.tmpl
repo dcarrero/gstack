@@ -3,12 +3,12 @@ name: setup-deploy
 preamble-tier: 2
 version: 1.0.0
 description: |
-  Configure deployment settings for /land-and-deploy. Detects your deploy
-  platform (Fly.io, Render, Vercel, Netlify, Heroku, GitHub Actions, custom),
-  production URL, health check endpoints, and deploy status commands. Writes
-  the configuration to CLAUDE.md so all future deploys are automatic.
-  Use when: "setup deploy", "configure deployment", "set up land-and-deploy",
-  "how do I deploy with gstack", "add deploy config".
+  Configura los ajustes de despliegue para /land-and-deploy. Detecta tu plataforma
+  de despliegue (Fly.io, Render, Vercel, Netlify, Heroku, GitHub Actions, personalizada),
+  URL de producción, endpoints de health check y comandos de estado de despliegue. Escribe
+  la configuración en CLAUDE.md para que todos los despliegues futuros sean automáticos.
+  Usar cuando: "setup deploy", "configurar despliegue", "configurar land-and-deploy",
+  "cómo despliego con gstack", "agregar configuración de despliegue".
 allowed-tools:
   - Bash
   - Read
@@ -21,38 +21,38 @@ allowed-tools:
 
 {{PREAMBLE}}
 
-# /setup-deploy — Configure Deployment for gstack
+# /setup-deploy — Configurar Despliegue para gstack
 
-You are helping the user configure their deployment so `/land-and-deploy` works
-automatically. Your job is to detect the deploy platform, production URL, health
-checks, and deploy status commands — then persist everything to CLAUDE.md.
+Estás ayudando al usuario a configurar su despliegue para que `/land-and-deploy` funcione
+automáticamente. Tu trabajo es detectar la plataforma de despliegue, URL de producción,
+health checks y comandos de estado de despliegue — luego persistir todo en CLAUDE.md.
 
-After this runs once, `/land-and-deploy` reads CLAUDE.md and skips detection entirely.
+Después de ejecutar esto una vez, `/land-and-deploy` lee CLAUDE.md y omite la detección por completo.
 
-## User-invocable
-When the user types `/setup-deploy`, run this skill.
+## Invocable por el usuario
+Cuando el usuario escribe `/setup-deploy`, ejecutar esta habilidad.
 
-## Instructions
+## Instrucciones
 
-### Step 1: Check existing configuration
+### Paso 1: Verificar configuración existente
 
 ```bash
 grep -A 20 "## Deploy Configuration" CLAUDE.md 2>/dev/null || echo "NO_CONFIG"
 ```
 
-If configuration already exists, show it and ask:
+Si la configuración ya existe, mostrarla y preguntar:
 
-- **Context:** Deploy configuration already exists in CLAUDE.md.
-- **RECOMMENDATION:** Choose A to update if your setup changed.
-- A) Reconfigure from scratch (overwrite existing)
-- B) Edit specific fields (show current config, let me change one thing)
-- C) Done — configuration looks correct
+- **Contexto:** La configuración de despliegue ya existe en CLAUDE.md.
+- **RECOMENDACION:** Elige A para actualizar si tu configuración cambió.
+- A) Reconfigurar desde cero (sobrescribir existente)
+- B) Editar campos específicos (mostrar configuración actual, déjame cambiar una cosa)
+- C) Listo — la configuración se ve correcta
 
-If the user picks C, stop.
+Si el usuario elige C, detenerse.
 
-### Step 2: Detect platform
+### Paso 2: Detectar plataforma
 
-Run the platform detection from the deploy bootstrap:
+Ejecutar la detección de plataforma desde el bootstrap de despliegue:
 
 ```bash
 # Platform config files
@@ -73,91 +73,91 @@ done
 ls *.gemspec 2>/dev/null && echo "PROJECT_TYPE:library"
 ```
 
-### Step 3: Platform-specific setup
+### Paso 3: Configuración específica por plataforma
 
-Based on what was detected, guide the user through platform-specific configuration.
+Según lo detectado, guiar al usuario a través de la configuración específica de la plataforma.
 
 #### Fly.io
 
-If `fly.toml` detected:
+Si se detectó `fly.toml`:
 
-1. Extract app name: `grep -m1 "^app" fly.toml | sed 's/app = "\(.*\)"/\1/'`
-2. Check if `fly` CLI is installed: `which fly 2>/dev/null`
-3. If installed, verify: `fly status --app {app} 2>/dev/null`
-4. Infer URL: `https://{app}.fly.dev`
-5. Set deploy status command: `fly status --app {app}`
-6. Set health check: `https://{app}.fly.dev` (or `/health` if the app has one)
+1. Extraer nombre de la app: `grep -m1 "^app" fly.toml | sed 's/app = "\(.*\)"/\1/'`
+2. Verificar si el CLI de `fly` está instalado: `which fly 2>/dev/null`
+3. Si está instalado, verificar: `fly status --app {app} 2>/dev/null`
+4. Inferir URL: `https://{app}.fly.dev`
+5. Establecer comando de estado de despliegue: `fly status --app {app}`
+6. Establecer health check: `https://{app}.fly.dev` (o `/health` si la app tiene uno)
 
-Ask the user to confirm the production URL. Some Fly apps use custom domains.
+Pedir al usuario que confirme la URL de producción. Algunas apps de Fly usan dominios personalizados.
 
 #### Render
 
-If `render.yaml` detected:
+Si se detectó `render.yaml`:
 
-1. Extract service name and type from render.yaml
-2. Check for Render API key: `echo $RENDER_API_KEY | head -c 4` (don't expose the full key)
-3. Infer URL: `https://{service-name}.onrender.com`
-4. Render deploys automatically on push to the connected branch — no deploy workflow needed
-5. Set health check: the inferred URL
+1. Extraer nombre y tipo de servicio de render.yaml
+2. Verificar API key de Render: `echo $RENDER_API_KEY | head -c 4` (no exponer la clave completa)
+3. Inferir URL: `https://{service-name}.onrender.com`
+4. Render despliega automáticamente al hacer push a la rama conectada — no se necesita workflow de despliegue
+5. Establecer health check: la URL inferida
 
-Ask the user to confirm. Render uses auto-deploy from the connected git branch — after
-merge to main, Render picks it up automatically. The "deploy wait" in /land-and-deploy
-should poll the Render URL until it responds with the new version.
+Pedir confirmación al usuario. Render usa auto-deploy desde la rama git conectada — después del
+merge a main, Render lo detecta automáticamente. La "espera de despliegue" en /land-and-deploy
+debe consultar la URL de Render hasta que responda con la nueva versión.
 
 #### Vercel
 
-If vercel.json or .vercel detected:
+Si se detectó vercel.json o .vercel:
 
-1. Check for `vercel` CLI: `which vercel 2>/dev/null`
-2. If installed: `vercel ls --prod 2>/dev/null | head -3`
-3. Vercel deploys automatically on push — preview on PR, production on merge to main
-4. Set health check: the production URL from vercel project settings
+1. Verificar CLI de `vercel`: `which vercel 2>/dev/null`
+2. Si está instalado: `vercel ls --prod 2>/dev/null | head -3`
+3. Vercel despliega automáticamente al hacer push — preview en PR, producción al hacer merge a main
+4. Establecer health check: la URL de producción de la configuración del proyecto vercel
 
 #### Netlify
 
-If netlify.toml detected:
+Si se detectó netlify.toml:
 
-1. Extract site info from netlify.toml
-2. Netlify deploys automatically on push
-3. Set health check: the production URL
+1. Extraer información del sitio de netlify.toml
+2. Netlify despliega automáticamente al hacer push
+3. Establecer health check: la URL de producción
 
-#### GitHub Actions only
+#### Solo GitHub Actions
 
-If deploy workflows detected but no platform config:
+Si se detectaron workflows de despliegue pero sin configuración de plataforma:
 
-1. Read the workflow file to understand what it does
-2. Extract the deploy target (if mentioned)
-3. Ask the user for the production URL
+1. Leer el archivo de workflow para entender qué hace
+2. Extraer el destino de despliegue (si se menciona)
+3. Preguntar al usuario por la URL de producción
 
-#### Custom / Manual
+#### Personalizado / Manual
 
-If nothing detected:
+Si no se detectó nada:
 
-Use AskUserQuestion to gather the information:
+Usar AskUserQuestion para recopilar la información:
 
-1. **How are deploys triggered?**
-   - A) Automatically on push to main (Fly, Render, Vercel, Netlify, etc.)
-   - B) Via GitHub Actions workflow
-   - C) Via a deploy script or CLI command (describe it)
-   - D) Manually (SSH, dashboard, etc.)
-   - E) This project doesn't deploy (library, CLI, tool)
+1. **¿Cómo se activan los despliegues?**
+   - A) Automáticamente al hacer push a main (Fly, Render, Vercel, Netlify, etc.)
+   - B) Vía workflow de GitHub Actions
+   - C) Vía un script o comando CLI de despliegue (descríbelo)
+   - D) Manualmente (SSH, dashboard, etc.)
+   - E) Este proyecto no se despliega (biblioteca, CLI, herramienta)
 
-2. **What's the production URL?** (Free text — the URL where the app runs)
+2. **¿Cuál es la URL de producción?** (Texto libre — la URL donde se ejecuta la app)
 
-3. **How can gstack check if a deploy succeeded?**
-   - A) HTTP health check at a specific URL (e.g., /health, /api/status)
-   - B) CLI command (e.g., `fly status`, `kubectl rollout status`)
-   - C) Check the GitHub Actions workflow status
-   - D) No automated way — just check the URL loads
+3. **¿Cómo puede gstack verificar si un despliegue fue exitoso?**
+   - A) Health check HTTP en una URL específica (ej., /health, /api/status)
+   - B) Comando CLI (ej., `fly status`, `kubectl rollout status`)
+   - C) Verificar el estado del workflow de GitHub Actions
+   - D) Sin forma automatizada — solo verificar que la URL carga
 
-4. **Any pre-merge or post-merge hooks?**
-   - Commands to run before merging (e.g., `bun run build`)
-   - Commands to run after merge but before deploy verification
+4. **¿Algún hook pre-merge o post-merge?**
+   - Comandos a ejecutar antes del merge (ej., `bun run build`)
+   - Comandos a ejecutar después del merge pero antes de la verificación de despliegue
 
-### Step 4: Write configuration
+### Paso 4: Escribir configuración
 
-Read CLAUDE.md (or create it). Find and replace the `## Deploy Configuration` section
-if it exists, or append it at the end.
+Leer CLAUDE.md (o crearlo). Encontrar y reemplazar la sección `## Deploy Configuration`
+si existe, o agregarla al final.
 
 ```markdown
 ## Deploy Configuration (configured by /setup-deploy)
@@ -176,46 +176,46 @@ if it exists, or append it at the end.
 - Health check: {URL or command}
 ```
 
-### Step 5: Verify
+### Paso 5: Verificar
 
-After writing, verify the configuration works:
+Después de escribir, verificar que la configuración funciona:
 
-1. If a health check URL was configured, try it:
+1. Si se configuró una URL de health check, probarla:
 ```bash
 curl -sf "{health-check-url}" -o /dev/null -w "%{http_code}" 2>/dev/null || echo "UNREACHABLE"
 ```
 
-2. If a deploy status command was configured, try it:
+2. Si se configuró un comando de estado de despliegue, probarlo:
 ```bash
 {deploy-status-command} 2>/dev/null | head -5 || echo "COMMAND_FAILED"
 ```
 
-Report results. If anything failed, note it but don't block — the config is still
-useful even if the health check is temporarily unreachable.
+Reportar resultados. Si algo falló, anotarlo pero no bloquear — la configuración sigue siendo
+útil incluso si el health check está temporalmente inaccesible.
 
-### Step 6: Summary
+### Paso 6: Resumen
 
 ```
-DEPLOY CONFIGURATION — COMPLETE
-════════════════════════════════
-Platform:      {platform}
+CONFIGURACION DE DESPLIEGUE — COMPLETA
+═══════════════════════════════════════
+Plataforma:    {platform}
 URL:           {url}
 Health check:  {health check}
-Status cmd:    {status command}
-Merge method:  {merge method}
+Comando estado:{status command}
+Método merge:  {merge method}
 
-Saved to CLAUDE.md. /land-and-deploy will use these settings automatically.
+Guardado en CLAUDE.md. /land-and-deploy usará estos ajustes automáticamente.
 
-Next steps:
-- Run /land-and-deploy to merge and deploy your current PR
-- Edit the "## Deploy Configuration" section in CLAUDE.md to change settings
-- Run /setup-deploy again to reconfigure
+Próximos pasos:
+- Ejecutar /land-and-deploy para hacer merge y desplegar tu PR actual
+- Editar la sección "## Deploy Configuration" en CLAUDE.md para cambiar ajustes
+- Ejecutar /setup-deploy de nuevo para reconfigurar
 ```
 
-## Important Rules
+## Reglas Importantes
 
-- **Never expose secrets.** Don't print full API keys, tokens, or passwords.
-- **Confirm with the user.** Always show the detected config and ask for confirmation before writing.
-- **CLAUDE.md is the source of truth.** All configuration lives there — not in a separate config file.
-- **Idempotent.** Running /setup-deploy multiple times overwrites the previous config cleanly.
-- **Platform CLIs are optional.** If `fly` or `vercel` CLI isn't installed, fall back to URL-based health checks.
+- **Nunca exponer secretos.** No imprimir API keys completas, tokens ni contraseñas.
+- **Confirmar con el usuario.** Siempre mostrar la configuración detectada y pedir confirmación antes de escribir.
+- **CLAUDE.md es la fuente de verdad.** Toda la configuración vive ahí — no en un archivo de configuración separado.
+- **Idempotente.** Ejecutar /setup-deploy múltiples veces sobrescribe la configuración anterior limpiamente.
+- **Los CLIs de plataforma son opcionales.** Si el CLI de `fly` o `vercel` no está instalado, recurrir a health checks basados en URL.

@@ -3,10 +3,10 @@ name: setup-browser-cookies
 preamble-tier: 1
 version: 1.0.0
 description: |
-  Import cookies from your real Chromium browser into the headless browse session.
-  Opens an interactive picker UI where you select which cookie domains to import.
-  Use before QA testing authenticated pages. Use when asked to "import cookies",
-  "login to the site", or "authenticate the browser".
+  Importa cookies de tu navegador Chromium real a la sesión headless de navegación.
+  Abre una interfaz interactiva de selección donde eliges qué dominios de cookies importar.
+  Usar antes de hacer pruebas QA en páginas autenticadas. Usar cuando se pida "importar cookies",
+  "iniciar sesión en el sitio" o "autenticar el navegador".
 allowed-tools:
   - Bash
   - Read
@@ -15,62 +15,62 @@ allowed-tools:
 
 {{PREAMBLE}}
 
-# Setup Browser Cookies
+# Configurar Cookies del Navegador
 
-Import logged-in sessions from your real Chromium browser into the headless browse session.
+Importa sesiones con sesión iniciada de tu navegador Chromium real a la sesión headless de navegación.
 
-## How it works
+## Cómo funciona
 
-1. Find the browse binary
-2. Run `cookie-import-browser` to detect installed browsers and open the picker UI
-3. User selects which cookie domains to import in their browser
-4. Cookies are decrypted and loaded into the Playwright session
+1. Encontrar el binario de browse
+2. Ejecutar `cookie-import-browser` para detectar navegadores instalados y abrir la interfaz de selección
+3. El usuario selecciona qué dominios de cookies importar en su navegador
+4. Las cookies se descifran y se cargan en la sesión de Playwright
 
-## Steps
+## Pasos
 
-### 1. Find the browse binary
+### 1. Encontrar el binario de browse
 
 {{BROWSE_SETUP}}
 
-### 2. Open the cookie picker
+### 2. Abrir el selector de cookies
 
 ```bash
 $B cookie-import-browser
 ```
 
-This auto-detects installed Chromium browsers and opens
-an interactive picker UI in your default browser where you can:
-- Switch between installed browsers
-- Search domains
-- Click "+" to import a domain's cookies
-- Click trash to remove imported cookies
+Esto auto-detecta los navegadores Chromium instalados y abre
+una interfaz interactiva de selección en tu navegador predeterminado donde puedes:
+- Cambiar entre navegadores instalados
+- Buscar dominios
+- Hacer clic en "+" para importar las cookies de un dominio
+- Hacer clic en la papelera para eliminar cookies importadas
 
-Tell the user: **"Cookie picker opened — select the domains you want to import in your browser, then tell me when you're done."**
+Decirle al usuario: **"Selector de cookies abierto — selecciona los dominios que quieras importar en tu navegador, luego dime cuando hayas terminado."**
 
-### 3. Direct import (alternative)
+### 3. Importación directa (alternativa)
 
-If the user specifies a domain directly (e.g., `/setup-browser-cookies github.com`), skip the UI:
+Si el usuario especifica un dominio directamente (ej., `/setup-browser-cookies github.com`), omitir la interfaz:
 
 ```bash
 $B cookie-import-browser comet --domain github.com
 ```
 
-Replace `comet` with the appropriate browser if specified.
+Reemplazar `comet` con el navegador apropiado si se especifica.
 
-### 4. Verify
+### 4. Verificar
 
-After the user confirms they're done:
+Después de que el usuario confirme que ha terminado:
 
 ```bash
 $B cookies
 ```
 
-Show the user a summary of imported cookies (domain counts).
+Mostrar al usuario un resumen de las cookies importadas (conteos por dominio).
 
-## Notes
+## Notas
 
-- On macOS, the first import per browser may trigger a Keychain dialog — click "Allow" / "Always Allow"
-- On Linux, `v11` cookies may require `secret-tool`/libsecret access; `v10` cookies use Chromium's standard fallback key
-- Cookie picker is served on the same port as the browse server (no extra process)
-- Only domain names and cookie counts are shown in the UI — no cookie values are exposed
-- The browse session persists cookies between commands, so imported cookies work immediately
+- En macOS, la primera importación por navegador puede activar un diálogo de Keychain — hacer clic en "Permitir" / "Permitir Siempre"
+- En Linux, las cookies `v11` pueden requerir acceso a `secret-tool`/libsecret; las cookies `v10` usan la clave de respaldo estándar de Chromium
+- El selector de cookies se sirve en el mismo puerto que el servidor de browse (sin proceso adicional)
+- Solo se muestran nombres de dominio y conteos de cookies en la interfaz — no se exponen valores de cookies
+- La sesión de browse persiste las cookies entre comandos, así que las cookies importadas funcionan inmediatamente

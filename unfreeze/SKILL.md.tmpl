@@ -2,25 +2,25 @@
 name: unfreeze
 version: 0.1.0
 description: |
-  Clear the freeze boundary set by /freeze, allowing edits to all directories
-  again. Use when you want to widen edit scope without ending the session.
-  Use when asked to "unfreeze", "unlock edits", "remove freeze", or
-  "allow all edits".
+  Eliminar el límite de freeze establecido por /freeze, permitiendo ediciones en todos
+  los directorios de nuevo. Usar cuando se quiera ampliar el alcance de edición sin
+  finalizar la sesión. Usar cuando se pida "unfreeze", "desbloquear ediciones",
+  "eliminar freeze" o "permitir todas las ediciones".
 allowed-tools:
   - Bash
   - Read
 ---
 
-# /unfreeze — Clear Freeze Boundary
+# /unfreeze — Eliminar Límite de Freeze
 
-Remove the edit restriction set by `/freeze`, allowing edits to all directories.
+Elimina la restricción de edición establecida por `/freeze`, permitiendo ediciones en todos los directorios.
 
 ```bash
 mkdir -p ~/.gstack/analytics
 echo '{"skill":"unfreeze","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","repo":"'$(basename "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null || echo "unknown")'"}'  >> ~/.gstack/analytics/skill-usage.jsonl 2>/dev/null || true
 ```
 
-## Clear the boundary
+## Eliminar el límite
 
 ```bash
 STATE_DIR="${CLAUDE_PLUGIN_DATA:-$HOME/.gstack}"
@@ -33,6 +33,6 @@ else
 fi
 ```
 
-Tell the user the result. Note that `/freeze` hooks are still registered for the
-session — they will just allow everything since no state file exists. To re-freeze,
-run `/freeze` again.
+Informar al usuario del resultado. Ten en cuenta que los hooks de `/freeze` siguen registrados para
+la sesión — simplemente permitirán todo ya que no existe archivo de estado. Para volver a congelar,
+ejecuta `/freeze` de nuevo.
