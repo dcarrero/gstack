@@ -55,7 +55,7 @@ export function generateOpenAIYaml(displayName: string, shortDescription: string
   return `interface:
   display_name: ${JSON.stringify(displayName)}
   short_description: ${JSON.stringify(shortDescription)}
-  default_prompt: ${JSON.stringify(`Use ${displayName} for this task.`)}
+  default_prompt: ${JSON.stringify(`Usa ${displayName} para esta tarea.`)}
 policy:
   allow_implicit_invocation: true
 `;
@@ -89,8 +89,8 @@ export function transformFrontmatter(content: string, host: Host): string {
   const MAX_DESC = 1024;
   if (description.length > MAX_DESC) {
     throw new Error(
-      `Codex description for "${name}" is ${description.length} chars (max ${MAX_DESC}). ` +
-      `Compress the description in the .tmpl file.`
+      `La descripción de Codex para "${name}" tiene ${description.length} caracteres (máximo ${MAX_DESC}). ` +
+      `Comprime la descripción en el archivo .tmpl.`
     );
   }
 
@@ -119,14 +119,14 @@ export function extractHookSafetyProse(tmplContent: string): string | null {
 
   // Build safety prose based on what tools are hooked
   const toolDescriptions: Record<string, string> = {
-    Bash: 'check bash commands for destructive operations (rm -rf, DROP TABLE, force-push, git reset --hard, etc.) before execution',
-    Edit: 'verify file edits are within the allowed scope boundary before applying',
-    Write: 'verify file writes are within the allowed scope boundary before applying',
+    Bash: 'verificar que los comandos bash no contengan operaciones destructivas (rm -rf, DROP TABLE, force-push, git reset --hard, etc.) antes de ejecutarlos',
+    Edit: 'verificar que las ediciones de archivos estén dentro del límite de alcance permitido antes de aplicarlas',
+    Write: 'verificar que las escrituras de archivos estén dentro del límite de alcance permitido antes de aplicarlas',
   };
 
   const safetyChecks = matchers
-    .map(t => toolDescriptions[t] || `check ${t} operations for safety`)
-    .join(', and ');
+    .map(t => toolDescriptions[t] || `verificar las operaciones de ${t} por seguridad`)
+    .join(', y ');
 
-  return `> **Safety Advisory:** This skill includes safety checks that ${safetyChecks}. When using this skill, always pause and verify before executing potentially destructive operations. If uncertain about a command's safety, ask the user for confirmation before proceeding.`;
+  return `> **Aviso de Seguridad:** Este skill incluye verificaciones de seguridad que ${safetyChecks}. Al usar este skill, siempre detente y verifica antes de ejecutar operaciones potencialmente destructivas. Si no estás seguro de la seguridad de un comando, pide confirmación al usuario antes de proceder.`;
 }

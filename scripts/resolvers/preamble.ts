@@ -10,7 +10,7 @@ GSTACK_BROWSE="$GSTACK_ROOT/browse/dist"
 `
     : '';
 
-  return `## Preamble (run first)
+  return `## Preámbulo (ejecutar primero)
 
 \`\`\`bash
 ${runtimeRoot}_UPD=$(${ctx.paths.binDir}/gstack-update-check 2>/dev/null || ${ctx.paths.localSkillRoot}/bin/gstack-update-check 2>/dev/null || true)
@@ -39,303 +39,303 @@ echo "TELEMETRY: \${_TEL:-off}"
 echo "TEL_PROMPTED: $_TEL_PROMPTED"
 mkdir -p ~/.gstack/analytics
 echo '{"skill":"${ctx.skillName}","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","repo":"'$(basename "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null || echo "unknown")'"}'  >> ~/.gstack/analytics/skill-usage.jsonl 2>/dev/null || true
-# zsh-compatible: use find instead of glob to avoid NOMATCH error
+# compatible con zsh: usar find en lugar de glob para evitar error NOMATCH
 for _PF in $(find ~/.gstack/analytics -maxdepth 1 -name '.pending-*' 2>/dev/null); do [ -f "$_PF" ] && ${ctx.paths.binDir}/gstack-telemetry-log --event-type skill_run --skill _pending_finalize --outcome unknown --session-id "$_SESSION_ID" 2>/dev/null || true; break; done
 \`\`\``;
 }
 
 function generateUpgradeCheck(ctx: TemplateContext): string {
-  return `If \`PROACTIVE\` is \`"false"\`, do not proactively suggest gstack skills AND do not
-auto-invoke skills based on conversation context. Only run skills the user explicitly
-types (e.g., /qa, /ship). If you would have auto-invoked a skill, instead briefly say:
-"I think /skillname might help here — want me to run it?" and wait for confirmation.
-The user opted out of proactive behavior.
+  return `Si \`PROACTIVE\` es \`"false"\`, no sugieras proactivamente skills de gstack NI invoques
+automáticamente skills según el contexto de la conversación. Solo ejecuta los skills que el usuario
+escriba explícitamente (p. ej., /qa, /ship). Si hubieras invocado un skill automáticamente, en su lugar di brevemente:
+"Creo que /nombredelskill podría ayudar aquí — ¿quieres que lo ejecute?" y espera confirmación.
+El usuario optó por desactivar el comportamiento proactivo.
 
-If output shows \`UPGRADE_AVAILABLE <old> <new>\`: read \`${ctx.paths.skillRoot}/gstack-upgrade/SKILL.md\` and follow the "Inline upgrade flow" (auto-upgrade if configured, otherwise AskUserQuestion with 4 options, write snooze state if declined). If \`JUST_UPGRADED <from> <to>\`: tell user "Running gstack v{to} (just updated!)" and continue.`;
+Si la salida muestra \`UPGRADE_AVAILABLE <old> <new>\`: lee \`${ctx.paths.skillRoot}/gstack-upgrade/SKILL.md\` y sigue el "Flujo de actualización en línea" (actualizar automáticamente si está configurado, de lo contrario AskUserQuestion con 4 opciones, guardar estado de pausa si se rechaza). Si \`JUST_UPGRADED <from> <to>\`: informa al usuario "Ejecutando gstack v{to} (¡recién actualizado!)" y continúa.`;
 }
 
 function generateLakeIntro(): string {
-  return `If \`LAKE_INTRO\` is \`no\`: Before continuing, introduce the Completeness Principle.
-Tell the user: "gstack follows the **Boil the Lake** principle — always do the complete
-thing when AI makes the marginal cost near-zero. Read more: https://garryslist.org/posts/boil-the-ocean"
-Then offer to open the essay in their default browser:
+  return `Si \`LAKE_INTRO\` es \`no\`: Antes de continuar, presenta el Principio de Completitud.
+Dile al usuario: "gstack sigue el principio de **Hervir el Lago** — siempre hacer lo completo
+cuando la IA hace que el coste marginal sea casi cero. Más información: https://garryslist.org/posts/boil-the-ocean"
+Luego ofrece abrir el ensayo en su navegador predeterminado:
 
 \`\`\`bash
 open https://garryslist.org/posts/boil-the-ocean
 touch ~/.gstack/.completeness-intro-seen
 \`\`\`
 
-Only run \`open\` if the user says yes. Always run \`touch\` to mark as seen. This only happens once.`;
+Solo ejecuta \`open\` si el usuario dice que sí. Siempre ejecuta \`touch\` para marcarlo como visto. Esto solo ocurre una vez.`;
 }
 
 function generateTelemetryPrompt(ctx: TemplateContext): string {
-  return `If \`TEL_PROMPTED\` is \`no\` AND \`LAKE_INTRO\` is \`yes\`: After the lake intro is handled,
-ask the user about telemetry. Use AskUserQuestion:
+  return `Si \`TEL_PROMPTED\` es \`no\` Y \`LAKE_INTRO\` es \`yes\`: Después de gestionar la introducción del lago,
+pregunta al usuario sobre la telemetría. Usa AskUserQuestion:
 
-> Help gstack get better! Community mode shares usage data (which skills you use, how long
-> they take, crash info) with a stable device ID so we can track trends and fix bugs faster.
-> No code, file paths, or repo names are ever sent.
-> Change anytime with \`gstack-config set telemetry off\`.
+> ¡Ayuda a mejorar gstack! El modo comunidad comparte datos de uso (qué skills usas, cuánto
+> tardan, información de errores) con un ID de dispositivo estable para que podamos rastrear tendencias y corregir errores más rápido.
+> Nunca se envía código, rutas de archivos ni nombres de repositorios.
+> Cámbialo en cualquier momento con \`gstack-config set telemetry off\`.
 
-Options:
-- A) Help gstack get better! (recommended)
-- B) No thanks
+Opciones:
+- A) ¡Ayudar a mejorar gstack! (recomendado)
+- B) No, gracias
 
-If A: run \`${ctx.paths.binDir}/gstack-config set telemetry community\`
+Si A: ejecuta \`${ctx.paths.binDir}/gstack-config set telemetry community\`
 
-If B: ask a follow-up AskUserQuestion:
+Si B: haz una pregunta de seguimiento con AskUserQuestion:
 
-> How about anonymous mode? We just learn that *someone* used gstack — no unique ID,
-> no way to connect sessions. Just a counter that helps us know if anyone's out there.
+> ¿Qué tal el modo anónimo? Solo sabríamos que *alguien* usó gstack — sin ID único,
+> sin forma de conectar sesiones. Solo un contador que nos ayuda a saber si alguien está ahí fuera.
 
-Options:
-- A) Sure, anonymous is fine
-- B) No thanks, fully off
+Opciones:
+- A) Claro, anónimo está bien
+- B) No, gracias, totalmente desactivado
 
-If B→A: run \`${ctx.paths.binDir}/gstack-config set telemetry anonymous\`
-If B→B: run \`${ctx.paths.binDir}/gstack-config set telemetry off\`
+Si B→A: ejecuta \`${ctx.paths.binDir}/gstack-config set telemetry anonymous\`
+Si B→B: ejecuta \`${ctx.paths.binDir}/gstack-config set telemetry off\`
 
-Always run:
+Siempre ejecuta:
 \`\`\`bash
 touch ~/.gstack/.telemetry-prompted
 \`\`\`
 
-This only happens once. If \`TEL_PROMPTED\` is \`yes\`, skip this entirely.`;
+Esto solo ocurre una vez. Si \`TEL_PROMPTED\` es \`yes\`, omite esto por completo.`;
 }
 
 function generateProactivePrompt(ctx: TemplateContext): string {
-  return `If \`PROACTIVE_PROMPTED\` is \`no\` AND \`TEL_PROMPTED\` is \`yes\`: After telemetry is handled,
-ask the user about proactive behavior. Use AskUserQuestion:
+  return `Si \`PROACTIVE_PROMPTED\` es \`no\` Y \`TEL_PROMPTED\` es \`yes\`: Después de gestionar la telemetría,
+pregunta al usuario sobre el comportamiento proactivo. Usa AskUserQuestion:
 
-> gstack can proactively figure out when you might need a skill while you work —
-> like suggesting /qa when you say "does this work?" or /investigate when you hit
-> a bug. We recommend keeping this on — it speeds up every part of your workflow.
+> gstack puede detectar proactivamente cuándo podrías necesitar un skill mientras trabajas —
+> como sugerir /qa cuando dices "¿esto funciona?" o /investigate cuando encuentras
+> un error. Recomendamos mantenerlo activado — acelera cada parte de tu flujo de trabajo.
 
-Options:
-- A) Keep it on (recommended)
-- B) Turn it off — I'll type /commands myself
+Opciones:
+- A) Mantenerlo activado (recomendado)
+- B) Desactivarlo — yo escribiré los /comandos manualmente
 
-If A: run \`${ctx.paths.binDir}/gstack-config set proactive true\`
-If B: run \`${ctx.paths.binDir}/gstack-config set proactive false\`
+Si A: ejecuta \`${ctx.paths.binDir}/gstack-config set proactive true\`
+Si B: ejecuta \`${ctx.paths.binDir}/gstack-config set proactive false\`
 
-Always run:
+Siempre ejecuta:
 \`\`\`bash
 touch ~/.gstack/.proactive-prompted
 \`\`\`
 
-This only happens once. If \`PROACTIVE_PROMPTED\` is \`yes\`, skip this entirely.`;
+Esto solo ocurre una vez. Si \`PROACTIVE_PROMPTED\` es \`yes\`, omite esto por completo.`;
 }
 
 function generateAskUserFormat(_ctx: TemplateContext): string {
-  return `## AskUserQuestion Format
+  return `## Formato de AskUserQuestion
 
-**ALWAYS follow this structure for every AskUserQuestion call:**
-1. **Re-ground:** State the project, the current branch (use the \`_BRANCH\` value printed by the preamble — NOT any branch from conversation history or gitStatus), and the current plan/task. (1-2 sentences)
-2. **Simplify:** Explain the problem in plain English a smart 16-year-old could follow. No raw function names, no internal jargon, no implementation details. Use concrete examples and analogies. Say what it DOES, not what it's called.
-3. **Recommend:** \`RECOMMENDATION: Choose [X] because [one-line reason]\` — always prefer the complete option over shortcuts (see Completeness Principle). Include \`Completeness: X/10\` for each option. Calibration: 10 = complete implementation (all edge cases, full coverage), 7 = covers happy path but skips some edges, 3 = shortcut that defers significant work. If both options are 8+, pick the higher; if one is ≤5, flag it.
-4. **Options:** Lettered options: \`A) ... B) ... C) ...\` — when an option involves effort, show both scales: \`(human: ~X / CC: ~Y)\`
+**SIEMPRE sigue esta estructura para cada llamada a AskUserQuestion:**
+1. **Re-contextualizar:** Indica el proyecto, la rama actual (usa el valor \`_BRANCH\` impreso por el preámbulo — NO cualquier rama del historial de conversación o gitStatus), y el plan/tarea actual. (1-2 frases)
+2. **Simplificar:** Explica el problema en español sencillo que un chico listo de 16 años pueda seguir. Sin nombres de funciones crudos, sin jerga interna, sin detalles de implementación. Usa ejemplos concretos y analogías. Di lo que HACE, no cómo se llama.
+3. **Recomendar:** \`RECOMMENDATION: Elige [X] porque [razón en una línea]\` — siempre prefiere la opción completa sobre los atajos (ver Principio de Completitud). Incluye \`Completeness: X/10\` para cada opción. Calibración: 10 = implementación completa (todos los casos límite, cobertura total), 7 = cubre el camino feliz pero omite algunos bordes, 3 = atajo que posterga trabajo significativo. Si ambas opciones son 8+, elige la mayor; si una es ≤5, señálalo.
+4. **Opciones:** Opciones con letras: \`A) ... B) ... C) ...\` — cuando una opción implica esfuerzo, muestra ambas escalas: \`(humano: ~X / CC: ~Y)\`
 
-Assume the user hasn't looked at this window in 20 minutes and doesn't have the code open. If you'd need to read the source to understand your own explanation, it's too complex.
+Asume que el usuario no ha mirado esta ventana en 20 minutos y no tiene el código abierto. Si necesitarías leer el código fuente para entender tu propia explicación, es demasiado complejo.
 
-Per-skill instructions may add additional formatting rules on top of this baseline.`;
+Las instrucciones por skill pueden añadir reglas de formato adicionales sobre esta base.`;
 }
 
 function generateCompletenessSection(): string {
-  return `## Completeness Principle — Boil the Lake
+  return `## Principio de Completitud — Hervir el Lago
 
-AI makes completeness near-free. Always recommend the complete option over shortcuts — the delta is minutes with CC+gstack. A "lake" (100% coverage, all edge cases) is boilable; an "ocean" (full rewrite, multi-quarter migration) is not. Boil lakes, flag oceans.
+La IA hace que la completitud sea casi gratuita. Siempre recomienda la opción completa sobre los atajos — la diferencia es de minutos con CC+gstack. Un "lago" (100% de cobertura, todos los casos límite) se puede hervir; un "océano" (reescritura completa, migración de varios trimestres) no. Hierve lagos, señala océanos.
 
-**Effort reference** — always show both scales:
+**Referencia de esfuerzo** — muestra siempre ambas escalas:
 
-| Task type | Human team | CC+gstack | Compression |
+| Tipo de tarea | Equipo humano | CC+gstack | Compresión |
 |-----------|-----------|-----------|-------------|
-| Boilerplate | 2 days | 15 min | ~100x |
-| Tests | 1 day | 15 min | ~50x |
-| Feature | 1 week | 30 min | ~30x |
-| Bug fix | 4 hours | 15 min | ~20x |
+| Boilerplate | 2 días | 15 min | ~100x |
+| Tests | 1 día | 15 min | ~50x |
+| Funcionalidad | 1 semana | 30 min | ~30x |
+| Corrección de errores | 4 horas | 15 min | ~20x |
 
-Include \`Completeness: X/10\` for each option (10=all edge cases, 7=happy path, 3=shortcut).`;
+Incluye \`Completeness: X/10\` para cada opción (10=todos los casos límite, 7=camino feliz, 3=atajo).`;
 }
 
 function generateRepoModeSection(): string {
-  return `## Repo Ownership — See Something, Say Something
+  return `## Propiedad del Repositorio — Si ves algo, di algo
 
-\`REPO_MODE\` controls how to handle issues outside your branch:
-- **\`solo\`** — You own everything. Investigate and offer to fix proactively.
-- **\`collaborative\`** / **\`unknown\`** — Flag via AskUserQuestion, don't fix (may be someone else's).
+\`REPO_MODE\` controla cómo manejar problemas fuera de tu rama:
+- **\`solo\`** — Eres dueño de todo. Investiga y ofrece corregir proactivamente.
+- **\`collaborative\`** / **\`unknown\`** — Señala mediante AskUserQuestion, no corrijas (puede ser de otra persona).
 
-Always flag anything that looks wrong — one sentence, what you noticed and its impact.`;
+Siempre señala cualquier cosa que parezca incorrecta — una frase, qué notaste y su impacto.`;
 }
 
 export function generateTestFailureTriage(): string {
-  return `## Test Failure Ownership Triage
+  return `## Triaje de Fallos en Tests
 
-When tests fail, do NOT immediately stop. First, determine ownership:
+Cuando los tests fallan, NO te detengas inmediatamente. Primero, determina la propiedad:
 
-### Step T1: Classify each failure
+### Paso T1: Clasifica cada fallo
 
-For each failing test:
+Para cada test fallido:
 
-1. **Get the files changed on this branch:**
+1. **Obtén los archivos modificados en esta rama:**
    \`\`\`bash
    git diff origin/<base>...HEAD --name-only
    \`\`\`
 
-2. **Classify the failure:**
-   - **In-branch** if: the failing test file itself was modified on this branch, OR the test output references code that was changed on this branch, OR you can trace the failure to a change in the branch diff.
-   - **Likely pre-existing** if: neither the test file nor the code it tests was modified on this branch, AND the failure is unrelated to any branch change you can identify.
-   - **When ambiguous, default to in-branch.** It is safer to stop the developer than to let a broken test ship. Only classify as pre-existing when you are confident.
+2. **Clasifica el fallo:**
+   - **En la rama** si: el archivo del test fallido fue modificado en esta rama, O la salida del test hace referencia a código que fue cambiado en esta rama, O puedes rastrear el fallo hasta un cambio en el diff de la rama.
+   - **Probablemente preexistente** si: ni el archivo del test ni el código que prueba fueron modificados en esta rama, Y el fallo no está relacionado con ningún cambio de la rama que puedas identificar.
+   - **Cuando sea ambiguo, clasifícalo como de la rama.** Es más seguro detener al desarrollador que dejar pasar un test roto. Solo clasifica como preexistente cuando estés seguro.
 
-   This classification is heuristic — use your judgment reading the diff and the test output. You do not have a programmatic dependency graph.
+   Esta clasificación es heurística — usa tu criterio leyendo el diff y la salida del test. No tienes un grafo de dependencias programático.
 
-### Step T2: Handle in-branch failures
+### Paso T2: Gestiona los fallos de la rama
 
-**STOP.** These are your failures. Show them and do not proceed. The developer must fix their own broken tests before shipping.
+**DETENTE.** Estos son tus fallos. Muéstralos y no continúes. El desarrollador debe corregir sus propios tests rotos antes de enviar.
 
-### Step T3: Handle pre-existing failures
+### Paso T3: Gestiona los fallos preexistentes
 
-Check \`REPO_MODE\` from the preamble output.
+Consulta \`REPO_MODE\` de la salida del preámbulo.
 
-**If REPO_MODE is \`solo\`:**
+**Si REPO_MODE es \`solo\`:**
 
-Use AskUserQuestion:
+Usa AskUserQuestion:
 
-> These test failures appear pre-existing (not caused by your branch changes):
+> Estos fallos de tests parecen preexistentes (no causados por los cambios de tu rama):
 >
-> [list each failure with file:line and brief error description]
+> [lista cada fallo con archivo:línea y breve descripción del error]
 >
-> Since this is a solo repo, you're the only one who will fix these.
+> Como este es un repositorio en solitario, eres la única persona que los corregirá.
 >
-> RECOMMENDATION: Choose A — fix now while the context is fresh. Completeness: 9/10.
-> A) Investigate and fix now (human: ~2-4h / CC: ~15min) — Completeness: 10/10
-> B) Add as P0 TODO — fix after this branch lands — Completeness: 7/10
-> C) Skip — I know about this, ship anyway — Completeness: 3/10
+> RECOMMENDATION: Elige A — corregir ahora mientras el contexto está fresco. Completeness: 9/10.
+> A) Investigar y corregir ahora (humano: ~2-4h / CC: ~15min) — Completeness: 10/10
+> B) Añadir como TODO P0 — corregir después de que esta rama se integre — Completeness: 7/10
+> C) Omitir — ya lo sé, enviar de todos modos — Completeness: 3/10
 
-**If REPO_MODE is \`collaborative\` or \`unknown\`:**
+**Si REPO_MODE es \`collaborative\` o \`unknown\`:**
 
-Use AskUserQuestion:
+Usa AskUserQuestion:
 
-> These test failures appear pre-existing (not caused by your branch changes):
+> Estos fallos de tests parecen preexistentes (no causados por los cambios de tu rama):
 >
-> [list each failure with file:line and brief error description]
+> [lista cada fallo con archivo:línea y breve descripción del error]
 >
-> This is a collaborative repo — these may be someone else's responsibility.
+> Este es un repositorio colaborativo — estos pueden ser responsabilidad de otra persona.
 >
-> RECOMMENDATION: Choose B — assign it to whoever broke it so the right person fixes it. Completeness: 9/10.
-> A) Investigate and fix now anyway — Completeness: 10/10
-> B) Blame + assign GitHub issue to the author — Completeness: 9/10
-> C) Add as P0 TODO — Completeness: 7/10
-> D) Skip — ship anyway — Completeness: 3/10
+> RECOMMENDATION: Elige B — asígnalo a quien lo rompió para que la persona correcta lo corrija. Completeness: 9/10.
+> A) Investigar y corregir ahora de todos modos — Completeness: 10/10
+> B) Blame + asignar issue de GitHub al autor — Completeness: 9/10
+> C) Añadir como TODO P0 — Completeness: 7/10
+> D) Omitir — enviar de todos modos — Completeness: 3/10
 
-### Step T4: Execute the chosen action
+### Paso T4: Ejecuta la acción elegida
 
-**If "Investigate and fix now":**
-- Switch to /investigate mindset: root cause first, then minimal fix.
-- Fix the pre-existing failure.
-- Commit the fix separately from the branch's changes: \`git commit -m "fix: pre-existing test failure in <test-file>"\`
-- Continue with the workflow.
+**Si "Investigar y corregir ahora":**
+- Cambia a mentalidad /investigate: primero la causa raíz, luego la corrección mínima.
+- Corrige el fallo preexistente.
+- Haz commit de la corrección por separado de los cambios de la rama: \`git commit -m "fix: pre-existing test failure in <test-file>"\`
+- Continúa con el flujo de trabajo.
 
-**If "Add as P0 TODO":**
-- If \`TODOS.md\` exists, add the entry following the format in \`review/TODOS-format.md\` (or \`.claude/skills/review/TODOS-format.md\`).
-- If \`TODOS.md\` does not exist, create it with the standard header and add the entry.
-- Entry should include: title, the error output, which branch it was noticed on, and priority P0.
-- Continue with the workflow — treat the pre-existing failure as non-blocking.
+**Si "Añadir como TODO P0":**
+- Si \`TODOS.md\` existe, añade la entrada siguiendo el formato en \`review/TODOS-format.md\` (o \`.claude/skills/review/TODOS-format.md\`).
+- Si \`TODOS.md\` no existe, créalo con la cabecera estándar y añade la entrada.
+- La entrada debe incluir: título, la salida del error, en qué rama se detectó, y prioridad P0.
+- Continúa con el flujo de trabajo — trata el fallo preexistente como no bloqueante.
 
-**If "Blame + assign GitHub issue" (collaborative only):**
-- Find who likely broke it. Check BOTH the test file AND the production code it tests:
+**Si "Blame + asignar issue de GitHub" (solo colaborativo):**
+- Encuentra quién probablemente lo rompió. Comprueba TANTO el archivo del test COMO el código de producción que prueba:
   \`\`\`bash
-  # Who last touched the failing test?
+  # ¿Quién tocó por última vez el test fallido?
   git log --format="%an (%ae)" -1 -- <failing-test-file>
-  # Who last touched the production code the test covers? (often the actual breaker)
+  # ¿Quién tocó por última vez el código de producción que cubre el test? (a menudo el verdadero causante)
   git log --format="%an (%ae)" -1 -- <source-file-under-test>
   \`\`\`
-  If these are different people, prefer the production code author — they likely introduced the regression.
-- Create a GitHub issue assigned to that person:
+  Si son personas diferentes, prefiere al autor del código de producción — probablemente introdujo la regresión.
+- Crea un issue de GitHub asignado a esa persona:
   \`\`\`bash
   gh issue create \\
     --title "Pre-existing test failure: <test-name>" \\
     --body "Found failing on branch <current-branch>. Failure is pre-existing.\\n\\n**Error:**\\n\`\`\`\\n<first 10 lines>\\n\`\`\`\\n\\n**Last modified by:** <author>\\n**Noticed by:** gstack /ship on <date>" \\
     --assignee "<github-username>"
   \`\`\`
-- If \`gh\` is not available or \`--assignee\` fails (user not in org, etc.), create the issue without assignee and note who should look at it in the body.
-- Continue with the workflow.
+- Si \`gh\` no está disponible o \`--assignee\` falla (usuario no está en la org, etc.), crea el issue sin asignado y menciona en el cuerpo quién debería revisarlo.
+- Continúa con el flujo de trabajo.
 
-**If "Skip":**
-- Continue with the workflow.
-- Note in output: "Pre-existing test failure skipped: <test-name>"`;
+**Si "Omitir":**
+- Continúa con el flujo de trabajo.
+- Indica en la salida: "Fallo de test preexistente omitido: <nombre-del-test>"`;
 }
 
 function generateSearchBeforeBuildingSection(ctx: TemplateContext): string {
-  return `## Search Before Building
+  return `## Buscar antes de Construir
 
-Before building anything unfamiliar, **search first.** See \`${ctx.paths.skillRoot}/ETHOS.md\`.
-- **Layer 1** (tried and true) — don't reinvent. **Layer 2** (new and popular) — scrutinize. **Layer 3** (first principles) — prize above all.
+Antes de construir algo desconocido, **busca primero.** Consulta \`${ctx.paths.skillRoot}/ETHOS.md\`.
+- **Capa 1** (probado y fiable) — no reinventes. **Capa 2** (nuevo y popular) — examina con cuidado. **Capa 3** (primeros principios) — valora por encima de todo.
 
-**Eureka:** When first-principles reasoning contradicts conventional wisdom, name it and log:
+**Eureka:** Cuando el razonamiento desde primeros principios contradice la sabiduría convencional, nómbralo y regístralo:
 \`\`\`bash
 jq -n --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg skill "SKILL_NAME" --arg branch "$(git branch --show-current 2>/dev/null)" --arg insight "ONE_LINE_SUMMARY" '{ts:$ts,skill:$skill,branch:$branch,insight:$insight}' >> ~/.gstack/analytics/eureka.jsonl 2>/dev/null || true
 \`\`\``;
 }
 
 function generateContributorMode(): string {
-  return `## Contributor Mode
+  return `## Modo Contribuidor
 
-If \`_CONTRIB\` is \`true\`: you are in **contributor mode**. At the end of each major workflow step, rate your gstack experience 0-10. If not a 10 and there's an actionable bug or improvement — file a field report.
+Si \`_CONTRIB\` es \`true\`: estás en **modo contribuidor**. Al final de cada paso principal del flujo de trabajo, puntúa tu experiencia con gstack de 0 a 10. Si no es un 10 y hay un error o mejora accionable — presenta un informe de campo.
 
-**File only:** gstack tooling bugs where the input was reasonable but gstack failed. **Skip:** user app bugs, network errors, auth failures on user's site.
+**Informa solo de:** errores de herramientas de gstack donde la entrada era razonable pero gstack falló. **Omite:** errores de la aplicación del usuario, errores de red, fallos de autenticación en el sitio del usuario.
 
-**To file:** write \`~/.gstack/contributor-logs/{slug}.md\`:
+**Para informar:** escribe \`~/.gstack/contributor-logs/{slug}.md\`:
 \`\`\`
-# {Title}
-**What I tried:** {action} | **What happened:** {result} | **Rating:** {0-10}
-## Repro
-1. {step}
-## What would make this a 10
-{one sentence}
-**Date:** {YYYY-MM-DD} | **Version:** {version} | **Skill:** /{skill}
+# {Título}
+**Qué intenté:** {acción} | **Qué pasó:** {resultado} | **Puntuación:** {0-10}
+## Reproducción
+1. {paso}
+## Qué lo haría un 10
+{una frase}
+**Fecha:** {YYYY-MM-DD} | **Versión:** {versión} | **Skill:** /{skill}
 \`\`\`
-Slug: lowercase hyphens, max 60 chars. Skip if exists. Max 3/session. File inline, don't stop.`;
+Slug: minúsculas con guiones, máximo 60 caracteres. Omitir si ya existe. Máximo 3/sesión. Informar en línea, no detenerse.`;
 }
 
 function generateCompletionStatus(): string {
-  return `## Completion Status Protocol
+  return `## Protocolo de Estado de Finalización
 
-When completing a skill workflow, report status using one of:
-- **DONE** — All steps completed successfully. Evidence provided for each claim.
-- **DONE_WITH_CONCERNS** — Completed, but with issues the user should know about. List each concern.
-- **BLOCKED** — Cannot proceed. State what is blocking and what was tried.
-- **NEEDS_CONTEXT** — Missing information required to continue. State exactly what you need.
+Al completar un flujo de trabajo de un skill, informa el estado usando uno de:
+- **DONE** — Todos los pasos completados exitosamente. Evidencia proporcionada para cada afirmación.
+- **DONE_WITH_CONCERNS** — Completado, pero con problemas que el usuario debería conocer. Lista cada preocupación.
+- **BLOCKED** — No se puede continuar. Indica qué está bloqueando y qué se intentó.
+- **NEEDS_CONTEXT** — Falta información necesaria para continuar. Indica exactamente qué necesitas.
 
-### Escalation
+### Escalación
 
-It is always OK to stop and say "this is too hard for me" or "I'm not confident in this result."
+Siempre está bien detenerse y decir "esto es demasiado difícil para mí" o "no estoy seguro de este resultado."
 
-Bad work is worse than no work. You will not be penalized for escalating.
-- If you have attempted a task 3 times without success, STOP and escalate.
-- If you are uncertain about a security-sensitive change, STOP and escalate.
-- If the scope of work exceeds what you can verify, STOP and escalate.
+Un trabajo mal hecho es peor que no hacer nada. No serás penalizado por escalar.
+- Si has intentado una tarea 3 veces sin éxito, DETENTE y escala.
+- Si no estás seguro sobre un cambio sensible en seguridad, DETENTE y escala.
+- Si el alcance del trabajo excede lo que puedes verificar, DETENTE y escala.
 
-Escalation format:
+Formato de escalación:
 \`\`\`
 STATUS: BLOCKED | NEEDS_CONTEXT
-REASON: [1-2 sentences]
-ATTEMPTED: [what you tried]
-RECOMMENDATION: [what the user should do next]
+REASON: [1-2 frases]
+ATTEMPTED: [qué intentaste]
+RECOMMENDATION: [qué debería hacer el usuario a continuación]
 \`\`\`
 
-## Telemetry (run last)
+## Telemetría (ejecutar al final)
 
-After the skill workflow completes (success, error, or abort), log the telemetry event.
-Determine the skill name from the \`name:\` field in this file's YAML frontmatter.
-Determine the outcome from the workflow result (success if completed normally, error
-if it failed, abort if the user interrupted).
+Después de que el flujo de trabajo del skill se complete (éxito, error o cancelación), registra el evento de telemetría.
+Determina el nombre del skill a partir del campo \`name:\` en el frontmatter YAML de este archivo.
+Determina el resultado del flujo de trabajo (success si se completó normalmente, error
+si falló, abort si el usuario interrumpió).
 
-**PLAN MODE EXCEPTION — ALWAYS RUN:** This command writes telemetry to
-\`~/.gstack/analytics/\` (user config directory, not project files). The skill
-preamble already writes to the same directory — this is the same pattern.
-Skipping this command loses session duration and outcome data.
+**EXCEPCIÓN DE MODO PLAN — EJECUTAR SIEMPRE:** Este comando escribe telemetría en
+\`~/.gstack/analytics/\` (directorio de configuración del usuario, no archivos del proyecto). El preámbulo
+del skill ya escribe en el mismo directorio — es el mismo patrón.
+Omitir este comando pierde datos de duración de sesión y resultado.
 
-Run this bash:
+Ejecuta este bash:
 
 \`\`\`bash
 _TEL_END=$(date +%s)
@@ -346,29 +346,29 @@ rm -f ~/.gstack/analytics/.pending-"$_SESSION_ID" 2>/dev/null || true
   --used-browse "USED_BROWSE" --session-id "$_SESSION_ID" 2>/dev/null &
 \`\`\`
 
-Replace \`SKILL_NAME\` with the actual skill name from frontmatter, \`OUTCOME\` with
-success/error/abort, and \`USED_BROWSE\` with true/false based on whether \`$B\` was used.
-If you cannot determine the outcome, use "unknown". This runs in the background and
-never blocks the user.
+Reemplaza \`SKILL_NAME\` con el nombre real del skill del frontmatter, \`OUTCOME\` con
+success/error/abort, y \`USED_BROWSE\` con true/false según si se usó \`$B\`.
+Si no puedes determinar el resultado, usa "unknown". Esto se ejecuta en segundo plano y
+nunca bloquea al usuario.
 
-## Plan Status Footer
+## Pie de Estado del Plan
 
-When you are in plan mode and about to call ExitPlanMode:
+Cuando estés en modo plan y a punto de llamar a ExitPlanMode:
 
-1. Check if the plan file already has a \`## GSTACK REVIEW REPORT\` section.
-2. If it DOES — skip (a review skill already wrote a richer report).
-3. If it does NOT — run this command:
+1. Comprueba si el archivo del plan ya tiene una sección \`## GSTACK REVIEW REPORT\`.
+2. Si la TIENE — omite (un skill de revisión ya escribió un informe más completo).
+3. Si NO la tiene — ejecuta este comando:
 
 \\\`\\\`\\\`bash
 ~/.claude/skills/gstack/bin/gstack-review-read
 \\\`\\\`\\\`
 
-Then write a \`## GSTACK REVIEW REPORT\` section to the end of the plan file:
+Luego escribe una sección \`## GSTACK REVIEW REPORT\` al final del archivo del plan:
 
-- If the output contains review entries (JSONL lines before \`---CONFIG---\`): format the
-  standard report table with runs/status/findings per skill, same format as the review
-  skills use.
-- If the output is \`NO_REVIEWS\` or empty: write this placeholder table:
+- Si la salida contiene entradas de revisión (líneas JSONL antes de \`---CONFIG---\`): formatea la
+  tabla estándar del informe con ejecuciones/estado/hallazgos por skill, mismo formato que usan los
+  skills de revisión.
+- Si la salida es \`NO_REVIEWS\` o vacía: escribe esta tabla de marcador de posición:
 
 \\\`\\\`\\\`markdown
 ## GSTACK REVIEW REPORT
@@ -380,12 +380,12 @@ Then write a \`## GSTACK REVIEW REPORT\` section to the end of the plan file:
 | Eng Review | \\\`/plan-eng-review\\\` | Architecture & tests (required) | 0 | — | — |
 | Design Review | \\\`/plan-design-review\\\` | UI/UX gaps | 0 | — | — |
 
-**VERDICT:** NO REVIEWS YET — run \\\`/autoplan\\\` for full review pipeline, or individual reviews above.
+**VEREDICTO:** AÚN SIN REVISIONES — ejecuta \\\`/autoplan\\\` para el pipeline completo de revisión, o las revisiones individuales de arriba.
 \\\`\\\`\\\`
 
-**PLAN MODE EXCEPTION — ALWAYS RUN:** This writes to the plan file, which is the one
-file you are allowed to edit in plan mode. The plan file review report is part of the
-plan's living status.`;
+**EXCEPCIÓN DE MODO PLAN — EJECUTAR SIEMPRE:** Esto escribe en el archivo del plan, que es el único
+archivo que puedes editar en modo plan. El informe de revisión del archivo del plan forma parte del
+estado vivo del plan.`;
 }
 
 // Preamble Composition (tier → sections)

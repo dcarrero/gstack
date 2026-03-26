@@ -3,10 +3,11 @@ name: gstack
 preamble-tier: 1
 version: 1.1.0
 description: |
-  Fast headless browser for QA testing and site dogfooding. Navigate pages, interact with
-  elements, verify state, diff before/after, take annotated screenshots, test responsive
-  layouts, forms, uploads, dialogs, and capture bug evidence. Use when asked to open or
-  test a site, verify a deployment, dogfood a user flow, or file a bug with screenshots.
+  Navegador headless rápido para pruebas QA y dogfooding de sitios. Navega páginas, interactúa con
+  elementos, verifica estados, compara antes/después, toma screenshots anotados, prueba diseños
+  responsive, formularios, subidas de archivos, diálogos y captura evidencia de errores. Úsalo cuando
+  te pidan abrir o probar un sitio, verificar un despliegue, probar un flujo de usuario o reportar
+  un error con screenshots.
 allowed-tools:
   - Bash
   - Read
@@ -16,133 +17,133 @@ allowed-tools:
 
 {{PREAMBLE}}
 
-If `PROACTIVE` is `false`: do NOT proactively suggest other gstack skills during this session.
-Only run skills the user explicitly invokes. This preference persists across sessions via
-`gstack-config`.
+Si `PROACTIVE` es `false`: NO sugieras proactivamente otros skills de gstack durante esta sesión.
+Solo ejecuta los skills que el usuario invoque explícitamente. Esta preferencia persiste entre sesiones
+mediante `gstack-config`.
 
-If `PROACTIVE` is `true` (default): suggest adjacent gstack skills when relevant to the
-user's workflow stage:
-- Brainstorming → /office-hours
-- Strategy → /plan-ceo-review
-- Architecture → /plan-eng-review
-- Design → /plan-design-review or /design-consultation
-- Auto-review → /autoplan
-- Debugging → /investigate
+Si `PROACTIVE` es `true` (por defecto): sugiere skills de gstack relacionados cuando sean relevantes
+para la etapa del flujo de trabajo del usuario:
+- Lluvia de ideas → /office-hours
+- Estrategia → /plan-ceo-review
+- Arquitectura → /plan-eng-review
+- Diseño → /plan-design-review o /design-consultation
+- Auto-revisión → /autoplan
+- Depuración → /investigate
 - QA → /qa
-- Code review → /review
-- Visual audit → /design-review
-- Shipping → /ship
-- Docs → /document-release
-- Retro → /retro
-- Second opinion → /codex
-- Prod safety → /careful or /guard
-- Scoped edits → /freeze or /unfreeze
-- Upgrades → /gstack-upgrade
+- Revisión de código → /review
+- Auditoría visual → /design-review
+- Lanzamiento → /ship
+- Documentación → /document-release
+- Retrospectiva → /retro
+- Segunda opinión → /codex
+- Seguridad en producción → /careful o /guard
+- Ediciones con alcance limitado → /freeze o /unfreeze
+- Actualizaciones → /gstack-upgrade
 
-If the user opts out of suggestions, run `gstack-config set proactive false`.
-If they opt back in, run `gstack-config set proactive true`.
+Si el usuario rechaza las sugerencias, ejecuta `gstack-config set proactive false`.
+Si vuelve a aceptarlas, ejecuta `gstack-config set proactive true`.
 
-# gstack browse: QA Testing & Dogfooding
+# gstack browse: Pruebas QA y Dogfooding
 
-Persistent headless Chromium. First call auto-starts (~3s), then ~100-200ms per command.
-Auto-shuts down after 30 min idle. State persists between calls (cookies, tabs, sessions).
+Chromium headless persistente. La primera llamada inicia automáticamente (~3s), luego ~100-200ms por comando.
+Se apaga automáticamente tras 30 min de inactividad. El estado persiste entre llamadas (cookies, pestañas, sesiones).
 
 {{BROWSE_SETUP}}
 
-## IMPORTANT
+## IMPORTANTE
 
-- Use the compiled binary via Bash: `$B <command>`
-- NEVER use `mcp__claude-in-chrome__*` tools. They are slow and unreliable.
-- Browser persists between calls — cookies, login sessions, and tabs carry over.
-- Dialogs (alert/confirm/prompt) are auto-accepted by default — no browser lockup.
-- **Show screenshots:** After `$B screenshot`, `$B snapshot -a -o`, or `$B responsive`, always use the Read tool on the output PNG(s) so the user can see them. Without this, screenshots are invisible.
+- Usa el binario compilado mediante Bash: `$B <command>`
+- NUNCA uses las herramientas `mcp__claude-in-chrome__*`. Son lentas y poco fiables.
+- El navegador persiste entre llamadas — las cookies, sesiones de inicio de sesión y pestañas se mantienen.
+- Los diálogos (alert/confirm/prompt) se aceptan automáticamente por defecto — sin bloqueo del navegador.
+- **Mostrar screenshots:** Después de `$B screenshot`, `$B snapshot -a -o` o `$B responsive`, usa siempre la herramienta Read sobre los PNG generados para que el usuario pueda verlos. Sin esto, los screenshots son invisibles.
 
-## QA Workflows
+## Flujos de trabajo QA
 
-### Test a user flow (login, signup, checkout, etc.)
+### Probar un flujo de usuario (login, registro, checkout, etc.)
 
 ```bash
-# 1. Go to the page
+# 1. Ir a la página
 $B goto https://app.example.com/login
 
-# 2. See what's interactive
+# 2. Ver qué es interactivo
 $B snapshot -i
 
-# 3. Fill the form using refs
+# 3. Rellenar el formulario usando refs
 $B fill @e3 "test@example.com"
 $B fill @e4 "password123"
 $B click @e5
 
-# 4. Verify it worked
-$B snapshot -D              # diff shows what changed after clicking
-$B is visible ".dashboard"  # assert the dashboard appeared
+# 4. Verificar que funcionó
+$B snapshot -D              # el diff muestra qué cambió tras hacer clic
+$B is visible ".dashboard"  # confirmar que apareció el dashboard
 $B screenshot /tmp/after-login.png
 ```
 
-### Verify a deployment / check prod
+### Verificar un despliegue / comprobar producción
 
 ```bash
 $B goto https://yourapp.com
-$B text                          # read the page — does it load?
-$B console                       # any JS errors?
-$B network                       # any failed requests?
-$B js "document.title"           # correct title?
-$B is visible ".hero-section"    # key elements present?
+$B text                          # leer la página — ¿carga correctamente?
+$B console                       # ¿errores de JS?
+$B network                       # ¿peticiones fallidas?
+$B js "document.title"           # ¿título correcto?
+$B is visible ".hero-section"    # ¿elementos clave presentes?
 $B screenshot /tmp/prod-check.png
 ```
 
-### Dogfood a feature end-to-end
+### Probar una funcionalidad de extremo a extremo (dogfooding)
 
 ```bash
-# Navigate to the feature
+# Navegar a la funcionalidad
 $B goto https://app.example.com/new-feature
 
-# Take annotated screenshot — shows every interactive element with labels
+# Tomar screenshot anotado — muestra cada elemento interactivo con etiquetas
 $B snapshot -i -a -o /tmp/feature-annotated.png
 
-# Find ALL clickable things (including divs with cursor:pointer)
+# Encontrar TODOS los elementos clicables (incluyendo divs con cursor:pointer)
 $B snapshot -C
 
-# Walk through the flow
-$B snapshot -i          # baseline
-$B click @e3            # interact
-$B snapshot -D          # what changed? (unified diff)
+# Recorrer el flujo
+$B snapshot -i          # línea base
+$B click @e3            # interactuar
+$B snapshot -D          # ¿qué cambió? (diff unificado)
 
-# Check element states
+# Comprobar estados de elementos
 $B is visible ".success-toast"
 $B is enabled "#next-step-btn"
 $B is checked "#agree-checkbox"
 
-# Check console for errors after interactions
+# Revisar la consola en busca de errores después de las interacciones
 $B console
 ```
 
-### Test responsive layouts
+### Probar diseños responsive
 
 ```bash
-# Quick: 3 screenshots at mobile/tablet/desktop
+# Rápido: 3 screenshots en móvil/tablet/escritorio
 $B goto https://yourapp.com
 $B responsive /tmp/layout
 
-# Manual: specific viewport
+# Manual: viewport específico
 $B viewport 375x812     # iPhone
 $B screenshot /tmp/mobile.png
-$B viewport 1440x900    # Desktop
+$B viewport 1440x900    # Escritorio
 $B screenshot /tmp/desktop.png
 
-# Element screenshot (crop to specific element)
+# Screenshot de elemento (recortar a un elemento específico)
 $B screenshot "#hero-banner" /tmp/hero.png
 $B snapshot -i
 $B screenshot @e3 /tmp/button.png
 
-# Region crop
+# Recorte por región
 $B screenshot --clip 0,0,800,600 /tmp/above-fold.png
 
-# Viewport only (no scroll)
+# Solo viewport (sin scroll)
 $B screenshot --viewport /tmp/viewport.png
 ```
 
-### Test file upload
+### Probar subida de archivos
 
 ```bash
 $B goto https://app.example.com/upload
@@ -152,59 +153,59 @@ $B is visible ".upload-success"
 $B screenshot /tmp/upload-result.png
 ```
 
-### Test forms with validation
+### Probar formularios con validación
 
 ```bash
 $B goto https://app.example.com/form
 $B snapshot -i
 
-# Submit empty — check validation errors appear
-$B click @e10                        # submit button
-$B snapshot -D                       # diff shows error messages appeared
+# Enviar vacío — comprobar que aparecen errores de validación
+$B click @e10                        # botón de envío
+$B snapshot -D                       # el diff muestra que aparecieron mensajes de error
 $B is visible ".error-message"
 
-# Fill and resubmit
+# Rellenar y reenviar
 $B fill @e3 "valid input"
 $B click @e10
-$B snapshot -D                       # diff shows errors gone, success state
+$B snapshot -D                       # el diff muestra que los errores desaparecieron, estado exitoso
 ```
 
-### Test dialogs (delete confirmations, prompts)
+### Probar diálogos (confirmaciones de eliminación, prompts)
 
 ```bash
-# Set up dialog handling BEFORE triggering
-$B dialog-accept              # will auto-accept next alert/confirm
-$B click "#delete-button"     # triggers confirmation dialog
-$B dialog                     # see what dialog appeared
-$B snapshot -D                # verify the item was deleted
+# Configurar el manejo de diálogos ANTES de activarlos
+$B dialog-accept              # aceptará automáticamente el siguiente alert/confirm
+$B click "#delete-button"     # activa el diálogo de confirmación
+$B dialog                     # ver qué diálogo apareció
+$B snapshot -D                # verificar que el elemento fue eliminado
 
-# For prompts that need input
-$B dialog-accept "my answer"  # accept with text
-$B click "#rename-button"     # triggers prompt
+# Para prompts que necesitan entrada de texto
+$B dialog-accept "my answer"  # aceptar con texto
+$B click "#rename-button"     # activa el prompt
 ```
 
-### Test authenticated pages (import real browser cookies)
+### Probar páginas autenticadas (importar cookies del navegador real)
 
 ```bash
-# Import cookies from your real browser (opens interactive picker)
+# Importar cookies de tu navegador real (abre un selector interactivo)
 $B cookie-import-browser
 
-# Or import a specific domain directly
+# O importar un dominio específico directamente
 $B cookie-import-browser comet --domain .github.com
 
-# Now test authenticated pages
+# Ahora probar páginas autenticadas
 $B goto https://github.com/settings/profile
 $B snapshot -i
 $B screenshot /tmp/github-profile.png
 ```
 
-### Compare two pages / environments
+### Comparar dos páginas / entornos
 
 ```bash
 $B diff https://staging.app.com https://prod.app.com
 ```
 
-### Multi-step chain (efficient for long flows)
+### Cadena de múltiples pasos (eficiente para flujos largos)
 
 ```bash
 echo '[
@@ -218,53 +219,53 @@ echo '[
 ]' | $B chain
 ```
 
-## Quick Assertion Patterns
+## Patrones rápidos de aserción
 
 ```bash
-# Element exists and is visible
+# El elemento existe y es visible
 $B is visible ".modal"
 
-# Button is enabled/disabled
+# El botón está habilitado/deshabilitado
 $B is enabled "#submit-btn"
 $B is disabled "#submit-btn"
 
-# Checkbox state
+# Estado del checkbox
 $B is checked "#agree"
 
-# Input is editable
+# El campo de entrada es editable
 $B is editable "#name-field"
 
-# Element has focus
+# El elemento tiene el foco
 $B is focused "#search-input"
 
-# Page contains text
+# La página contiene texto
 $B js "document.body.textContent.includes('Success')"
 
-# Element count
+# Cantidad de elementos
 $B js "document.querySelectorAll('.list-item').length"
 
-# Specific attribute value
-$B attrs "#logo"    # returns all attributes as JSON
+# Valor de un atributo específico
+$B attrs "#logo"    # devuelve todos los atributos como JSON
 
-# CSS property
+# Propiedad CSS
 $B css ".button" "background-color"
 ```
 
-## Snapshot System
+## Sistema de Snapshot
 
 {{SNAPSHOT_FLAGS}}
 
-## Command Reference
+## Referencia de comandos
 
 {{COMMAND_REFERENCE}}
 
-## Tips
+## Consejos
 
-1. **Navigate once, query many times.** `goto` loads the page; then `text`, `js`, `screenshot` all hit the loaded page instantly.
-2. **Use `snapshot -i` first.** See all interactive elements, then click/fill by ref. No CSS selector guessing.
-3. **Use `snapshot -D` to verify.** Baseline → action → diff. See exactly what changed.
-4. **Use `is` for assertions.** `is visible .modal` is faster and more reliable than parsing page text.
-5. **Use `snapshot -a` for evidence.** Annotated screenshots are great for bug reports.
-6. **Use `snapshot -C` for tricky UIs.** Finds clickable divs that the accessibility tree misses.
-7. **Check `console` after actions.** Catch JS errors that don't surface visually.
-8. **Use `chain` for long flows.** Single command, no per-step CLI overhead.
+1. **Navega una vez, consulta muchas veces.** `goto` carga la página; luego `text`, `js`, `screenshot` acceden a la página cargada al instante.
+2. **Usa `snapshot -i` primero.** Ve todos los elementos interactivos, luego haz clic/rellena por ref. Sin adivinar selectores CSS.
+3. **Usa `snapshot -D` para verificar.** Línea base → acción → diff. Ve exactamente qué cambió.
+4. **Usa `is` para aserciones.** `is visible .modal` es más rápido y fiable que analizar el texto de la página.
+5. **Usa `snapshot -a` como evidencia.** Los screenshots anotados son ideales para reportes de errores.
+6. **Usa `snapshot -C` para interfaces complejas.** Encuentra divs clicables que el árbol de accesibilidad no detecta.
+7. **Revisa `console` después de las acciones.** Detecta errores de JS que no se manifiestan visualmente.
+8. **Usa `chain` para flujos largos.** Un solo comando, sin sobrecarga de CLI por cada paso.

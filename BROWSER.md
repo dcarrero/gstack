@@ -1,29 +1,31 @@
-# Browser — technical details
+> Traducido de [garrytan/gstack](https://github.com/garrytan/gstack). Original en inglés por Garry Tan.
 
-This document covers the command reference and internals of gstack's headless browser.
+# Navegador — detalles técnicos
 
-## Command reference
+Este documento cubre la referencia de comandos y los detalles internos del navegador headless de gstack.
 
-| Category | Commands | What for |
-|----------|----------|----------|
-| Navigate | `goto`, `back`, `forward`, `reload`, `url` | Get to a page |
-| Read | `text`, `html`, `links`, `forms`, `accessibility` | Extract content |
-| Snapshot | `snapshot [-i] [-c] [-d N] [-s sel] [-D] [-a] [-o] [-C]` | Get refs, diff, annotate |
-| Interact | `click`, `fill`, `select`, `hover`, `type`, `press`, `scroll`, `wait`, `viewport`, `upload` | Use the page |
-| Inspect | `js`, `eval`, `css`, `attrs`, `is`, `console`, `network`, `dialog`, `cookies`, `storage`, `perf` | Debug and verify |
-| Visual | `screenshot [--viewport] [--clip x,y,w,h] [sel\|@ref] [path]`, `pdf`, `responsive` | See what Claude sees |
-| Compare | `diff <url1> <url2>` | Spot differences between environments |
-| Dialogs | `dialog-accept [text]`, `dialog-dismiss` | Control alert/confirm/prompt handling |
-| Tabs | `tabs`, `tab`, `newtab`, `closetab` | Multi-page workflows |
-| Cookies | `cookie-import`, `cookie-import-browser` | Import cookies from file or real browser |
-| Multi-step | `chain` (JSON from stdin) | Batch commands in one call |
-| Handoff | `handoff [reason]`, `resume` | Switch to visible Chrome for user takeover |
+## Referencia de comandos
 
-All selector arguments accept CSS selectors, `@e` refs after `snapshot`, or `@c` refs after `snapshot -C`. 50+ commands total plus cookie import.
+| Categoría | Comandos | Para qué |
+|-----------|----------|----------|
+| Navegar | `goto`, `back`, `forward`, `reload`, `url` | Ir a una página |
+| Leer | `text`, `html`, `links`, `forms`, `accessibility` | Extraer contenido |
+| Snapshot | `snapshot [-i] [-c] [-d N] [-s sel] [-D] [-a] [-o] [-C]` | Obtener refs, diff, anotar |
+| Interactuar | `click`, `fill`, `select`, `hover`, `type`, `press`, `scroll`, `wait`, `viewport`, `upload` | Usar la página |
+| Inspeccionar | `js`, `eval`, `css`, `attrs`, `is`, `console`, `network`, `dialog`, `cookies`, `storage`, `perf` | Depurar y verificar |
+| Visual | `screenshot [--viewport] [--clip x,y,w,h] [sel\|@ref] [path]`, `pdf`, `responsive` | Ver lo que Claude ve |
+| Comparar | `diff <url1> <url2>` | Detectar diferencias entre entornos |
+| Diálogos | `dialog-accept [text]`, `dialog-dismiss` | Controlar el manejo de alert/confirm/prompt |
+| Pestañas | `tabs`, `tab`, `newtab`, `closetab` | Flujos de trabajo multi-página |
+| Cookies | `cookie-import`, `cookie-import-browser` | Importar cookies desde archivo o navegador real |
+| Multi-paso | `chain` (JSON desde stdin) | Ejecutar comandos en lote en una sola llamada |
+| Traspaso | `handoff [reason]`, `resume` | Cambiar a Chrome visible para intervención del usuario |
 
-## How it works
+Todos los argumentos de selector aceptan CSS selectors, refs `@e` después de `snapshot`, o refs `@c` después de `snapshot -C`. Más de 50 comandos en total más importación de cookies.
 
-gstack's browser is a compiled CLI binary that talks to a persistent local Chromium daemon over HTTP. The CLI is a thin client — it reads a state file, sends a command, and prints the response to stdout. The server does the real work via [Playwright](https://playwright.dev/).
+## Cómo funciona
+
+El navegador de gstack es un binario CLI compilado que se comunica con un daemon local persistente de Chromium a través de HTTP. El CLI es un cliente ligero — lee un archivo de estado, envía un comando e imprime la respuesta a stdout. El servidor hace el trabajo real a través de [Playwright](https://playwright.dev/).
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -45,17 +47,17 @@ gstack's browser is a compiled CLI binary that talks to a persistent local Chrom
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### Lifecycle
+### Ciclo de vida
 
-1. **First call**: CLI checks `.gstack/browse.json` (in the project root) for a running server. None found — it spawns `bun run browse/src/server.ts` in the background. The server launches headless Chromium via Playwright, picks a random port (10000-60000), generates a bearer token, writes the state file, and starts accepting HTTP requests. This takes ~3 seconds.
+1. **Primera llamada**: El CLI comprueba `.gstack/browse.json` (en la raíz del proyecto) buscando un servidor en ejecución. No se encuentra ninguno — lanza `bun run browse/src/server.ts` en segundo plano. El servidor inicia Chromium headless a través de Playwright, elige un puerto aleatorio (10000-60000), genera un bearer token, escribe el archivo de estado y comienza a aceptar solicitudes HTTP. Esto tarda ~3 segundos.
 
-2. **Subsequent calls**: CLI reads the state file, sends an HTTP POST with the bearer token, prints the response. ~100-200ms round trip.
+2. **Llamadas posteriores**: El CLI lee el archivo de estado, envía un HTTP POST con el bearer token e imprime la respuesta. ~100-200ms de ida y vuelta.
 
-3. **Idle shutdown**: After 30 minutes with no commands, the server shuts down and cleans up the state file. Next call restarts it automatically.
+3. **Apagado por inactividad**: Después de 30 minutos sin comandos, el servidor se apaga y limpia el archivo de estado. La siguiente llamada lo reinicia automáticamente.
 
-4. **Crash recovery**: If Chromium crashes, the server exits immediately (no self-healing — don't hide failure). The CLI detects the dead server on the next call and starts a fresh one.
+4. **Recuperación ante caídas**: Si Chromium se cae, el servidor sale inmediatamente (sin auto-reparación — no ocultar fallos). El CLI detecta el servidor muerto en la siguiente llamada e inicia uno nuevo.
 
-### Key components
+### Componentes clave
 
 ```
 browse/
@@ -76,57 +78,57 @@ browse/
     └── browse              # Compiled binary (~58MB, Bun --compile)
 ```
 
-### The snapshot system
+### El sistema de snapshot
 
-The browser's key innovation is ref-based element selection, built on Playwright's accessibility tree API:
+La innovación clave del navegador es la selección de elementos basada en refs, construida sobre la API de árbol de accesibilidad de Playwright:
 
-1. `page.locator(scope).ariaSnapshot()` returns a YAML-like accessibility tree
-2. The snapshot parser assigns refs (`@e1`, `@e2`, ...) to each element
-3. For each ref, it builds a Playwright `Locator` (using `getByRole` + nth-child)
-4. The ref-to-Locator map is stored on `BrowserManager`
-5. Later commands like `click @e3` look up the Locator and call `locator.click()`
+1. `page.locator(scope).ariaSnapshot()` devuelve un árbol de accesibilidad tipo YAML
+2. El parser de snapshots asigna refs (`@e1`, `@e2`, ...) a cada elemento
+3. Para cada ref, construye un `Locator` de Playwright (usando `getByRole` + nth-child)
+4. El mapa de ref-a-Locator se almacena en `BrowserManager`
+5. Comandos posteriores como `click @e3` buscan el Locator y llaman a `locator.click()`
 
-No DOM mutation. No injected scripts. Just Playwright's native accessibility API.
+Sin mutación del DOM. Sin scripts inyectados. Solo la API de accesibilidad nativa de Playwright.
 
-**Ref staleness detection:** SPAs can mutate the DOM without navigation (React router, tab switches, modals). When this happens, refs collected from a previous `snapshot` may point to elements that no longer exist. To handle this, `resolveRef()` runs an async `count()` check before using any ref — if the element count is 0, it throws immediately with a message telling the agent to re-run `snapshot`. This fails fast (~5ms) instead of waiting for Playwright's 30-second action timeout.
+**Detección de obsolescencia de refs:** Las SPAs pueden mutar el DOM sin navegación (React router, cambios de pestaña, modales). Cuando esto ocurre, los refs recopilados de un `snapshot` anterior pueden apuntar a elementos que ya no existen. Para manejar esto, `resolveRef()` ejecuta una comprobación asíncrona con `count()` antes de usar cualquier ref — si el recuento de elementos es 0, lanza una excepción inmediatamente con un mensaje indicando al agente que vuelva a ejecutar `snapshot`. Esto falla rápidamente (~5ms) en lugar de esperar al timeout de acción de 30 segundos de Playwright.
 
-**Extended snapshot features:**
-- `--diff` (`-D`): Stores each snapshot as a baseline. On the next `-D` call, returns a unified diff showing what changed. Use this to verify that an action (click, fill, etc.) actually worked.
-- `--annotate` (`-a`): Injects temporary overlay divs at each ref's bounding box, takes a screenshot with ref labels visible, then removes the overlays. Use `-o <path>` to control the output path.
-- `--cursor-interactive` (`-C`): Scans for non-ARIA interactive elements (divs with `cursor:pointer`, `onclick`, `tabindex>=0`) using `page.evaluate`. Assigns `@c1`, `@c2`... refs with deterministic `nth-child` CSS selectors. These are elements the ARIA tree misses but users can still click.
+**Funcionalidades extendidas de snapshot:**
+- `--diff` (`-D`): Almacena cada snapshot como línea base. En la siguiente llamada con `-D`, devuelve un diff unificado mostrando qué cambió. Úsalo para verificar que una acción (click, fill, etc.) realmente funcionó.
+- `--annotate` (`-a`): Inyecta divs de superposición temporales en el bounding box de cada ref, toma una captura de pantalla con las etiquetas de refs visibles, y luego elimina las superposiciones. Usa `-o <path>` para controlar la ruta de salida.
+- `--cursor-interactive` (`-C`): Escanea elementos interactivos no-ARIA (divs con `cursor:pointer`, `onclick`, `tabindex>=0`) usando `page.evaluate`. Asigna refs `@c1`, `@c2`... con CSS selectors deterministas de `nth-child`. Estos son elementos que el árbol ARIA omite pero los usuarios aún pueden hacer clic.
 
-### Screenshot modes
+### Modos de captura de pantalla
 
-The `screenshot` command supports four modes:
+El comando `screenshot` soporta cuatro modos:
 
-| Mode | Syntax | Playwright API |
-|------|--------|----------------|
-| Full page (default) | `screenshot [path]` | `page.screenshot({ fullPage: true })` |
-| Viewport only | `screenshot --viewport [path]` | `page.screenshot({ fullPage: false })` |
-| Element crop | `screenshot "#sel" [path]` or `screenshot @e3 [path]` | `locator.screenshot()` |
-| Region clip | `screenshot --clip x,y,w,h [path]` | `page.screenshot({ clip })` |
+| Modo | Sintaxis | API de Playwright |
+|------|----------|-------------------|
+| Página completa (por defecto) | `screenshot [path]` | `page.screenshot({ fullPage: true })` |
+| Solo viewport | `screenshot --viewport [path]` | `page.screenshot({ fullPage: false })` |
+| Recorte de elemento | `screenshot "#sel" [path]` o `screenshot @e3 [path]` | `locator.screenshot()` |
+| Recorte de región | `screenshot --clip x,y,w,h [path]` | `page.screenshot({ clip })` |
 
-Element crop accepts CSS selectors (`.class`, `#id`, `[attr]`) or `@e`/`@c` refs from `snapshot`. Auto-detection: `@e`/`@c` prefix = ref, `.`/`#`/`[` prefix = CSS selector, `--` prefix = flag, everything else = output path.
+El recorte de elemento acepta CSS selectors (`.class`, `#id`, `[attr]`) o refs `@e`/`@c` de `snapshot`. Auto-detección: prefijo `@e`/`@c` = ref, prefijo `.`/`#`/`[` = CSS selector, prefijo `--` = flag, todo lo demás = ruta de salida.
 
-Mutual exclusion: `--clip` + selector and `--viewport` + `--clip` both throw errors. Unknown flags (e.g. `--bogus`) also throw.
+Exclusión mutua: `--clip` + selector y `--viewport` + `--clip` lanzan errores. Los flags desconocidos (por ejemplo, `--bogus`) también lanzan error.
 
-### Authentication
+### Autenticación
 
-Each server session generates a random UUID as a bearer token. The token is written to the state file (`.gstack/browse.json`) with chmod 600. Every HTTP request must include `Authorization: Bearer <token>`. This prevents other processes on the machine from controlling the browser.
+Cada sesión del servidor genera un UUID aleatorio como bearer token. El token se escribe en el archivo de estado (`.gstack/browse.json`) con chmod 600. Cada solicitud HTTP debe incluir `Authorization: Bearer <token>`. Esto impide que otros procesos en la máquina controlen el navegador.
 
-### Console, network, and dialog capture
+### Captura de consola, red y diálogos
 
-The server hooks into Playwright's `page.on('console')`, `page.on('response')`, and `page.on('dialog')` events. All entries are kept in O(1) circular buffers (50,000 capacity each) and flushed to disk asynchronously via `Bun.write()`:
+El servidor se conecta a los eventos `page.on('console')`, `page.on('response')` y `page.on('dialog')` de Playwright. Todas las entradas se mantienen en buffers circulares O(1) (capacidad de 50.000 cada uno) y se vacían a disco de forma asíncrona mediante `Bun.write()`:
 
-- Console: `.gstack/browse-console.log`
-- Network: `.gstack/browse-network.log`
-- Dialog: `.gstack/browse-dialog.log`
+- Consola: `.gstack/browse-console.log`
+- Red: `.gstack/browse-network.log`
+- Diálogos: `.gstack/browse-dialog.log`
 
-The `console`, `network`, and `dialog` commands read from the in-memory buffers, not disk.
+Los comandos `console`, `network` y `dialog` leen de los buffers en memoria, no del disco.
 
-### User handoff
+### Traspaso al usuario
 
-When the headless browser can't proceed (CAPTCHA, MFA, complex auth), `handoff` opens a visible Chrome window at the exact same page with all cookies, localStorage, and tabs preserved. The user solves the problem manually, then `resume` returns control to the agent with a fresh snapshot.
+Cuando el navegador headless no puede continuar (CAPTCHA, MFA, autenticación compleja), `handoff` abre una ventana visible de Chrome en la misma página exacta con todas las cookies, localStorage y pestañas preservadas. El usuario resuelve el problema manualmente, y luego `resume` devuelve el control al agente con un snapshot actualizado.
 
 ```bash
 $B handoff "Stuck on CAPTCHA at login page"   # opens visible Chrome
@@ -134,15 +136,15 @@ $B handoff "Stuck on CAPTCHA at login page"   # opens visible Chrome
 $B resume                                       # returns to headless with fresh snapshot
 ```
 
-The browser auto-suggests `handoff` after 3 consecutive failures. State is fully preserved across the switch — no re-login needed.
+El navegador sugiere automáticamente `handoff` después de 3 fallos consecutivos. El estado se preserva completamente durante el cambio — no es necesario volver a iniciar sesión.
 
-### Dialog handling
+### Manejo de diálogos
 
-Dialogs (alert, confirm, prompt) are auto-accepted by default to prevent browser lockup. The `dialog-accept` and `dialog-dismiss` commands control this behavior. For prompts, `dialog-accept <text>` provides the response text. All dialogs are logged to the dialog buffer with type, message, and action taken.
+Los diálogos (alert, confirm, prompt) se aceptan automáticamente por defecto para prevenir bloqueos del navegador. Los comandos `dialog-accept` y `dialog-dismiss` controlan este comportamiento. Para prompts, `dialog-accept <text>` proporciona el texto de respuesta. Todos los diálogos se registran en el buffer de diálogos con tipo, mensaje y acción tomada.
 
-### JavaScript execution (`js` and `eval`)
+### Ejecución de JavaScript (`js` y `eval`)
 
-`js` runs a single expression, `eval` runs a JS file. Both support `await` — expressions containing `await` are automatically wrapped in an async context:
+`js` ejecuta una sola expresión, `eval` ejecuta un archivo JS. Ambos soportan `await` — las expresiones que contienen `await` se envuelven automáticamente en un contexto asíncrono:
 
 ```bash
 $B js "await fetch('/api/data').then(r => r.json())"  # works
@@ -150,60 +152,60 @@ $B js "document.title"                                  # also works (no wrappin
 $B eval my-script.js                                    # file with await works too
 ```
 
-For `eval` files, single-line files return the expression value directly. Multi-line files need explicit `return` when using `await`. Comments containing "await" don't trigger wrapping.
+Para archivos `eval`, los archivos de una sola línea devuelven el valor de la expresión directamente. Los archivos de varias líneas necesitan `return` explícito cuando usan `await`. Los comentarios que contienen "await" no activan el envolvimiento.
 
-### Multi-workspace support
+### Soporte multi-workspace
 
-Each workspace gets its own isolated browser instance with its own Chromium process, tabs, cookies, and logs. State is stored in `.gstack/` inside the project root (detected via `git rev-parse --show-toplevel`).
+Cada workspace obtiene su propia instancia de navegador aislada con su propio proceso de Chromium, pestañas, cookies y logs. El estado se almacena en `.gstack/` dentro de la raíz del proyecto (detectada mediante `git rev-parse --show-toplevel`).
 
-| Workspace | State file | Port |
-|-----------|------------|------|
-| `/code/project-a` | `/code/project-a/.gstack/browse.json` | random (10000-60000) |
-| `/code/project-b` | `/code/project-b/.gstack/browse.json` | random (10000-60000) |
+| Workspace | Archivo de estado | Puerto |
+|-----------|-------------------|--------|
+| `/code/project-a` | `/code/project-a/.gstack/browse.json` | aleatorio (10000-60000) |
+| `/code/project-b` | `/code/project-b/.gstack/browse.json` | aleatorio (10000-60000) |
 
-No port collisions. No shared state. Each project is fully isolated.
+Sin colisiones de puertos. Sin estado compartido. Cada proyecto está completamente aislado.
 
-### Environment variables
+### Variables de entorno
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `BROWSE_PORT` | 0 (random 10000-60000) | Fixed port for the HTTP server (debug override) |
-| `BROWSE_IDLE_TIMEOUT` | 1800000 (30 min) | Idle shutdown timeout in ms |
-| `BROWSE_STATE_FILE` | `.gstack/browse.json` | Path to state file (CLI passes to server) |
-| `BROWSE_SERVER_SCRIPT` | auto-detected | Path to server.ts |
+| Variable | Por defecto | Descripción |
+|----------|-------------|-------------|
+| `BROWSE_PORT` | 0 (aleatorio 10000-60000) | Puerto fijo para el servidor HTTP (override de depuración) |
+| `BROWSE_IDLE_TIMEOUT` | 1800000 (30 min) | Timeout de apagado por inactividad en ms |
+| `BROWSE_STATE_FILE` | `.gstack/browse.json` | Ruta al archivo de estado (el CLI lo pasa al servidor) |
+| `BROWSE_SERVER_SCRIPT` | auto-detectado | Ruta a server.ts |
 
-### Performance
+### Rendimiento
 
-| Tool | First call | Subsequent calls | Context overhead per call |
-|------|-----------|-----------------|--------------------------|
-| Chrome MCP | ~5s | ~2-5s | ~2000 tokens (schema + protocol) |
-| Playwright MCP | ~3s | ~1-3s | ~1500 tokens (schema + protocol) |
-| **gstack browse** | **~3s** | **~100-200ms** | **0 tokens** (plain text stdout) |
+| Herramienta | Primera llamada | Llamadas posteriores | Sobrecarga de contexto por llamada |
+|-------------|----------------|---------------------|------------------------------------|
+| Chrome MCP | ~5s | ~2-5s | ~2000 tokens (schema + protocolo) |
+| Playwright MCP | ~3s | ~1-3s | ~1500 tokens (schema + protocolo) |
+| **gstack browse** | **~3s** | **~100-200ms** | **0 tokens** (texto plano a stdout) |
 
-The context overhead difference compounds fast. In a 20-command browser session, MCP tools burn 30,000-40,000 tokens on protocol framing alone. gstack burns zero.
+La diferencia en sobrecarga de contexto se acumula rápidamente. En una sesión de navegador de 20 comandos, las herramientas MCP queman 30.000-40.000 tokens solo en el encuadre del protocolo. gstack quema cero.
 
-### Why CLI over MCP?
+### ¿Por qué CLI en lugar de MCP?
 
-MCP (Model Context Protocol) works well for remote services, but for local browser automation it adds pure overhead:
+MCP (Model Context Protocol) funciona bien para servicios remotos, pero para automatización de navegador local añade pura sobrecarga:
 
-- **Context bloat**: every MCP call includes full JSON schemas and protocol framing. A simple "get the page text" costs 10x more context tokens than it should.
-- **Connection fragility**: persistent WebSocket/stdio connections drop and fail to reconnect.
-- **Unnecessary abstraction**: Claude Code already has a Bash tool. A CLI that prints to stdout is the simplest possible interface.
+- **Inflación de contexto**: cada llamada MCP incluye JSON schemas completos y encuadre de protocolo. Un simple "obtener el texto de la página" cuesta 10 veces más tokens de contexto de lo que debería.
+- **Fragilidad de conexión**: las conexiones persistentes de WebSocket/stdio se caen y fallan al reconectarse.
+- **Abstracción innecesaria**: Claude Code ya tiene una herramienta Bash. Un CLI que imprime a stdout es la interfaz más simple posible.
 
-gstack skips all of this. Compiled binary. Plain text in, plain text out. No protocol. No schema. No connection management.
+gstack se salta todo esto. Binario compilado. Texto plano de entrada, texto plano de salida. Sin protocolo. Sin schema. Sin gestión de conexiones.
 
-## Acknowledgments
+## Agradecimientos
 
-The browser automation layer is built on [Playwright](https://playwright.dev/) by Microsoft. Playwright's accessibility tree API, locator system, and headless Chromium management are what make ref-based interaction possible. The snapshot system — assigning `@ref` labels to accessibility tree nodes and mapping them back to Playwright Locators — is built entirely on top of Playwright's primitives. Thank you to the Playwright team for building such a solid foundation.
+La capa de automatización del navegador está construida sobre [Playwright](https://playwright.dev/) de Microsoft. La API de árbol de accesibilidad de Playwright, el sistema de locators y la gestión de Chromium headless son lo que hace posible la interacción basada en refs. El sistema de snapshots — asignar etiquetas `@ref` a nodos del árbol de accesibilidad y mapearlos de vuelta a Locators de Playwright — está construido enteramente sobre las primitivas de Playwright. Gracias al equipo de Playwright por construir una base tan sólida.
 
-## Development
+## Desarrollo
 
-### Prerequisites
+### Requisitos previos
 
 - [Bun](https://bun.sh/) v1.0+
-- Playwright's Chromium (installed automatically by `bun install`)
+- Chromium de Playwright (se instala automáticamente con `bun install`)
 
-### Quick start
+### Inicio rápido
 
 ```bash
 bun install              # install dependencies + Playwright Chromium
@@ -212,9 +214,9 @@ bun run dev <cmd>        # run CLI from source (no compile)
 bun run build            # compile to browse/dist/browse
 ```
 
-### Dev mode vs compiled binary
+### Modo desarrollo vs binario compilado
 
-During development, use `bun run dev` instead of the compiled binary. It runs `browse/src/cli.ts` directly with Bun, so you get instant feedback without a compile step:
+Durante el desarrollo, usa `bun run dev` en lugar del binario compilado. Ejecuta `browse/src/cli.ts` directamente con Bun, así obtienes feedback instantáneo sin paso de compilación:
 
 ```bash
 bun run dev goto https://example.com
@@ -223,9 +225,9 @@ bun run dev snapshot -i
 bun run dev click @e3
 ```
 
-The compiled binary (`bun run build`) is only needed for distribution. It produces a single ~58MB executable at `browse/dist/browse` using Bun's `--compile` flag.
+El binario compilado (`bun run build`) solo se necesita para distribución. Produce un único ejecutable de ~58MB en `browse/dist/browse` usando el flag `--compile` de Bun.
 
-### Running tests
+### Ejecutar tests
 
 ```bash
 bun test                         # run all tests
@@ -234,38 +236,38 @@ bun test browse/test/snapshot              # run snapshot tests only
 bun test browse/test/cookie-import-browser # run cookie import unit tests only
 ```
 
-Tests spin up a local HTTP server (`browse/test/test-server.ts`) serving HTML fixtures from `browse/test/fixtures/`, then exercise the CLI commands against those pages. 203 tests across 3 files, ~15 seconds total.
+Los tests levantan un servidor HTTP local (`browse/test/test-server.ts`) que sirve fixtures HTML desde `browse/test/fixtures/`, y luego ejercitan los comandos del CLI contra esas páginas. 203 tests en 3 archivos, ~15 segundos en total.
 
-### Source map
+### Mapa de código fuente
 
-| File | Role |
-|------|------|
-| `browse/src/cli.ts` | Entry point. Reads `.gstack/browse.json`, sends HTTP to the server, prints response. |
-| `browse/src/server.ts` | Bun HTTP server. Routes commands to the right handler. Manages idle timeout. |
-| `browse/src/browser-manager.ts` | Chromium lifecycle — launch, tab management, ref map, crash detection. |
-| `browse/src/snapshot.ts` | Parses accessibility tree, assigns `@e`/`@c` refs, builds Locator map. Handles `--diff`, `--annotate`, `-C`. |
-| `browse/src/read-commands.ts` | Non-mutating commands: `text`, `html`, `links`, `js`, `css`, `is`, `dialog`, `forms`, etc. Exports `getCleanText()`. |
-| `browse/src/write-commands.ts` | Mutating commands: `goto`, `click`, `fill`, `upload`, `dialog-accept`, `useragent` (with context recreation), etc. |
-| `browse/src/meta-commands.ts` | Server management, chain routing, diff (DRY via `getCleanText`), snapshot delegation. |
-| `browse/src/cookie-import-browser.ts` | Decrypt Chromium cookies from macOS and Linux browser profiles using platform-specific safe-storage key lookup. Auto-detects installed browsers. |
-| `browse/src/cookie-picker-routes.ts` | HTTP routes for `/cookie-picker/*` — browser list, domain search, import, remove. |
-| `browse/src/cookie-picker-ui.ts` | Self-contained HTML generator for the interactive cookie picker (dark theme, no frameworks). |
-| `browse/src/buffers.ts` | `CircularBuffer<T>` (O(1) ring buffer) + console/network/dialog capture with async disk flush. |
+| Archivo | Rol |
+|---------|-----|
+| `browse/src/cli.ts` | Punto de entrada. Lee `.gstack/browse.json`, envía HTTP al servidor, imprime la respuesta. |
+| `browse/src/server.ts` | Servidor HTTP con Bun. Enruta comandos al handler correcto. Gestiona el timeout de inactividad. |
+| `browse/src/browser-manager.ts` | Ciclo de vida de Chromium — lanzamiento, gestión de pestañas, mapa de refs, detección de caídas. |
+| `browse/src/snapshot.ts` | Parsea el árbol de accesibilidad, asigna refs `@e`/`@c`, construye el mapa de Locators. Maneja `--diff`, `--annotate`, `-C`. |
+| `browse/src/read-commands.ts` | Comandos sin mutación: `text`, `html`, `links`, `js`, `css`, `is`, `dialog`, `forms`, etc. Exporta `getCleanText()`. |
+| `browse/src/write-commands.ts` | Comandos con mutación: `goto`, `click`, `fill`, `upload`, `dialog-accept`, `useragent` (con recreación de contexto), etc. |
+| `browse/src/meta-commands.ts` | Gestión del servidor, enrutamiento de chain, diff (DRY mediante `getCleanText`), delegación de snapshot. |
+| `browse/src/cookie-import-browser.ts` | Desencripta cookies de Chromium desde perfiles de navegador en macOS y Linux usando búsqueda de claves de safe-storage específica de plataforma. Auto-detecta navegadores instalados. |
+| `browse/src/cookie-picker-routes.ts` | Rutas HTTP para `/cookie-picker/*` — lista de navegadores, búsqueda de dominio, importar, eliminar. |
+| `browse/src/cookie-picker-ui.ts` | Generador de HTML autocontenido para el selector de cookies interactivo (tema oscuro, sin frameworks). |
+| `browse/src/buffers.ts` | `CircularBuffer<T>` (ring buffer O(1)) + captura de consola/red/diálogos con vaciado asíncrono a disco. |
 
-### Deploying to the active skill
+### Desplegar a la skill activa
 
-The active skill lives at `~/.claude/skills/gstack/`. After making changes:
+La skill activa vive en `~/.claude/skills/gstack/`. Después de hacer cambios:
 
-1. Push your branch
-2. Pull in the skill directory: `cd ~/.claude/skills/gstack && git pull`
-3. Rebuild: `cd ~/.claude/skills/gstack && bun run build`
+1. Haz push de tu rama
+2. Haz pull en el directorio de la skill: `cd ~/.claude/skills/gstack && git pull`
+3. Recompila: `cd ~/.claude/skills/gstack && bun run build`
 
-Or copy the binary directly: `cp browse/dist/browse ~/.claude/skills/gstack/browse/dist/browse`
+O copia el binario directamente: `cp browse/dist/browse ~/.claude/skills/gstack/browse/dist/browse`
 
-### Adding a new command
+### Añadir un nuevo comando
 
-1. Add the handler in `read-commands.ts` (non-mutating) or `write-commands.ts` (mutating)
-2. Register the route in `server.ts`
-3. Add a test case in `browse/test/commands.test.ts` with an HTML fixture if needed
-4. Run `bun test` to verify
-5. Run `bun run build` to compile
+1. Añade el handler en `read-commands.ts` (sin mutación) o `write-commands.ts` (con mutación)
+2. Registra la ruta en `server.ts`
+3. Añade un caso de prueba en `browse/test/commands.test.ts` con un fixture HTML si es necesario
+4. Ejecuta `bun test` para verificar
+5. Ejecuta `bun run build` para compilar

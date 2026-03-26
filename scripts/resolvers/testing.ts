@@ -1,12 +1,12 @@
 import type { TemplateContext } from './types';
 
 export function generateTestBootstrap(_ctx: TemplateContext): string {
-  return `## Test Framework Bootstrap
+  return `## Bootstrap del Framework de Tests
 
-**Detect existing test framework and project runtime:**
+**Detectar el framework de tests existente y el runtime del proyecto:**
 
 \`\`\`bash
-# Detect project runtime
+# Detectar runtime del proyecto
 [ -f Gemfile ] && echo "RUNTIME:ruby"
 [ -f package.json ] && echo "RUNTIME:node"
 [ -f requirements.txt ] || [ -f pyproject.toml ] && echo "RUNTIME:python"
@@ -14,40 +14,40 @@ export function generateTestBootstrap(_ctx: TemplateContext): string {
 [ -f Cargo.toml ] && echo "RUNTIME:rust"
 [ -f composer.json ] && echo "RUNTIME:php"
 [ -f mix.exs ] && echo "RUNTIME:elixir"
-# Detect sub-frameworks
+# Detectar sub-frameworks
 [ -f Gemfile ] && grep -q "rails" Gemfile 2>/dev/null && echo "FRAMEWORK:rails"
 [ -f package.json ] && grep -q '"next"' package.json 2>/dev/null && echo "FRAMEWORK:nextjs"
-# Check for existing test infrastructure
+# Comprobar infraestructura de tests existente
 ls jest.config.* vitest.config.* playwright.config.* .rspec pytest.ini pyproject.toml phpunit.xml 2>/dev/null
 ls -d test/ tests/ spec/ __tests__/ cypress/ e2e/ 2>/dev/null
-# Check opt-out marker
+# Comprobar marcador de opt-out
 [ -f .gstack/no-test-bootstrap ] && echo "BOOTSTRAP_DECLINED"
 \`\`\`
 
-**If test framework detected** (config files or test directories found):
-Print "Test framework detected: {name} ({N} existing tests). Skipping bootstrap."
-Read 2-3 existing test files to learn conventions (naming, imports, assertion style, setup patterns).
-Store conventions as prose context for use in Phase 8e.5 or Step 3.4. **Skip the rest of bootstrap.**
+**Si se detectó un framework de tests** (archivos de configuración o directorios de tests encontrados):
+Imprime "Framework de tests detectado: {nombre} ({N} tests existentes). Omitiendo bootstrap."
+Lee 2-3 archivos de test existentes para aprender convenciones (nomenclatura, imports, estilo de assertions, patrones de setup).
+Almacena las convenciones como contexto en prosa para usar en la Fase 8e.5 o Paso 3.4. **Omite el resto del bootstrap.**
 
-**If BOOTSTRAP_DECLINED** appears: Print "Test bootstrap previously declined — skipping." **Skip the rest of bootstrap.**
+**Si aparece BOOTSTRAP_DECLINED**: Imprime "Bootstrap de tests previamente rechazado — omitiendo." **Omite el resto del bootstrap.**
 
-**If NO runtime detected** (no config files found): Use AskUserQuestion:
-"I couldn't detect your project's language. What runtime are you using?"
-Options: A) Node.js/TypeScript B) Ruby/Rails C) Python D) Go E) Rust F) PHP G) Elixir H) This project doesn't need tests.
-If user picks H → write \`.gstack/no-test-bootstrap\` and continue without tests.
+**Si NO se detectó runtime** (sin archivos de configuración encontrados): Usa AskUserQuestion:
+"No pude detectar el lenguaje de tu proyecto. ¿Qué runtime estás usando?"
+Opciones: A) Node.js/TypeScript B) Ruby/Rails C) Python D) Go E) Rust F) PHP G) Elixir H) Este proyecto no necesita tests.
+Si el usuario elige H → escribe \`.gstack/no-test-bootstrap\` y continúa sin tests.
 
-**If runtime detected but no test framework — bootstrap:**
+**Si se detectó runtime pero no framework de tests — hacer bootstrap:**
 
-### B2. Research best practices
+### B2. Investigar mejores prácticas
 
-Use WebSearch to find current best practices for the detected runtime:
+Usa WebSearch para encontrar las mejores prácticas actuales para el runtime detectado:
 - \`"[runtime] best test framework 2025 2026"\`
 - \`"[framework A] vs [framework B] comparison"\`
 
-If WebSearch is unavailable, use this built-in knowledge table:
+Si WebSearch no está disponible, usa esta tabla de conocimiento integrada:
 
-| Runtime | Primary recommendation | Alternative |
-|---------|----------------------|-------------|
+| Runtime | Recomendación principal | Alternativa |
+|---------|------------------------|-------------|
 | Ruby/Rails | minitest + fixtures + capybara | rspec + factory_bot + shoulda-matchers |
 | Node.js | vitest + @testing-library | jest + @testing-library |
 | Next.js | vitest + @testing-library/react + playwright | jest + cypress |
@@ -57,91 +57,91 @@ If WebSearch is unavailable, use this built-in knowledge table:
 | PHP | phpunit + mockery | pest |
 | Elixir | ExUnit (built-in) + ex_machina | — |
 
-### B3. Framework selection
+### B3. Selección de framework
 
-Use AskUserQuestion:
-"I detected this is a [Runtime/Framework] project with no test framework. I researched current best practices. Here are the options:
-A) [Primary] — [rationale]. Includes: [packages]. Supports: unit, integration, smoke, e2e
-B) [Alternative] — [rationale]. Includes: [packages]
-C) Skip — don't set up testing right now
-RECOMMENDATION: Choose A because [reason based on project context]"
+Usa AskUserQuestion:
+"Detecté que este es un proyecto [Runtime/Framework] sin framework de tests. Investigué las mejores prácticas actuales. Estas son las opciones:
+A) [Principal] — [justificación]. Incluye: [paquetes]. Soporta: unitarios, integración, smoke, e2e
+B) [Alternativa] — [justificación]. Incluye: [paquetes]
+C) Omitir — no configurar testing ahora
+RECOMMENDATION: Elige A porque [razón basada en el contexto del proyecto]"
 
-If user picks C → write \`.gstack/no-test-bootstrap\`. Tell user: "If you change your mind later, delete \`.gstack/no-test-bootstrap\` and re-run." Continue without tests.
+Si el usuario elige C → escribe \`.gstack/no-test-bootstrap\`. Dile al usuario: "Si cambias de opinión después, elimina \`.gstack/no-test-bootstrap\` y vuelve a ejecutar." Continúa sin tests.
 
-If multiple runtimes detected (monorepo) → ask which runtime to set up first, with option to do both sequentially.
+Si se detectaron múltiples runtimes (monorepo) → pregunta qué runtime configurar primero, con opción de hacer ambos secuencialmente.
 
-### B4. Install and configure
+### B4. Instalar y configurar
 
-1. Install the chosen packages (npm/bun/gem/pip/etc.)
-2. Create minimal config file
-3. Create directory structure (test/, spec/, etc.)
-4. Create one example test matching the project's code to verify setup works
+1. Instala los paquetes elegidos (npm/bun/gem/pip/etc.)
+2. Crea un archivo de configuración mínimo
+3. Crea la estructura de directorios (test/, spec/, etc.)
+4. Crea un test de ejemplo que coincida con el código del proyecto para verificar que el setup funciona
 
-If package installation fails → debug once. If still failing → revert with \`git checkout -- package.json package-lock.json\` (or equivalent for the runtime). Warn user and continue without tests.
+Si la instalación de paquetes falla → depura una vez. Si sigue fallando → revierte con \`git checkout -- package.json package-lock.json\` (o equivalente para el runtime). Avisa al usuario y continúa sin tests.
 
-### B4.5. First real tests
+### B4.5. Primeros tests reales
 
-Generate 3-5 real tests for existing code:
+Genera 3-5 tests reales para código existente:
 
-1. **Find recently changed files:** \`git log --since=30.days --name-only --format="" | sort | uniq -c | sort -rn | head -10\`
-2. **Prioritize by risk:** Error handlers > business logic with conditionals > API endpoints > pure functions
-3. **For each file:** Write one test that tests real behavior with meaningful assertions. Never \`expect(x).toBeDefined()\` — test what the code DOES.
-4. Run each test. Passes → keep. Fails → fix once. Still fails → delete silently.
-5. Generate at least 1 test, cap at 5.
+1. **Encontrar archivos cambiados recientemente:** \`git log --since=30.days --name-only --format="" | sort | uniq -c | sort -rn | head -10\`
+2. **Priorizar por riesgo:** Manejadores de errores > lógica de negocio con condicionales > endpoints de API > funciones puras
+3. **Para cada archivo:** Escribe un test que pruebe comportamiento real con assertions significativas. Nunca \`expect(x).toBeDefined()\` — prueba lo que el código HACE.
+4. Ejecuta cada test. Pasa → conservar. Falla → arreglar una vez. Sigue fallando → eliminar silenciosamente.
+5. Genera al menos 1 test, máximo 5.
 
-Never import secrets, API keys, or credentials in test files. Use environment variables or test fixtures.
+Nunca importes secretos, claves API o credenciales en archivos de test. Usa variables de entorno o fixtures de test.
 
-### B5. Verify
+### B5. Verificar
 
 \`\`\`bash
-# Run the full test suite to confirm everything works
+# Ejecutar la suite completa de tests para confirmar que todo funciona
 {detected test command}
 \`\`\`
 
-If tests fail → debug once. If still failing → revert all bootstrap changes and warn user.
+Si los tests fallan → depura una vez. Si siguen fallando → revierte todos los cambios del bootstrap y avisa al usuario.
 
-### B5.5. CI/CD pipeline
+### B5.5. Pipeline CI/CD
 
 \`\`\`bash
-# Check CI provider
+# Comprobar proveedor de CI
 ls -d .github/ 2>/dev/null && echo "CI:github"
 ls .gitlab-ci.yml .circleci/ bitrise.yml 2>/dev/null
 \`\`\`
 
-If \`.github/\` exists (or no CI detected — default to GitHub Actions):
-Create \`.github/workflows/test.yml\` with:
+Si \`.github/\` existe (o no se detectó CI — usar GitHub Actions por defecto):
+Crea \`.github/workflows/test.yml\` con:
 - \`runs-on: ubuntu-latest\`
-- Appropriate setup action for the runtime (setup-node, setup-ruby, setup-python, etc.)
-- The same test command verified in B5
+- Action de setup apropiada para el runtime (setup-node, setup-ruby, setup-python, etc.)
+- El mismo comando de test verificado en B5
 - Trigger: push + pull_request
 
-If non-GitHub CI detected → skip CI generation with note: "Detected {provider} — CI pipeline generation supports GitHub Actions only. Add test step to your existing pipeline manually."
+Si se detectó CI no-GitHub → omite la generación de CI con nota: "Se detectó {proveedor} — la generación de pipeline CI solo soporta GitHub Actions. Agrega el paso de test a tu pipeline existente manualmente."
 
-### B6. Create TESTING.md
+### B6. Crear TESTING.md
 
-First check: If TESTING.md already exists → read it and update/append rather than overwriting. Never destroy existing content.
+Primero verifica: Si TESTING.md ya existe → léelo y actualiza/agrega en lugar de sobrescribir. Nunca destruyas contenido existente.
 
-Write TESTING.md with:
-- Philosophy: "100% test coverage is the key to great vibe coding. Tests let you move fast, trust your instincts, and ship with confidence — without them, vibe coding is just yolo coding. With tests, it's a superpower."
-- Framework name and version
-- How to run tests (the verified command from B5)
-- Test layers: Unit tests (what, where, when), Integration tests, Smoke tests, E2E tests
-- Conventions: file naming, assertion style, setup/teardown patterns
+Escribe TESTING.md con:
+- Filosofía: "100% de cobertura de tests es la clave para un gran vibe coding. Los tests te permiten moverte rápido, confiar en tus instintos y publicar con confianza — sin ellos, el vibe coding es solo yolo coding. Con tests, es un superpoder."
+- Nombre y versión del framework
+- Cómo ejecutar tests (el comando verificado en B5)
+- Capas de test: Tests unitarios (qué, dónde, cuándo), Tests de integración, Tests smoke, Tests E2E
+- Convenciones: nomenclatura de archivos, estilo de assertions, patrones de setup/teardown
 
-### B7. Update CLAUDE.md
+### B7. Actualizar CLAUDE.md
 
-First check: If CLAUDE.md already has a \`## Testing\` section → skip. Don't duplicate.
+Primero verifica: Si CLAUDE.md ya tiene una sección \`## Testing\` → omite. No dupliques.
 
-Append a \`## Testing\` section:
-- Run command and test directory
-- Reference to TESTING.md
-- Test expectations:
-  - 100% test coverage is the goal — tests make vibe coding safe
-  - When writing new functions, write a corresponding test
-  - When fixing a bug, write a regression test
-  - When adding error handling, write a test that triggers the error
-  - When adding a conditional (if/else, switch), write tests for BOTH paths
-  - Never commit code that makes existing tests fail
+Agrega una sección \`## Testing\`:
+- Comando de ejecución y directorio de tests
+- Referencia a TESTING.md
+- Expectativas de tests:
+  - 100% de cobertura de tests es el objetivo — los tests hacen que el vibe coding sea seguro
+  - Al escribir nuevas funciones, escribe un test correspondiente
+  - Al corregir un bug, escribe un test de regresión
+  - Al agregar manejo de errores, escribe un test que active el error
+  - Al agregar un condicional (if/else, switch), escribe tests para AMBOS caminos
+  - Nunca hagas commit de código que haga fallar tests existentes
 
 ### B8. Commit
 
@@ -149,13 +149,13 @@ Append a \`## Testing\` section:
 git status --porcelain
 \`\`\`
 
-Only commit if there are changes. Stage all bootstrap files (config, test directory, TESTING.md, CLAUDE.md, .github/workflows/test.yml if created):
+Solo haz commit si hay cambios. Agrega al staging todos los archivos del bootstrap (config, directorio de tests, TESTING.md, CLAUDE.md, .github/workflows/test.yml si se creó):
 \`git commit -m "chore: bootstrap test framework ({framework name})"\`
 
 ---`;
 }
 
-// ─── Test Coverage Audit ────────────────────────────────────
+// ─── Test Coverage Audit ────────────────────────────────────────────────
 //
 // Shared methodology for codepath tracing, ASCII diagrams, and test gap analysis.
 // Three modes, three placeholders, one inner function:
@@ -183,220 +183,220 @@ function generateTestCoverageAuditInner(mode: CoverageAuditMode): string {
 
   // ── Intro (mode-specific) ──
   if (mode === 'ship') {
-    sections.push(`100% coverage is the goal — every untested path is a path where bugs hide and vibe coding becomes yolo coding. Evaluate what was ACTUALLY coded (from the diff), not what was planned.`);
+    sections.push(`El objetivo es 100% de cobertura — cada camino sin probar es un camino donde los bugs se esconden y el vibe coding se convierte en yolo coding. Evalúa lo que se CODIFICÓ REALMENTE (del diff), no lo que se planificó.`);
   } else if (mode === 'plan') {
-    sections.push(`100% coverage is the goal. Evaluate every codepath in the plan and ensure the plan includes tests for each one. If the plan is missing tests, add them — the plan should be complete enough that implementation includes full test coverage from the start.`);
+    sections.push(`El objetivo es 100% de cobertura. Evalúa cada ruta de código en el plan y asegura que el plan incluya tests para cada una. Si al plan le faltan tests, agrégalos — el plan debe ser lo suficientemente completo para que la implementación incluya cobertura completa de tests desde el inicio.`);
   } else {
-    sections.push(`100% coverage is the goal. Evaluate every codepath changed in the diff and identify test gaps. Gaps become INFORMATIONAL findings that follow the Fix-First flow.`);
+    sections.push(`El objetivo es 100% de cobertura. Evalúa cada ruta de código cambiada en el diff e identifica brechas de tests. Las brechas se convierten en hallazgos INFORMATIONAL que siguen el flujo Fix-First.`);
   }
 
   // ── Test framework detection (shared) ──
   sections.push(`
-### Test Framework Detection
+### Detección del Framework de Tests
 
-Before analyzing coverage, detect the project's test framework:
+Antes de analizar la cobertura, detecta el framework de tests del proyecto:
 
-1. **Read CLAUDE.md** — look for a \`## Testing\` section with test command and framework name. If found, use that as the authoritative source.
-2. **If CLAUDE.md has no testing section, auto-detect:**
+1. **Lee CLAUDE.md** — busca una sección \`## Testing\` con el comando de test y nombre del framework. Si se encuentra, úsalo como la fuente autoritativa.
+2. **Si CLAUDE.md no tiene sección de testing, auto-detectar:**
 
 \`\`\`bash
-# Detect project runtime
+# Detectar runtime del proyecto
 [ -f Gemfile ] && echo "RUNTIME:ruby"
 [ -f package.json ] && echo "RUNTIME:node"
 [ -f requirements.txt ] || [ -f pyproject.toml ] && echo "RUNTIME:python"
 [ -f go.mod ] && echo "RUNTIME:go"
 [ -f Cargo.toml ] && echo "RUNTIME:rust"
-# Check for existing test infrastructure
+# Comprobar infraestructura de tests existente
 ls jest.config.* vitest.config.* playwright.config.* cypress.config.* .rspec pytest.ini phpunit.xml 2>/dev/null
 ls -d test/ tests/ spec/ __tests__/ cypress/ e2e/ 2>/dev/null
 \`\`\`
 
-3. **If no framework detected:**${mode === 'ship' ? ' falls through to the Test Framework Bootstrap step (Step 2.5) which handles full setup.' : ' still produce the coverage diagram, but skip test generation.'}`);
+3. **Si no se detectó framework:**${mode === 'ship' ? ' cae al paso de Bootstrap del Framework de Tests (Paso 2.5) que maneja la configuración completa.' : ' igualmente produce el diagrama de cobertura, pero omite la generación de tests.'}`);
 
   // ── Before/after count (ship only) ──
   if (mode === 'ship') {
     sections.push(`
-**0. Before/after test count:**
+**0. Conteo antes/después de tests:**
 
 \`\`\`bash
-# Count test files before any generation
+# Contar archivos de test antes de cualquier generación
 find . -name '*.test.*' -o -name '*.spec.*' -o -name '*_test.*' -o -name '*_spec.*' | grep -v node_modules | wc -l
 \`\`\`
 
-Store this number for the PR body.`);
+Almacena este número para el cuerpo del PR.`);
   }
 
   // ── Codepath tracing methodology (shared, with mode-specific source) ──
   const traceSource = mode === 'plan'
-    ? `**Step 1. Trace every codepath in the plan:**
+    ? `**Paso 1. Trazar cada ruta de código en el plan:**
 
-Read the plan document. For each new feature, service, endpoint, or component described, trace how data will flow through the code — don't just list planned functions, actually follow the planned execution:`
-    : `**${mode === 'ship' ? '1' : 'Step 1'}. Trace every codepath changed** using \`git diff origin/<base>...HEAD\`:
+Lee el documento del plan. Para cada nueva funcionalidad, servicio, endpoint o componente descrito, traza cómo los datos fluirán a través del código — no solo listes funciones planificadas, sigue realmente la ejecución planificada:`
+    : `**${mode === 'ship' ? '1' : 'Paso 1'}. Trazar cada ruta de código cambiada** usando \`git diff origin/<base>...HEAD\`:
 
-Read every changed file. For each one, trace how data flows through the code — don't just list functions, actually follow the execution:`;
+Lee cada archivo cambiado. Para cada uno, traza cómo los datos fluyen a través del código — no solo listes funciones, sigue realmente la ejecución:`;
 
   const traceStep1 = mode === 'plan'
-    ? `1. **Read the plan.** For each planned component, understand what it does and how it connects to existing code.`
-    : `1. **Read the diff.** For each changed file, read the full file (not just the diff hunk) to understand context.`;
+    ? `1. **Lee el plan.** Para cada componente planificado, entiende qué hace y cómo se conecta al código existente.`
+    : `1. **Lee el diff.** Para cada archivo cambiado, lee el archivo completo (no solo el fragmento del diff) para entender el contexto.`;
 
   sections.push(`
 ${traceSource}
 
 ${traceStep1}
-2. **Trace data flow.** Starting from each entry point (route handler, exported function, event listener, component render), follow the data through every branch:
-   - Where does input come from? (request params, props, database, API call)
-   - What transforms it? (validation, mapping, computation)
-   - Where does it go? (database write, API response, rendered output, side effect)
-   - What can go wrong at each step? (null/undefined, invalid input, network failure, empty collection)
-3. **Diagram the execution.** For each changed file, draw an ASCII diagram showing:
-   - Every function/method that was added or modified
-   - Every conditional branch (if/else, switch, ternary, guard clause, early return)
-   - Every error path (try/catch, rescue, error boundary, fallback)
-   - Every call to another function (trace into it — does IT have untested branches?)
-   - Every edge: what happens with null input? Empty array? Invalid type?
+2. **Traza el flujo de datos.** Comenzando desde cada punto de entrada (manejador de ruta, función exportada, listener de eventos, render de componente), sigue los datos a través de cada rama:
+   - ¿De dónde viene la entrada? (parámetros de request, props, base de datos, llamada API)
+   - ¿Qué la transforma? (validación, mapeo, cómputo)
+   - ¿A dónde va? (escritura en base de datos, respuesta API, salida renderizada, efecto secundario)
+   - ¿Qué puede salir mal en cada paso? (null/undefined, entrada inválida, fallo de red, colección vacía)
+3. **Diagrama la ejecución.** Para cada archivo cambiado, dibuja un diagrama ASCII mostrando:
+   - Cada función/método que fue agregado o modificado
+   - Cada rama condicional (if/else, switch, ternario, cláusula guard, retorno temprano)
+   - Cada ruta de error (try/catch, rescue, boundary de error, fallback)
+   - Cada llamada a otra función (trázala — ¿ELLA tiene ramas sin probar?)
+   - Cada borde: ¿qué pasa con entrada null? ¿Array vacío? ¿Tipo inválido?
 
-This is the critical step — you're building a map of every line of code that can execute differently based on input. Every branch in this diagram needs a test.`);
+Este es el paso crítico — estás construyendo un mapa de cada línea de código que puede ejecutarse de manera diferente según la entrada. Cada rama en este diagrama necesita un test.`);
 
   // ── User flow coverage (shared) ──
   sections.push(`
-**${mode === 'ship' ? '2' : 'Step 2'}. Map user flows, interactions, and error states:**
+**${mode === 'ship' ? '2' : 'Paso 2'}. Mapear flujos de usuario, interacciones y estados de error:**
 
-Code coverage isn't enough — you need to cover how real users interact with the changed code. For each changed feature, think through:
+La cobertura de código no es suficiente — necesitas cubrir cómo los usuarios reales interactúan con el código cambiado. Para cada funcionalidad cambiada, piensa en:
 
-- **User flows:** What sequence of actions does a user take that touches this code? Map the full journey (e.g., "user clicks 'Pay' → form validates → API call → success/failure screen"). Each step in the journey needs a test.
-- **Interaction edge cases:** What happens when the user does something unexpected?
-  - Double-click/rapid resubmit
-  - Navigate away mid-operation (back button, close tab, click another link)
-  - Submit with stale data (page sat open for 30 minutes, session expired)
-  - Slow connection (API takes 10 seconds — what does the user see?)
-  - Concurrent actions (two tabs, same form)
-- **Error states the user can see:** For every error the code handles, what does the user actually experience?
-  - Is there a clear error message or a silent failure?
-  - Can the user recover (retry, go back, fix input) or are they stuck?
-  - What happens with no network? With a 500 from the API? With invalid data from the server?
-- **Empty/zero/boundary states:** What does the UI show with zero results? With 10,000 results? With a single character input? With maximum-length input?
+- **Flujos de usuario:** ¿Qué secuencia de acciones toma un usuario que toca este código? Mapea el recorrido completo (ej.: "el usuario hace clic en 'Pagar' → el formulario valida → llamada API → pantalla de éxito/fallo"). Cada paso del recorrido necesita un test.
+- **Casos extremos de interacción:** ¿Qué pasa cuando el usuario hace algo inesperado?
+  - Doble clic/re-envío rápido
+  - Navegar lejos a mitad de operación (botón atrás, cerrar pestaña, clic en otro enlace)
+  - Enviar con datos obsoletos (la página estuvo abierta 30 minutos, sesión expirada)
+  - Conexión lenta (la API tarda 10 segundos — ¿qué ve el usuario?)
+  - Acciones concurrentes (dos pestañas, mismo formulario)
+- **Estados de error que el usuario puede ver:** Para cada error que el código maneja, ¿qué experimenta realmente el usuario?
+  - ¿Hay un mensaje de error claro o un fallo silencioso?
+  - ¿Puede el usuario recuperarse (reintentar, volver, corregir entrada) o está atascado?
+  - ¿Qué pasa sin red? ¿Con un 500 de la API? ¿Con datos inválidos del servidor?
+- **Estados vacío/cero/límite:** ¿Qué muestra la UI con cero resultados? ¿Con 10,000 resultados? ¿Con una entrada de un solo carácter? ¿Con entrada de longitud máxima?
 
-Add these to your diagram alongside the code branches. A user flow with no test is just as much a gap as an untested if/else.`);
+Agrega estos a tu diagrama junto con las ramas de código. Un flujo de usuario sin test es una brecha tan grande como un if/else sin probar.`);
 
   // ── Check branches against tests + quality rubric (shared) ──
   sections.push(`
-**${mode === 'ship' ? '3' : 'Step 3'}. Check each branch against existing tests:**
+**${mode === 'ship' ? '3' : 'Paso 3'}. Verificar cada rama contra los tests existentes:**
 
-Go through your diagram branch by branch — both code paths AND user flows. For each one, search for a test that exercises it:
-- Function \`processPayment()\` → look for \`billing.test.ts\`, \`billing.spec.ts\`, \`test/billing_test.rb\`
-- An if/else → look for tests covering BOTH the true AND false path
-- An error handler → look for a test that triggers that specific error condition
-- A call to \`helperFn()\` that has its own branches → those branches need tests too
-- A user flow → look for an integration or E2E test that walks through the journey
-- An interaction edge case → look for a test that simulates the unexpected action
+Recorre tu diagrama rama por rama — tanto rutas de código COMO flujos de usuario. Para cada uno, busca un test que lo ejercite:
+- Función \`processPayment()\` → busca \`billing.test.ts\`, \`billing.spec.ts\`, \`test/billing_test.rb\`
+- Un if/else → busca tests que cubran AMBOS caminos verdadero Y falso
+- Un manejador de errores → busca un test que active esa condición específica de error
+- Una llamada a \`helperFn()\` que tiene sus propias ramas → esas ramas necesitan tests también
+- Un flujo de usuario → busca un test de integración o E2E que recorra el camino
+- Un caso extremo de interacción → busca un test que simule la acción inesperada
 
-Quality scoring rubric:
-- ★★★  Tests behavior with edge cases AND error paths
-- ★★   Tests correct behavior, happy path only
-- ★    Smoke test / existence check / trivial assertion (e.g., "it renders", "it doesn't throw")`);
+Rúbrica de puntuación de calidad:
+- ★★★  Prueba comportamiento con casos extremos Y rutas de error
+- ★★   Prueba comportamiento correcto, solo camino feliz
+- ★    Test smoke / verificación de existencia / assertion trivial (ej.: "renderiza", "no lanza excepción")`);
 
   // ── E2E test decision matrix (shared) ──
   sections.push(`
-### E2E Test Decision Matrix
+### Matriz de Decisión de Tests E2E
 
-When checking each branch, also determine whether a unit test or E2E/integration test is the right tool:
+Al verificar cada rama, también determina si un test unitario o un test E2E/integración es la herramienta correcta:
 
-**RECOMMEND E2E (mark as [→E2E] in the diagram):**
-- Common user flow spanning 3+ components/services (e.g., signup → verify email → first login)
-- Integration point where mocking hides real failures (e.g., API → queue → worker → DB)
-- Auth/payment/data-destruction flows — too important to trust unit tests alone
+**RECOMENDAR E2E (marcar como [→E2E] en el diagrama):**
+- Flujo común de usuario que abarca 3+ componentes/servicios (ej.: registro → verificar email → primer login)
+- Punto de integración donde el mocking oculta fallos reales (ej.: API → cola → worker → BD)
+- Flujos de auth/pago/destrucción-de-datos — demasiado importantes para confiar solo en tests unitarios
 
-**RECOMMEND EVAL (mark as [→EVAL] in the diagram):**
-- Critical LLM call that needs a quality eval (e.g., prompt change → test output still meets quality bar)
-- Changes to prompt templates, system instructions, or tool definitions
+**RECOMENDAR EVAL (marcar como [→EVAL] en el diagrama):**
+- Llamada crítica a LLM que necesita una evaluación de calidad (ej.: cambio de prompt → verificar que la salida cumple la barra de calidad)
+- Cambios en plantillas de prompt, instrucciones del sistema o definiciones de herramientas
 
-**STICK WITH UNIT TESTS:**
-- Pure function with clear inputs/outputs
-- Internal helper with no side effects
-- Edge case of a single function (null input, empty array)
-- Obscure/rare flow that isn't customer-facing`);
+**MANTENER TESTS UNITARIOS:**
+- Función pura con entradas/salidas claras
+- Helper interno sin efectos secundarios
+- Caso extremo de una sola función (entrada null, array vacío)
+- Flujo oscuro/raro que no es de cara al cliente`);
 
   // ── Regression rule (shared) ──
   sections.push(`
-### REGRESSION RULE (mandatory)
+### REGLA DE REGRESIÓN (obligatoria)
 
-**IRON RULE:** When the coverage audit identifies a REGRESSION — code that previously worked but the diff broke — a regression test is ${mode === 'plan' ? 'added to the plan as a critical requirement' : 'written immediately'}. No AskUserQuestion. No skipping. Regressions are the highest-priority test because they prove something broke.
+**REGLA DE HIERRO:** Cuando la auditoría de cobertura identifica una REGRESIÓN — código que antes funcionaba pero el diff rompió — un test de regresión se ${mode === 'plan' ? 'agrega al plan como requisito crítico' : 'escribe inmediatamente'}. Sin AskUserQuestion. Sin omitir. Las regresiones son el test de mayor prioridad porque prueban que algo se rompió.
 
-A regression is when:
-- The diff modifies existing behavior (not new code)
-- The existing test suite (if any) doesn't cover the changed path
-- The change introduces a new failure mode for existing callers
+Una regresión ocurre cuando:
+- El diff modifica comportamiento existente (no código nuevo)
+- La suite de tests existente (si la hay) no cubre la ruta cambiada
+- El cambio introduce un nuevo modo de fallo para llamadores existentes
 
-When uncertain whether a change is a regression, err on the side of writing the test.${mode !== 'plan' ? '\n\nFormat: commit as `test: regression test for {what broke}`' : ''}`);
+Ante la duda sobre si un cambio es una regresión, opta por escribir el test.${mode !== 'plan' ? '\n\nFormato: commit como `test: regression test for {what broke}`' : ''}`);
 
   // ── ASCII coverage diagram (shared) ──
   sections.push(`
-**${mode === 'ship' ? '4' : 'Step 4'}. Output ASCII coverage diagram:**
+**${mode === 'ship' ? '4' : 'Paso 4'}. Generar diagrama ASCII de cobertura:**
 
-Include BOTH code paths and user flows in the same diagram. Mark E2E-worthy and eval-worthy paths:
+Incluye TANTO rutas de código COMO flujos de usuario en el mismo diagrama. Marca las rutas que ameritan E2E y eval:
 
 \`\`\`
-CODE PATH COVERAGE
+COBERTURA DE RUTAS DE CÓDIGO
 ===========================
 [+] src/services/billing.ts
     │
     ├── processPayment()
-    │   ├── [★★★ TESTED] Happy path + card declined + timeout — billing.test.ts:42
-    │   ├── [GAP]         Network timeout — NO TEST
-    │   └── [GAP]         Invalid currency — NO TEST
+    │   ├── [★★★ PROBADO] Camino feliz + tarjeta rechazada + timeout — billing.test.ts:42
+    │   ├── [GAP]          Timeout de red — SIN TEST
+    │   └── [GAP]          Moneda inválida — SIN TEST
     │
     └── refundPayment()
-        ├── [★★  TESTED] Full refund — billing.test.ts:89
-        └── [★   TESTED] Partial refund (checks non-throw only) — billing.test.ts:101
+        ├── [★★  PROBADO] Reembolso total — billing.test.ts:89
+        └── [★   PROBADO] Reembolso parcial (solo verifica que no lanza) — billing.test.ts:101
 
-USER FLOW COVERAGE
+COBERTURA DE FLUJOS DE USUARIO
 ===========================
-[+] Payment checkout flow
+[+] Flujo de pago en checkout
     │
-    ├── [★★★ TESTED] Complete purchase — checkout.e2e.ts:15
-    ├── [GAP] [→E2E] Double-click submit — needs E2E, not just unit
-    ├── [GAP]         Navigate away during payment — unit test sufficient
-    └── [★   TESTED]  Form validation errors (checks render only) — checkout.test.ts:40
+    ├── [★★★ PROBADO] Compra completa — checkout.e2e.ts:15
+    ├── [GAP] [→E2E] Doble clic en enviar — necesita E2E, no solo unitario
+    ├── [GAP]         Navegar lejos durante el pago — test unitario suficiente
+    └── [★   PROBADO] Errores de validación del formulario (solo verifica render) — checkout.test.ts:40
 
-[+] Error states
+[+] Estados de error
     │
-    ├── [★★  TESTED] Card declined message — billing.test.ts:58
-    ├── [GAP]         Network timeout UX (what does user see?) — NO TEST
-    └── [GAP]         Empty cart submission — NO TEST
+    ├── [★★  PROBADO] Mensaje de tarjeta rechazada — billing.test.ts:58
+    ├── [GAP]          UX de timeout de red (¿qué ve el usuario?) — SIN TEST
+    └── [GAP]          Envío con carrito vacío — SIN TEST
 
-[+] LLM integration
+[+] Integración LLM
     │
-    └── [GAP] [→EVAL] Prompt template change — needs eval test
+    └── [GAP] [→EVAL] Cambio de plantilla de prompt — necesita test eval
 
 ─────────────────────────────────
-COVERAGE: 5/13 paths tested (38%)
-  Code paths: 3/5 (60%)
-  User flows: 2/8 (25%)
-QUALITY:  ★★★: 2  ★★: 2  ★: 1
-GAPS: 8 paths need tests (2 need E2E, 1 needs eval)
+COBERTURA: 5/13 rutas probadas (38%)
+  Rutas de código: 3/5 (60%)
+  Flujos de usuario: 2/8 (25%)
+CALIDAD:  ★★★: 2  ★★: 2  ★: 1
+BRECHAS: 8 rutas necesitan tests (2 necesitan E2E, 1 necesita eval)
 ─────────────────────────────────
 \`\`\`
 
-**Fast path:** All paths covered → "${mode === 'ship' ? 'Step 3.4' : mode === 'review' ? 'Step 4.75' : 'Test review'}: All new code paths have test coverage ✓" Continue.`);
+**Camino rápido:** Todas las rutas cubiertas → "${mode === 'ship' ? 'Paso 3.4' : mode === 'review' ? 'Paso 4.75' : 'Revisión de tests'}: Todas las nuevas rutas de código tienen cobertura de tests ✓" Continuar.`);
 
   // ── Mode-specific action section ──
   if (mode === 'plan') {
     sections.push(`
-**Step 5. Add missing tests to the plan:**
+**Paso 5. Agregar tests faltantes al plan:**
 
-For each GAP identified in the diagram, add a test requirement to the plan. Be specific:
-- What test file to create (match existing naming conventions)
-- What the test should assert (specific inputs → expected outputs/behavior)
-- Whether it's a unit test, E2E test, or eval (use the decision matrix)
-- For regressions: flag as **CRITICAL** and explain what broke
+Para cada GAP identificado en el diagrama, agrega un requisito de test al plan. Sé específico:
+- Qué archivo de test crear (coincide con las convenciones de nomenclatura existentes)
+- Qué debe verificar el test (entradas específicas → salidas/comportamiento esperado)
+- Si es un test unitario, test E2E, o eval (usa la matriz de decisión)
+- Para regresiones: marcar como **CRITICAL** y explicar qué se rompió
 
-The plan should be complete enough that when implementation begins, every test is written alongside the feature code — not deferred to a follow-up.`);
+El plan debe ser lo suficientemente completo para que cuando comience la implementación, cada test se escriba junto con el código de la funcionalidad — no diferido a un seguimiento.`);
 
     // ── Test plan artifact (plan + ship) ──
     sections.push(`
-### Test Plan Artifact
+### Artefacto del Plan de Tests
 
-After producing the coverage diagram, write a test plan artifact to the project directory so \`/qa\` and \`/qa-only\` can consume it as primary test input:
+Después de producir el diagrama de cobertura, escribe un artefacto de plan de tests en el directorio del proyecto para que \`/qa\` y \`/qa-only\` puedan consumirlo como entrada primaria de tests:
 
 \`\`\`bash
 eval "$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)" && mkdir -p ~/.gstack/projects/$SLUG
@@ -404,96 +404,96 @@ USER=$(whoami)
 DATETIME=$(date +%Y%m%d-%H%M%S)
 \`\`\`
 
-Write to \`~/.gstack/projects/{slug}/{user}-{branch}-eng-review-test-plan-{datetime}.md\`:
+Escribe en \`~/.gstack/projects/{slug}/{user}-{branch}-eng-review-test-plan-{datetime}.md\`:
 
 \`\`\`markdown
-# Test Plan
-Generated by /plan-eng-review on {date}
-Branch: {branch}
+# Plan de Tests
+Generado por /plan-eng-review el {date}
+Rama: {branch}
 Repo: {owner/repo}
 
-## Affected Pages/Routes
-- {URL path} — {what to test and why}
+## Páginas/Rutas Afectadas
+- {ruta URL} — {qué probar y por qué}
 
-## Key Interactions to Verify
-- {interaction description} on {page}
+## Interacciones Clave a Verificar
+- {descripción de interacción} en {página}
 
-## Edge Cases
-- {edge case} on {page}
+## Casos Extremos
+- {caso extremo} en {página}
 
-## Critical Paths
-- {end-to-end flow that must work}
+## Rutas Críticas
+- {flujo extremo a extremo que debe funcionar}
 \`\`\`
 
-This file is consumed by \`/qa\` and \`/qa-only\` as primary test input. Include only the information that helps a QA tester know **what to test and where** — not implementation details.`);
+Este archivo es consumido por \`/qa\` y \`/qa-only\` como entrada primaria de tests. Incluye solo la información que ayuda a un tester de QA a saber **qué probar y dónde** — no detalles de implementación.`);
   } else if (mode === 'ship') {
     sections.push(`
-**5. Generate tests for uncovered paths:**
+**5. Generar tests para rutas sin cobertura:**
 
-If test framework detected (or bootstrapped in Step 2.5):
-- Prioritize error handlers and edge cases first (happy paths are more likely already tested)
-- Read 2-3 existing test files to match conventions exactly
-- Generate unit tests. Mock all external dependencies (DB, API, Redis).
-- For paths marked [→E2E]: generate integration/E2E tests using the project's E2E framework (Playwright, Cypress, Capybara, etc.)
-- For paths marked [→EVAL]: generate eval tests using the project's eval framework, or flag for manual eval if none exists
-- Write tests that exercise the specific uncovered path with real assertions
-- Run each test. Passes → commit as \`test: coverage for {feature}\`
-- Fails → fix once. Still fails → revert, note gap in diagram.
+Si se detectó un framework de tests (o se hizo bootstrap en el Paso 2.5):
+- Prioriza manejadores de errores y casos extremos primero (los caminos felices son más probablemente ya testeados)
+- Lee 2-3 archivos de test existentes para coincidir exactamente con las convenciones
+- Genera tests unitarios. Mockea todas las dependencias externas (BD, API, Redis).
+- Para rutas marcadas [→E2E]: genera tests de integración/E2E usando el framework E2E del proyecto (Playwright, Cypress, Capybara, etc.)
+- Para rutas marcadas [→EVAL]: genera tests eval usando el framework eval del proyecto, o marca para eval manual si no existe ninguno
+- Escribe tests que ejerciten la ruta específica sin cobertura con assertions reales
+- Ejecuta cada test. Pasa → commit como \`test: coverage for {feature}\`
+- Falla → arregla una vez. Sigue fallando → revierte, anota brecha en el diagrama.
 
-Caps: 30 code paths max, 20 tests generated max (code + user flow combined), 2-min per-test exploration cap.
+Límites: máximo 30 rutas de código, máximo 20 tests generados (código + flujo de usuario combinados), límite de 2 min de exploración por test.
 
-If no test framework AND user declined bootstrap → diagram only, no generation. Note: "Test generation skipped — no test framework configured."
+Si no hay framework de tests Y el usuario rechazó el bootstrap → solo diagrama, sin generación. Nota: "Generación de tests omitida — no hay framework de tests configurado."
 
-**Diff is test-only changes:** Skip Step 3.4 entirely: "No new application code paths to audit."
+**El diff solo contiene cambios de tests:** Omite el Paso 3.4 por completo: "Sin nuevas rutas de código de aplicación para auditar."
 
-**6. After-count and coverage summary:**
+**6. Conteo final y resumen de cobertura:**
 
 \`\`\`bash
-# Count test files after generation
+# Contar archivos de test después de la generación
 find . -name '*.test.*' -o -name '*.spec.*' -o -name '*_test.*' -o -name '*_spec.*' | grep -v node_modules | wc -l
 \`\`\`
 
-For PR body: \`Tests: {before} → {after} (+{delta} new)\`
-Coverage line: \`Test Coverage Audit: N new code paths. M covered (X%). K tests generated, J committed.\`
+Para el cuerpo del PR: \`Tests: {antes} → {después} (+{delta} nuevos)\`
+Línea de cobertura: \`Auditoría de Cobertura de Tests: N nuevas rutas de código. M cubiertas (X%). K tests generados, J committeados.\`
 
-**7. Coverage gate:**
+**7. Gate de cobertura:**
 
-Before proceeding, check CLAUDE.md for a \`## Test Coverage\` section with \`Minimum:\` and \`Target:\` fields. If found, use those percentages. Otherwise use defaults: Minimum = 60%, Target = 80%.
+Antes de proceder, revisa CLAUDE.md buscando una sección \`## Test Coverage\` con campos \`Minimum:\` y \`Target:\`. Si se encuentran, usa esos porcentajes. De lo contrario usa los defaults: Mínimo = 60%, Objetivo = 80%.
 
-Using the coverage percentage from the diagram in substep 4 (the \`COVERAGE: X/Y (Z%)\` line):
+Usando el porcentaje de cobertura del diagrama en el subpaso 4 (la línea \`COBERTURA: X/Y (Z%)\`):
 
-- **>= target:** Pass. "Coverage gate: PASS ({X}%)." Continue.
-- **>= minimum, < target:** Use AskUserQuestion:
-  - "AI-assessed coverage is {X}%. {N} code paths are untested. Target is {target}%."
-  - RECOMMENDATION: Choose A because untested code paths are where production bugs hide.
-  - Options:
-    A) Generate more tests for remaining gaps (recommended)
-    B) Ship anyway — I accept the coverage risk
-    C) These paths don't need tests — mark as intentionally uncovered
-  - If A: Loop back to substep 5 (generate tests) targeting the remaining gaps. After second pass, if still below target, present AskUserQuestion again with updated numbers. Maximum 2 generation passes total.
-  - If B: Continue. Include in PR body: "Coverage gate: {X}% — user accepted risk."
-  - If C: Continue. Include in PR body: "Coverage gate: {X}% — {N} paths intentionally uncovered."
+- **>= objetivo:** Aprobado. "Gate de cobertura: APROBADO ({X}%)." Continuar.
+- **>= mínimo, < objetivo:** Usa AskUserQuestion:
+  - "La cobertura evaluada por IA es {X}%. {N} rutas de código están sin probar. El objetivo es {target}%."
+  - RECOMMENDATION: Elige A porque las rutas de código sin probar son donde se esconden los bugs de producción.
+  - Opciones:
+    A) Generar más tests para las brechas restantes (recomendado)
+    B) Enviar de todos modos — acepto el riesgo de cobertura
+    C) Estas rutas no necesitan tests — marcar como intencionalmente sin cobertura
+  - Si A: Vuelve al subpaso 5 (generar tests) apuntando a las brechas restantes. Después del segundo pase, si sigue debajo del objetivo, presenta AskUserQuestion de nuevo con números actualizados. Máximo 2 pases de generación en total.
+  - Si B: Continuar. Incluir en el cuerpo del PR: "Gate de cobertura: {X}% — usuario aceptó el riesgo."
+  - Si C: Continuar. Incluir en el cuerpo del PR: "Gate de cobertura: {X}% — {N} rutas intencionalmente sin cobertura."
 
-- **< minimum:** Use AskUserQuestion:
-  - "AI-assessed coverage is critically low ({X}%). {N} of {M} code paths have no tests. Minimum threshold is {minimum}%."
-  - RECOMMENDATION: Choose A because less than {minimum}% means more code is untested than tested.
-  - Options:
-    A) Generate tests for remaining gaps (recommended)
-    B) Override — ship with low coverage (I understand the risk)
-  - If A: Loop back to substep 5. Maximum 2 passes. If still below minimum after 2 passes, present the override choice again.
-  - If B: Continue. Include in PR body: "Coverage gate: OVERRIDDEN at {X}%."
+- **< mínimo:** Usa AskUserQuestion:
+  - "La cobertura evaluada por IA es críticamente baja ({X}%). {N} de {M} rutas de código no tienen tests. El umbral mínimo es {minimum}%."
+  - RECOMMENDATION: Elige A porque menos de {minimum}% significa que hay más código sin probar que probado.
+  - Opciones:
+    A) Generar tests para las brechas restantes (recomendado)
+    B) Anular — enviar con baja cobertura (entiendo el riesgo)
+  - Si A: Vuelve al subpaso 5. Máximo 2 pases. Si sigue debajo del mínimo después de 2 pases, presenta la opción de anulación de nuevo.
+  - Si B: Continuar. Incluir en el cuerpo del PR: "Gate de cobertura: ANULADO en {X}%."
 
-**Coverage percentage undetermined:** If the coverage diagram doesn't produce a clear numeric percentage (ambiguous output, parse error), **skip the gate** with: "Coverage gate: could not determine percentage — skipping." Do not default to 0% or block.
+**Porcentaje de cobertura indeterminado:** Si el diagrama de cobertura no produce un porcentaje numérico claro (salida ambigua, error de parsing), **omite el gate** con: "Gate de cobertura: no se pudo determinar el porcentaje — omitiendo." No asumas 0% ni bloquees.
 
-**Test-only diffs:** Skip the gate (same as the existing fast-path).
+**Diffs solo de tests:** Omite el gate (igual que el camino rápido existente).
 
-**100% coverage:** "Coverage gate: PASS (100%)." Continue.`);
+**100% de cobertura:** "Gate de cobertura: APROBADO (100%)." Continuar.`);
 
     // ── Test plan artifact (ship mode) ──
     sections.push(`
-### Test Plan Artifact
+### Artefacto del Plan de Tests
 
-After producing the coverage diagram, write a test plan artifact so \`/qa\` and \`/qa-only\` can consume it:
+Después de producir el diagrama de cobertura, escribe un artefacto de plan de tests para que \`/qa\` y \`/qa-only\` puedan consumirlo:
 
 \`\`\`bash
 eval "$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)" && mkdir -p ~/.gstack/projects/$SLUG
@@ -501,58 +501,58 @@ USER=$(whoami)
 DATETIME=$(date +%Y%m%d-%H%M%S)
 \`\`\`
 
-Write to \`~/.gstack/projects/{slug}/{user}-{branch}-ship-test-plan-{datetime}.md\`:
+Escribe en \`~/.gstack/projects/{slug}/{user}-{branch}-ship-test-plan-{datetime}.md\`:
 
 \`\`\`markdown
-# Test Plan
-Generated by /ship on {date}
-Branch: {branch}
+# Plan de Tests
+Generado por /ship el {date}
+Rama: {branch}
 Repo: {owner/repo}
 
-## Affected Pages/Routes
-- {URL path} — {what to test and why}
+## Páginas/Rutas Afectadas
+- {ruta URL} — {qué probar y por qué}
 
-## Key Interactions to Verify
-- {interaction description} on {page}
+## Interacciones Clave a Verificar
+- {descripción de interacción} en {página}
 
-## Edge Cases
-- {edge case} on {page}
+## Casos Extremos
+- {caso extremo} en {página}
 
-## Critical Paths
-- {end-to-end flow that must work}
+## Rutas Críticas
+- {flujo extremo a extremo que debe funcionar}
 \`\`\``);
   } else {
     // review mode
     sections.push(`
-**Step 5. Generate tests for gaps (Fix-First):**
+**Paso 5. Generar tests para brechas (Fix-First):**
 
-If test framework is detected and gaps were identified:
-- Classify each gap as AUTO-FIX or ASK per the Fix-First Heuristic:
-  - **AUTO-FIX:** Simple unit tests for pure functions, edge cases of existing tested functions
-  - **ASK:** E2E tests, tests requiring new test infrastructure, tests for ambiguous behavior
-- For AUTO-FIX gaps: generate the test, run it, commit as \`test: coverage for {feature}\`
-- For ASK gaps: include in the Fix-First batch question with the other review findings
-- For paths marked [→E2E]: always ASK (E2E tests are higher-effort and need user confirmation)
-- For paths marked [→EVAL]: always ASK (eval tests need user confirmation on quality criteria)
+Si se detectó un framework de tests y se identificaron brechas:
+- Clasifica cada brecha como AUTO-FIX o ASK según la Heurística Fix-First:
+  - **AUTO-FIX:** Tests unitarios simples para funciones puras, casos extremos de funciones ya probadas
+  - **ASK:** Tests E2E, tests que requieren nueva infraestructura de testing, tests para comportamiento ambiguo
+- Para brechas AUTO-FIX: genera el test, ejecútalo, commit como \`test: coverage for {feature}\`
+- Para brechas ASK: incluye en la pregunta batch Fix-First con los otros hallazgos de la revisión
+- Para rutas marcadas [→E2E]: siempre ASK (los tests E2E son de mayor esfuerzo y necesitan confirmación del usuario)
+- Para rutas marcadas [→EVAL]: siempre ASK (los tests eval necesitan confirmación del usuario sobre criterios de calidad)
 
-If no test framework detected → include gaps as INFORMATIONAL findings only, no generation.
+Si no se detectó framework de tests → incluye brechas como hallazgos solo INFORMATIONAL, sin generación.
 
-**Diff is test-only changes:** Skip Step 4.75 entirely: "No new application code paths to audit."
+**El diff solo contiene cambios de tests:** Omite el Paso 4.75 por completo: "Sin nuevas rutas de código de aplicación para auditar."
 
-### Coverage Warning
+### Advertencia de Cobertura
 
-After producing the coverage diagram, check the coverage percentage. Read CLAUDE.md for a \`## Test Coverage\` section with a \`Minimum:\` field. If not found, use default: 60%.
+Después de producir el diagrama de cobertura, revisa el porcentaje de cobertura. Lee CLAUDE.md buscando una sección \`## Test Coverage\` con un campo \`Minimum:\`. Si no se encuentra, usa el default: 60%.
 
-If coverage is below the minimum threshold, output a prominent warning **before** the regular review findings:
+Si la cobertura está debajo del umbral mínimo, genera una advertencia prominente **antes** de los hallazgos regulares de la revisión:
 
 \`\`\`
-⚠️ COVERAGE WARNING: AI-assessed coverage is {X}%. {N} code paths untested.
-Consider writing tests before running /ship.
+⚠️ ADVERTENCIA DE COBERTURA: La cobertura evaluada por IA es {X}%. {N} rutas de código sin probar.
+Considera escribir tests antes de ejecutar /ship.
 \`\`\`
 
-This is INFORMATIONAL — does not block /review. But it makes low coverage visible early so the developer can address it before reaching the /ship coverage gate.
+Esto es INFORMATIONAL — no bloquea /review. Pero hace visible la baja cobertura tempranamente para que el desarrollador pueda abordarla antes de llegar al gate de cobertura de /ship.
 
-If coverage percentage cannot be determined, skip the warning silently.`);
+Si el porcentaje de cobertura no puede determinarse, omite la advertencia silenciosamente.`);
   }
 
   return sections.join('\n');

@@ -1,231 +1,230 @@
 import type { TemplateContext } from './types';
 
 export function generateReviewDashboard(_ctx: TemplateContext): string {
-  return `## Review Readiness Dashboard
+  return `## Panel de Estado de Revisiones
 
-After completing the review, read the review log and config to display the dashboard.
+Después de completar la revisión, lee el registro de revisión y la configuración para mostrar el panel.
 
 \`\`\`bash
 ~/.claude/skills/gstack/bin/gstack-review-read
 \`\`\`
 
-Parse the output. Find the most recent entry for each skill (plan-ceo-review, plan-eng-review, review, plan-design-review, design-review-lite, adversarial-review, codex-review, codex-plan-review). Ignore entries with timestamps older than 7 days. For the Eng Review row, show whichever is more recent between \`review\` (diff-scoped pre-landing review) and \`plan-eng-review\` (plan-stage architecture review). Append "(DIFF)" or "(PLAN)" to the status to distinguish. For the Adversarial row, show whichever is more recent between \`adversarial-review\` (new auto-scaled) and \`codex-review\` (legacy). For Design Review, show whichever is more recent between \`plan-design-review\` (full visual audit) and \`design-review-lite\` (code-level check). Append "(FULL)" or "(LITE)" to the status to distinguish. Display:
+Analiza la salida. Encuentra la entrada más reciente de cada skill (plan-ceo-review, plan-eng-review, review, plan-design-review, design-review-lite, adversarial-review, codex-review, codex-plan-review). Ignora las entradas con timestamps de más de 7 días de antigüedad. Para la fila de Revisión de Ingeniería, muestra la más reciente entre \`review\` (revisión pre-landing del diff) y \`plan-eng-review\` (revisión de arquitectura en fase de planificación). Agrega "(DIFF)" o "(PLAN)" al estado para distinguir. Para la fila de Adversarial, muestra la más reciente entre \`adversarial-review\` (nuevo auto-escalado) y \`codex-review\` (legacy). Para Revisión de Diseño, muestra la más reciente entre \`plan-design-review\` (auditoría visual completa) y \`design-review-lite\` (verificación a nivel de código). Agrega "(FULL)" o "(LITE)" al estado para distinguir. Muestra:
 
 \`\`\`
 +====================================================================+
-|                    REVIEW READINESS DASHBOARD                       |
+|                    PANEL DE ESTADO DE REVISIONES                     |
 +====================================================================+
-| Review          | Runs | Last Run            | Status    | Required |
-|-----------------|------|---------------------|-----------|----------|
-| Eng Review      |  1   | 2026-03-16 15:00    | CLEAR     | YES      |
-| CEO Review      |  0   | —                   | —         | no       |
-| Design Review   |  0   | —                   | —         | no       |
-| Adversarial     |  0   | —                   | —         | no       |
-| Outside Voice   |  0   | —                   | —         | no       |
+| Revisión        | Ejecuciones | Última Ejecución    | Estado    | Requerida |
+|-----------------|-------------|---------------------|-----------|-----------|
+| Rev. Ingeniería |  1          | 2026-03-16 15:00    | LIMPIA    | SÍ        |
+| Rev. CEO        |  0          | —                   | —         | no        |
+| Rev. Diseño     |  0          | —                   | —         | no        |
+| Adversarial     |  0          | —                   | —         | no        |
+| Voz Externa     |  0          | —                   | —         | no        |
 +--------------------------------------------------------------------+
-| VERDICT: CLEARED — Eng Review passed                                |
+| VEREDICTO: APROBADO — Revisión de Ingeniería superada               |
 +====================================================================+
 \`\`\`
 
-**Review tiers:**
-- **Eng Review (required by default):** The only review that gates shipping. Covers architecture, code quality, tests, performance. Can be disabled globally with \\\`gstack-config set skip_eng_review true\\\` (the "don't bother me" setting).
-- **CEO Review (optional):** Use your judgment. Recommend it for big product/business changes, new user-facing features, or scope decisions. Skip for bug fixes, refactors, infra, and cleanup.
-- **Design Review (optional):** Use your judgment. Recommend it for UI/UX changes. Skip for backend-only, infra, or prompt-only changes.
-- **Adversarial Review (automatic):** Auto-scales by diff size. Small diffs (<50 lines) skip adversarial. Medium diffs (50–199) get cross-model adversarial. Large diffs (200+) get all 4 passes: Claude structured, Codex structured, Claude adversarial subagent, Codex adversarial. No configuration needed.
-- **Outside Voice (optional):** Independent plan review from a different AI model. Offered after all review sections complete in /plan-ceo-review and /plan-eng-review. Falls back to Claude subagent if Codex is unavailable. Never gates shipping.
+**Niveles de revisión:**
+- **Revisión de Ingeniería (requerida por defecto):** La única revisión que bloquea el envío. Cubre arquitectura, calidad de código, tests, rendimiento. Se puede desactivar globalmente con \\\`gstack-config set skip_eng_review true\\\` (la opción "no me molestes").
+- **Revisión CEO (opcional):** Usa tu criterio. Recomiéndala para cambios importantes de producto/negocio, nuevas funcionalidades visibles al usuario, o decisiones de alcance. Omítela para correcciones de bugs, refactorizaciones, infraestructura y limpieza.
+- **Revisión de Diseño (opcional):** Usa tu criterio. Recomiéndala para cambios de UI/UX. Omítela para cambios solo de backend, infraestructura o solo de prompts.
+- **Revisión Adversarial (automática):** Se escala automáticamente según el tamaño del diff. Diffs pequeños (<50 líneas) omiten la revisión adversarial. Diffs medianos (50–199) obtienen revisión adversarial cross-model. Diffs grandes (200+) obtienen los 4 pases: Claude estructurado, Codex estructurado, subagente adversarial de Claude, Codex adversarial. No requiere configuración.
+- **Voz Externa (opcional):** Revisión independiente del plan desde un modelo de IA diferente. Se ofrece después de completar todas las secciones de revisión en /plan-ceo-review y /plan-eng-review. Recurre al subagente de Claude si Codex no está disponible. Nunca bloquea el envío.
 
-**Verdict logic:**
-- **CLEARED**: Eng Review has >= 1 entry within 7 days from either \\\`review\\\` or \\\`plan-eng-review\\\` with status "clean" (or \\\`skip_eng_review\\\` is \\\`true\\\`)
-- **NOT CLEARED**: Eng Review missing, stale (>7 days), or has open issues
-- CEO, Design, and Codex reviews are shown for context but never block shipping
-- If \\\`skip_eng_review\\\` config is \\\`true\\\`, Eng Review shows "SKIPPED (global)" and verdict is CLEARED
+**Lógica del veredicto:**
+- **APROBADO**: La Revisión de Ingeniería tiene >= 1 entrada dentro de 7 días de \\\`review\\\` o \\\`plan-eng-review\\\` con estado "clean" (o \\\`skip_eng_review\\\` es \\\`true\\\`)
+- **NO APROBADO**: Revisión de Ingeniería faltante, obsoleta (>7 días) o con incidencias abiertas
+- Las revisiones de CEO, Diseño y Codex se muestran como contexto pero nunca bloquean el envío
+- Si la configuración \\\`skip_eng_review\\\` es \\\`true\\\`, la Revisión de Ingeniería muestra "OMITIDA (global)" y el veredicto es APROBADO
 
-**Staleness detection:** After displaying the dashboard, check if any existing reviews may be stale:
-- Parse the \\\`---HEAD---\\\` section from the bash output to get the current HEAD commit hash
-- For each review entry that has a \\\`commit\\\` field: compare it against the current HEAD. If different, count elapsed commits: \\\`git rev-list --count STORED_COMMIT..HEAD\\\`. Display: "Note: {skill} review from {date} may be stale — {N} commits since review"
-- For entries without a \\\`commit\\\` field (legacy entries): display "Note: {skill} review from {date} has no commit tracking — consider re-running for accurate staleness detection"
-- If all reviews match the current HEAD, do not display any staleness notes`;
+**Detección de obsolescencia:** Después de mostrar el panel, comprueba si alguna revisión existente puede estar obsoleta:
+- Analiza la sección \\\`---HEAD---\\\` de la salida de bash para obtener el hash del commit HEAD actual
+- Para cada entrada de revisión que tenga un campo \\\`commit\\\`: compáralo con el HEAD actual. Si es diferente, cuenta los commits transcurridos: \\\`git rev-list --count STORED_COMMIT..HEAD\\\`. Muestra: "Nota: la revisión de {skill} del {date} puede estar obsoleta — {N} commits desde la revisión"
+- Para entradas sin campo \\\`commit\\\` (entradas legacy): muestra "Nota: la revisión de {skill} del {date} no tiene seguimiento de commits — considera re-ejecutarla para una detección precisa de obsolescencia"
+- Si todas las revisiones coinciden con el HEAD actual, no muestres notas de obsolescencia`;
 }
 
 export function generatePlanFileReviewReport(_ctx: TemplateContext): string {
-  return `## Plan File Review Report
+  return `## Informe de Revisión del Archivo de Plan
 
-After displaying the Review Readiness Dashboard in conversation output, also update the
-**plan file** itself so review status is visible to anyone reading the plan.
+Después de mostrar el Panel de Estado de Revisiones en la salida de la conversación, también actualiza
+el **archivo de plan** para que el estado de la revisión sea visible para cualquiera que lea el plan.
 
-### Detect the plan file
+### Detectar el archivo de plan
 
-1. Check if there is an active plan file in this conversation (the host provides plan file
-   paths in system messages — look for plan file references in the conversation context).
-2. If not found, skip this section silently — not every review runs in plan mode.
+1. Comprueba si hay un archivo de plan activo en esta conversación (el host proporciona rutas
+   de archivos de plan en mensajes del sistema — busca referencias a archivos de plan en el contexto de la conversación).
+2. Si no se encuentra, omite esta sección silenciosamente — no todas las revisiones se ejecutan en modo plan.
 
-### Generate the report
+### Generar el informe
 
-Read the review log output you already have from the Review Readiness Dashboard step above.
-Parse each JSONL entry. Each skill logs different fields:
+Lee la salida del registro de revisión que ya tienes del paso del Panel de Estado de Revisiones anterior.
+Analiza cada entrada JSONL. Cada skill registra campos diferentes:
 
 - **plan-ceo-review**: \\\`status\\\`, \\\`unresolved\\\`, \\\`critical_gaps\\\`, \\\`mode\\\`, \\\`scope_proposed\\\`, \\\`scope_accepted\\\`, \\\`scope_deferred\\\`, \\\`commit\\\`
-  → Findings: "{scope_proposed} proposals, {scope_accepted} accepted, {scope_deferred} deferred"
-  → If scope fields are 0 or missing (HOLD/REDUCTION mode): "mode: {mode}, {critical_gaps} critical gaps"
+  → Hallazgos: "{scope_proposed} propuestas, {scope_accepted} aceptadas, {scope_deferred} diferidas"
+  → Si los campos de scope son 0 o no existen (modo HOLD/REDUCTION): "modo: {mode}, {critical_gaps} brechas críticas"
 - **plan-eng-review**: \\\`status\\\`, \\\`unresolved\\\`, \\\`critical_gaps\\\`, \\\`issues_found\\\`, \\\`mode\\\`, \\\`commit\\\`
-  → Findings: "{issues_found} issues, {critical_gaps} critical gaps"
+  → Hallazgos: "{issues_found} incidencias, {critical_gaps} brechas críticas"
 - **plan-design-review**: \\\`status\\\`, \\\`initial_score\\\`, \\\`overall_score\\\`, \\\`unresolved\\\`, \\\`decisions_made\\\`, \\\`commit\\\`
-  → Findings: "score: {initial_score}/10 → {overall_score}/10, {decisions_made} decisions"
+  → Hallazgos: "puntuación: {initial_score}/10 → {overall_score}/10, {decisions_made} decisiones"
 - **codex-review**: \\\`status\\\`, \\\`gate\\\`, \\\`findings\\\`, \\\`findings_fixed\\\`
-  → Findings: "{findings} findings, {findings_fixed}/{findings} fixed"
+  → Hallazgos: "{findings} hallazgos, {findings_fixed}/{findings} corregidos"
 
-All fields needed for the Findings column are now present in the JSONL entries.
-For the review you just completed, you may use richer details from your own Completion
-Summary. For prior reviews, use the JSONL fields directly — they contain all required data.
+Todos los campos necesarios para la columna de Hallazgos están ahora presentes en las entradas JSONL.
+Para la revisión que acabas de completar, puedes usar detalles más ricos de tu propio Resumen
+de Finalización. Para revisiones anteriores, usa los campos JSONL directamente — contienen todos los datos necesarios.
 
-Produce this markdown table:
+Genera esta tabla markdown:
 
 \\\`\\\`\\\`markdown
-## GSTACK REVIEW REPORT
+## INFORME DE REVISIÓN GSTACK
 
-| Review | Trigger | Why | Runs | Status | Findings |
-|--------|---------|-----|------|--------|----------|
-| CEO Review | \\\`/plan-ceo-review\\\` | Scope & strategy | {runs} | {status} | {findings} |
-| Codex Review | \\\`/codex review\\\` | Independent 2nd opinion | {runs} | {status} | {findings} |
-| Eng Review | \\\`/plan-eng-review\\\` | Architecture & tests (required) | {runs} | {status} | {findings} |
-| Design Review | \\\`/plan-design-review\\\` | UI/UX gaps | {runs} | {status} | {findings} |
+| Revisión | Disparador | Por qué | Ejecuciones | Estado | Hallazgos |
+|----------|------------|---------|-------------|--------|-----------|
+| Rev. CEO | \\\`/plan-ceo-review\\\` | Alcance y estrategia | {runs} | {status} | {findings} |
+| Rev. Codex | \\\`/codex review\\\` | 2.ª opinión independiente | {runs} | {status} | {findings} |
+| Rev. Ingeniería | \\\`/plan-eng-review\\\` | Arquitectura y tests (requerida) | {runs} | {status} | {findings} |
+| Rev. Diseño | \\\`/plan-design-review\\\` | Brechas de UI/UX | {runs} | {status} | {findings} |
 \\\`\\\`\\\`
 
-Below the table, add these lines (omit any that are empty/not applicable):
+Debajo de la tabla, agrega estas líneas (omite las que estén vacías o no apliquen):
 
-- **CODEX:** (only if codex-review ran) — one-line summary of codex fixes
-- **CROSS-MODEL:** (only if both Claude and Codex reviews exist) — overlap analysis
-- **UNRESOLVED:** total unresolved decisions across all reviews
-- **VERDICT:** list reviews that are CLEAR (e.g., "CEO + ENG CLEARED — ready to implement").
-  If Eng Review is not CLEAR and not skipped globally, append "eng review required".
+- **CODEX:** (solo si se ejecutó codex-review) — resumen en una línea de las correcciones de Codex
+- **CROSS-MODEL:** (solo si existen revisiones tanto de Claude como de Codex) — análisis de solapamiento
+- **SIN RESOLVER:** total de decisiones sin resolver en todas las revisiones
+- **VEREDICTO:** lista las revisiones que están APROBADAS (ej.: "CEO + ING APROBADAS — listo para implementar").
+  Si la Revisión de Ingeniería no está APROBADA y no está omitida globalmente, agrega "revisión de ingeniería requerida".
 
-### Write to the plan file
+### Escribir en el archivo de plan
 
-**PLAN MODE EXCEPTION — ALWAYS RUN:** This writes to the plan file, which is the one
-file you are allowed to edit in plan mode. The plan file review report is part of the
-plan's living status.
+**EXCEPCIÓN DE MODO PLAN — EJECUTAR SIEMPRE:** Esto escribe en el archivo de plan, que es el único
+archivo que se permite editar en modo plan. El informe de revisión del archivo de plan es parte del
+estado vivo del plan.
 
-- Search the plan file for a \\\`## GSTACK REVIEW REPORT\\\` section **anywhere** in the file
-  (not just at the end — content may have been added after it).
-- If found, **replace it** entirely using the Edit tool. Match from \\\`## GSTACK REVIEW REPORT\\\`
-  through either the next \\\`## \\\` heading or end of file, whichever comes first. This ensures
-  content added after the report section is preserved, not eaten. If the Edit fails
-  (e.g., concurrent edit changed the content), re-read the plan file and retry once.
-- If no such section exists, **append it** to the end of the plan file.
-- Always place it as the very last section in the plan file. If it was found mid-file,
-  move it: delete the old location and append at the end.`;
+- Busca en el archivo de plan una sección \\\`## INFORME DE REVISIÓN GSTACK\\\` **en cualquier parte** del archivo
+  (no solo al final — puede haberse agregado contenido después).
+- Si se encuentra, **reemplázala** completamente usando la herramienta Edit. Busca desde \\\`## INFORME DE REVISIÓN GSTACK\\\`
+  hasta el siguiente encabezado \\\`## \\\` o el final del archivo, lo que ocurra primero. Esto asegura que
+  el contenido agregado después de la sección del informe se preserve, no se consuma. Si el Edit falla
+  (ej.: una edición concurrente cambió el contenido), vuelve a leer el archivo de plan e intenta una vez más.
+- Si no existe tal sección, **agrégala** al final del archivo de plan.
+- Siempre colócala como la última sección del archivo de plan. Si se encontró a mitad del archivo,
+  muévela: elimina la ubicación antigua y agrégala al final.`;
 }
 
 export function generateSpecReviewLoop(_ctx: TemplateContext): string {
-  return `## Spec Review Loop
+  return `## Bucle de Revisión de Especificación
 
-Before presenting the document to the user for approval, run an adversarial review.
+Antes de presentar el documento al usuario para su aprobación, ejecuta una revisión adversarial.
 
-**Step 1: Dispatch reviewer subagent**
+**Paso 1: Despachar subagente revisor**
 
-Use the Agent tool to dispatch an independent reviewer. The reviewer has fresh context
-and cannot see the brainstorming conversation — only the document. This ensures genuine
-adversarial independence.
+Usa la herramienta Agent para despachar un revisor independiente. El revisor tiene contexto fresco
+y no puede ver la conversación de brainstorming — solo el documento. Esto asegura una independencia
+adversarial genuina.
 
-Prompt the subagent with:
-- The file path of the document just written
-- "Read this document and review it on 5 dimensions. For each dimension, note PASS or
-  list specific issues with suggested fixes. At the end, output a quality score (1-10)
-  across all dimensions."
+Instruye al subagente con:
+- La ruta del archivo del documento recién escrito
+- "Lee este documento y revísalo en 5 dimensiones. Para cada dimensión, indica PASS o
+  lista incidencias específicas con correcciones sugeridas. Al final, emite una puntuación de calidad (1-10)
+  en todas las dimensiones."
 
-**Dimensions:**
-1. **Completeness** — Are all requirements addressed? Missing edge cases?
-2. **Consistency** — Do parts of the document agree with each other? Contradictions?
-3. **Clarity** — Could an engineer implement this without asking questions? Ambiguous language?
-4. **Scope** — Does the document creep beyond the original problem? YAGNI violations?
-5. **Feasibility** — Can this actually be built with the stated approach? Hidden complexity?
+**Dimensiones:**
+1. **Completitud** — ¿Se abordan todos los requisitos? ¿Faltan casos extremos?
+2. **Consistencia** — ¿Las partes del documento concuerdan entre sí? ¿Contradicciones?
+3. **Claridad** — ¿Podría un ingeniero implementar esto sin hacer preguntas? ¿Lenguaje ambiguo?
+4. **Alcance** — ¿El documento se expande más allá del problema original? ¿Violaciones de YAGNI?
+5. **Viabilidad** — ¿Se puede construir realmente con el enfoque planteado? ¿Complejidad oculta?
 
-The subagent should return:
-- A quality score (1-10)
-- PASS if no issues, or a numbered list of issues with dimension, description, and fix
+El subagente debe devolver:
+- Una puntuación de calidad (1-10)
+- PASS si no hay incidencias, o una lista numerada de incidencias con dimensión, descripción y corrección
 
-**Step 2: Fix and re-dispatch**
+**Paso 2: Corregir y re-despachar**
 
-If the reviewer returns issues:
-1. Fix each issue in the document on disk (use Edit tool)
-2. Re-dispatch the reviewer subagent with the updated document
-3. Maximum 3 iterations total
+Si el revisor devuelve incidencias:
+1. Corrige cada incidencia en el documento en disco (usa la herramienta Edit)
+2. Re-despacha el subagente revisor con el documento actualizado
+3. Máximo 3 iteraciones en total
 
-**Convergence guard:** If the reviewer returns the same issues on consecutive iterations
-(the fix didn't resolve them or the reviewer disagrees with the fix), stop the loop
-and persist those issues as "Reviewer Concerns" in the document rather than looping
-further.
+**Guarda de convergencia:** Si el revisor devuelve las mismas incidencias en iteraciones consecutivas
+(la corrección no las resolvió o el revisor no está de acuerdo con la corrección), detén el bucle
+y persiste esas incidencias como "Preocupaciones del Revisor" en el documento en lugar de seguir iterando.
 
-If the subagent fails, times out, or is unavailable — skip the review loop entirely.
-Tell the user: "Spec review unavailable — presenting unreviewed doc." The document is
-already written to disk; the review is a quality bonus, not a gate.
+Si el subagente falla, expira o no está disponible — omite el bucle de revisión por completo.
+Dile al usuario: "Revisión de especificación no disponible — presentando documento sin revisar." El documento ya
+está escrito en disco; la revisión es un bonus de calidad, no una puerta de paso.
 
-**Step 3: Report and persist metrics**
+**Paso 3: Informar y persistir métricas**
 
-After the loop completes (PASS, max iterations, or convergence guard):
+Después de que el bucle termine (PASS, iteraciones máximas, o guarda de convergencia):
 
-1. Tell the user the result — summary by default:
-   "Your doc survived N rounds of adversarial review. M issues caught and fixed.
-   Quality score: X/10."
-   If they ask "what did the reviewer find?", show the full reviewer output.
+1. Informa al usuario del resultado — resumen por defecto:
+   "Tu documento sobrevivió N rondas de revisión adversarial. M incidencias encontradas y corregidas.
+   Puntuación de calidad: X/10."
+   Si preguntan "¿qué encontró el revisor?", muestra la salida completa del revisor.
 
-2. If issues remain after max iterations or convergence, add a "## Reviewer Concerns"
-   section to the document listing each unresolved issue. Downstream skills will see this.
+2. Si quedan incidencias después de las iteraciones máximas o convergencia, agrega una sección "## Preocupaciones del Revisor"
+   al documento listando cada incidencia sin resolver. Los skills posteriores lo verán.
 
-3. Append metrics:
+3. Agrega métricas:
 \`\`\`bash
 mkdir -p ~/.gstack/analytics
 echo '{"skill":"${_ctx.skillName}","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","iterations":ITERATIONS,"issues_found":FOUND,"issues_fixed":FIXED,"remaining":REMAINING,"quality_score":SCORE}' >> ~/.gstack/analytics/spec-review.jsonl 2>/dev/null || true
 \`\`\`
-Replace ITERATIONS, FOUND, FIXED, REMAINING, SCORE with actual values from the review.`;
+Reemplaza ITERATIONS, FOUND, FIXED, REMAINING, SCORE con los valores reales de la revisión.`;
 }
 
 export function generateBenefitsFrom(ctx: TemplateContext): string {
   if (!ctx.benefitsFrom || ctx.benefitsFrom.length === 0) return '';
 
-  const skillList = ctx.benefitsFrom.map(s => `\`/${s}\``).join(' or ');
+  const skillList = ctx.benefitsFrom.map(s => `\`/${s}\``).join(' o ');
   const first = ctx.benefitsFrom[0];
 
-  return `## Prerequisite Skill Offer
+  return `## Oferta de Skill Prerrequisito
 
-When the design doc check above prints "No design doc found," offer the prerequisite
-skill before proceeding.
+Cuando la verificación del documento de diseño anterior muestre "No se encontró documento de diseño", ofrece el skill
+prerrequisito antes de continuar.
 
-Say to the user via AskUserQuestion:
+Dile al usuario mediante AskUserQuestion:
 
-> "No design doc found for this branch. ${skillList} produces a structured problem
-> statement, premise challenge, and explored alternatives — it gives this review much
-> sharper input to work with. Takes about 10 minutes. The design doc is per-feature,
-> not per-product — it captures the thinking behind this specific change."
+> "No se encontró documento de diseño para esta rama. ${skillList} produce un planteamiento
+> estructurado del problema, desafío de premisas y alternativas exploradas — le da a esta revisión
+> una entrada mucho más precisa con la que trabajar. Toma unos 10 minutos. El documento de diseño es por funcionalidad,
+> no por producto — captura el razonamiento detrás de este cambio específico."
 
-Options:
-- A) Run /${first} now (we'll pick up the review right after)
-- B) Skip — proceed with standard review
+Opciones:
+- A) Ejecutar /${first} ahora (retomaremos la revisión justo después)
+- B) Omitir — proceder con la revisión estándar
 
-If they skip: "No worries — standard review. If you ever want sharper input, try
-/${first} first next time." Then proceed normally. Do not re-offer later in the session.
+Si omiten: "Sin problema — revisión estándar. Si alguna vez quieres una entrada más precisa, prueba
+/${first} primero la próxima vez." Luego procede normalmente. No vuelvas a ofrecer más adelante en la sesión.
 
-If they choose A:
+Si eligen A:
 
-Say: "Running /${first} inline. Once the design doc is ready, I'll pick up
-the review right where we left off."
+Di: "Ejecutando /${first} en línea. Una vez que el documento de diseño esté listo, retomaré
+la revisión justo donde la dejamos."
 
-Read the ${first} skill file from disk using the Read tool:
+Lee el archivo del skill ${first} desde disco usando la herramienta Read:
 \`~/.claude/skills/gstack/${first}/SKILL.md\`
 
-Follow it inline, **skipping these sections** (already handled by the parent skill):
-- Preamble (run first)
-- AskUserQuestion Format
-- Completeness Principle — Boil the Lake
-- Search Before Building
-- Contributor Mode
-- Completion Status Protocol
-- Telemetry (run last)
+Síguelo en línea, **omitiendo estas secciones** (ya manejadas por el skill padre):
+- Preámbulo (ejecutar primero)
+- Formato de AskUserQuestion
+- Principio de Completitud — Hervir el Lago
+- Buscar Antes de Construir
+- Modo Contribuidor
+- Protocolo de Estado de Completitud
+- Telemetría (ejecutar al final)
 
-If the Read fails (file not found), say:
-"Could not load /${first} — proceeding with standard review."
+Si la lectura falla (archivo no encontrado), di:
+"No se pudo cargar /${first} — procediendo con la revisión estándar."
 
-After /${first} completes, re-run the design doc check:
+Después de que /${first} termine, re-ejecuta la verificación del documento de diseño:
 \`\`\`bash
 SLUG=$(~/.claude/skills/gstack/browse/bin/remote-slug 2>/dev/null || basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")
 BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null | tr '/' '-' || echo 'no-branch')
@@ -234,95 +233,95 @@ DESIGN=$(ls -t ~/.gstack/projects/$SLUG/*-$BRANCH-design-*.md 2>/dev/null | head
 [ -n "$DESIGN" ] && echo "Design doc found: $DESIGN" || echo "No design doc found"
 \`\`\`
 
-If a design doc is now found, read it and continue the review.
-If none was produced (user may have cancelled), proceed with standard review.`;
+Si ahora se encuentra un documento de diseño, léelo y continúa la revisión.
+Si no se produjo ninguno (el usuario puede haber cancelado), procede con la revisión estándar.`;
 }
 
 export function generateCodexSecondOpinion(ctx: TemplateContext): string {
   // Codex host: strip entirely — Codex should never invoke itself
   if (ctx.host === 'codex') return '';
 
-  return `## Phase 3.5: Cross-Model Second Opinion (optional)
+  return `## Fase 3.5: Segunda Opinión Cross-Model (opcional)
 
-**Binary check first — no question if unavailable:**
+**Verificación binaria primero — sin pregunta si no está disponible:**
 
 \`\`\`bash
 which codex 2>/dev/null && echo "CODEX_AVAILABLE" || echo "CODEX_NOT_AVAILABLE"
 \`\`\`
 
-If \`CODEX_NOT_AVAILABLE\`: skip Phase 3.5 entirely — no message, no AskUserQuestion. Proceed directly to Phase 4.
+Si \`CODEX_NOT_AVAILABLE\`: omite la Fase 3.5 por completo — sin mensaje, sin AskUserQuestion. Procede directamente a la Fase 4.
 
-If \`CODEX_AVAILABLE\`: use AskUserQuestion:
+Si \`CODEX_AVAILABLE\`: usa AskUserQuestion:
 
-> Want a second opinion from a different AI model? Codex will independently review your problem statement, key answers, premises, and any landscape findings from this session. It hasn't seen this conversation — it gets a structured summary. Usually takes 2-5 minutes.
-> A) Yes, get a second opinion
-> B) No, proceed to alternatives
+> ¿Quieres una segunda opinión de un modelo de IA diferente? Codex revisará independientemente tu planteamiento del problema, respuestas clave, premisas y hallazgos del landscape de esta sesión. No ha visto esta conversación — recibe un resumen estructurado. Suele tardar 2-5 minutos.
+> A) Sí, obtener una segunda opinión
+> B) No, proceder a las alternativas
 
-If B: skip Phase 3.5 entirely. Remember that Codex did NOT run (affects design doc, founder signals, and Phase 4 below).
+Si B: omite la Fase 3.5 por completo. Recuerda que Codex NO se ejecutó (afecta al documento de diseño, señales del fundador y la Fase 4 a continuación).
 
-**If A: Run the Codex cold read.**
+**Si A: Ejecutar la lectura en frío de Codex.**
 
-1. Assemble a structured context block from Phases 1-3:
-   - Mode (Startup or Builder)
-   - Problem statement (from Phase 1)
-   - Key answers from Phase 2A/2B (summarize each Q&A in 1-2 sentences, include verbatim user quotes)
-   - Landscape findings (from Phase 2.75, if search was run)
-   - Agreed premises (from Phase 3)
-   - Codebase context (project name, languages, recent activity)
+1. Ensambla un bloque de contexto estructurado de las Fases 1-3:
+   - Modo (Startup o Builder)
+   - Planteamiento del problema (de la Fase 1)
+   - Respuestas clave de la Fase 2A/2B (resume cada P&R en 1-2 oraciones, incluye citas textuales del usuario)
+   - Hallazgos del landscape (de la Fase 2.75, si se ejecutó la búsqueda)
+   - Premisas acordadas (de la Fase 3)
+   - Contexto del codebase (nombre del proyecto, lenguajes, actividad reciente)
 
-2. **Write the assembled prompt to a temp file** (prevents shell injection from user-derived content):
+2. **Escribe el prompt ensamblado en un archivo temporal** (evita inyección shell desde contenido derivado del usuario):
 
 \`\`\`bash
 CODEX_PROMPT_FILE=$(mktemp /tmp/gstack-codex-oh-XXXXXXXX.txt)
 \`\`\`
 
-Write the full prompt (context block + instructions) to this file. Use the mode-appropriate variant:
+Escribe el prompt completo (bloque de contexto + instrucciones) en este archivo. Usa la variante apropiada para el modo:
 
-**Startup mode instructions:** "You are an independent technical advisor reading a transcript of a startup brainstorming session. [CONTEXT BLOCK HERE]. Your job: 1) What is the STRONGEST version of what this person is trying to build? Steelman it in 2-3 sentences. 2) What is the ONE thing from their answers that reveals the most about what they should actually build? Quote it and explain why. 3) Name ONE agreed premise you think is wrong, and what evidence would prove you right. 4) If you had 48 hours and one engineer to build a prototype, what would you build? Be specific — tech stack, features, what you'd skip. Be direct. Be terse. No preamble."
+**Instrucciones modo Startup:** "Eres un asesor técnico independiente leyendo la transcripción de una sesión de brainstorming de startup. [BLOQUE DE CONTEXTO AQUÍ]. Tu trabajo: 1) ¿Cuál es la versión MÁS FUERTE de lo que esta persona intenta construir? Refuérzala en 2-3 oraciones. 2) ¿Cuál es la ÚNICA cosa de sus respuestas que más revela sobre lo que realmente debería construir? Cítala y explica por qué. 3) Nombra UNA premisa acordada que crees que es incorrecta, y qué evidencia te daría la razón. 4) Si tuvieras 48 horas y un ingeniero para construir un prototipo, ¿qué construirías? Sé específico — stack tecnológico, funcionalidades, qué omitirías. Sé directo. Sé conciso. Sin preámbulos."
 
-**Builder mode instructions:** "You are an independent technical advisor reading a transcript of a builder brainstorming session. [CONTEXT BLOCK HERE]. Your job: 1) What is the COOLEST version of this they haven't considered? 2) What's the ONE thing from their answers that reveals what excites them most? Quote it. 3) What existing open source project or tool gets them 50% of the way there — and what's the 50% they'd need to build? 4) If you had a weekend to build this, what would you build first? Be specific. Be direct. No preamble."
+**Instrucciones modo Builder:** "Eres un asesor técnico independiente leyendo la transcripción de una sesión de brainstorming de builder. [BLOQUE DE CONTEXTO AQUÍ]. Tu trabajo: 1) ¿Cuál es la versión MÁS GENIAL de esto que no han considerado? 2) ¿Cuál es la ÚNICA cosa de sus respuestas que revela qué les entusiasma más? Cítala. 3) ¿Qué proyecto de código abierto o herramienta existente les lleva al 50% del camino — y cuál es el 50% que necesitarían construir? 4) Si tuvieras un fin de semana para construir esto, ¿qué construirías primero? Sé específico. Sé directo. Sin preámbulos."
 
-3. Run Codex:
+3. Ejecuta Codex:
 
 \`\`\`bash
 TMPERR_OH=$(mktemp /tmp/codex-oh-err-XXXXXXXX)
 codex exec "$(cat "$CODEX_PROMPT_FILE")" -C "$(git rev-parse --show-toplevel)" -s read-only -c 'model_reasoning_effort="xhigh"' --enable web_search_cached 2>"$TMPERR_OH"
 \`\`\`
 
-Use a 5-minute timeout (\`timeout: 300000\`). After the command completes, read stderr:
+Usa un timeout de 5 minutos (\`timeout: 300000\`). Después de que el comando termine, lee stderr:
 \`\`\`bash
 cat "$TMPERR_OH"
 rm -f "$TMPERR_OH" "$CODEX_PROMPT_FILE"
 \`\`\`
 
-**Error handling:** All errors are non-blocking — Codex second opinion is a quality enhancement, not a prerequisite.
-- **Auth failure:** If stderr contains "auth", "login", "unauthorized", or "API key": "Codex authentication failed. Run \\\`codex login\\\` to authenticate. Skipping second opinion."
-- **Timeout:** "Codex timed out after 5 minutes. Skipping second opinion."
-- **Empty response:** "Codex returned no response. Stderr: <paste relevant error>. Skipping second opinion."
+**Manejo de errores:** Todos los errores son no bloqueantes — la segunda opinión de Codex es una mejora de calidad, no un prerrequisito.
+- **Fallo de autenticación:** Si stderr contiene "auth", "login", "unauthorized" o "API key": "Fallo de autenticación de Codex. Ejecuta \\\`codex login\\\` para autenticarte. Omitiendo segunda opinión."
+- **Timeout:** "Codex expiró después de 5 minutos. Omitiendo segunda opinión."
+- **Respuesta vacía:** "Codex no devolvió respuesta. Stderr: <pegar error relevante>. Omitiendo segunda opinión."
 
-On any error, proceed to Phase 4 — do NOT fall back to a Claude subagent (this is brainstorming, not adversarial review).
+Ante cualquier error, procede a la Fase 4 — NO recurras a un subagente de Claude (esto es brainstorming, no revisión adversarial).
 
-4. **Presentation:**
+4. **Presentación:**
 
 \`\`\`
-SECOND OPINION (Codex):
+SEGUNDA OPINIÓN (Codex):
 ════════════════════════════════════════════════════════════
-<full codex output, verbatim — do not truncate or summarize>
+<salida completa de codex, textual — no truncar ni resumir>
 ════════════════════════════════════════════════════════════
 \`\`\`
 
-5. **Cross-model synthesis:** After presenting Codex output, provide 3-5 bullet synthesis:
-   - Where Claude agrees with Codex
-   - Where Claude disagrees and why
-   - Whether Codex's challenged premise changes Claude's recommendation
+5. **Síntesis cross-model:** Después de presentar la salida de Codex, proporciona una síntesis de 3-5 puntos:
+   - Donde Claude coincide con Codex
+   - Donde Claude discrepa y por qué
+   - Si la premisa cuestionada por Codex cambia la recomendación de Claude
 
-6. **Premise revision check:** If Codex challenged an agreed premise, use AskUserQuestion:
+6. **Verificación de revisión de premisas:** Si Codex cuestionó una premisa acordada, usa AskUserQuestion:
 
-> Codex challenged premise #{N}: "{premise text}". Their argument: "{reasoning}".
-> A) Revise this premise based on Codex's input
-> B) Keep the original premise — proceed to alternatives
+> Codex cuestionó la premisa #{N}: "{texto de la premisa}". Su argumento: "{razonamiento}".
+> A) Revisar esta premisa basándose en la aportación de Codex
+> B) Mantener la premisa original — proceder a las alternativas
 
-If A: revise the premise and note the revision. If B: proceed (and note that the user defended this premise with reasoning — this is a founder signal if they articulate WHY they disagree, not just dismiss).`;
+Si A: revisa la premisa y anota la revisión. Si B: procede (y anota que el usuario defendió esta premisa con razonamiento — esto es una señal de fundador si articulan POR QUÉ no están de acuerdo, no solo desestiman).`;
 }
 
 export function generateAdversarialStep(ctx: TemplateContext): string {
@@ -332,39 +331,39 @@ export function generateAdversarialStep(ctx: TemplateContext): string {
   const isShip = ctx.skillName === 'ship';
   const stepNum = isShip ? '3.8' : '5.7';
 
-  return `## Step ${stepNum}: Adversarial review (auto-scaled)
+  return `## Paso ${stepNum}: Revisión adversarial (auto-escalada)
 
-Adversarial review thoroughness scales automatically based on diff size. No configuration needed.
+La exhaustividad de la revisión adversarial se escala automáticamente según el tamaño del diff. No requiere configuración.
 
-**Detect diff size and tool availability:**
+**Detectar tamaño del diff y disponibilidad de herramientas:**
 
 \`\`\`bash
 DIFF_INS=$(git diff origin/<base> --stat | tail -1 | grep -oE '[0-9]+ insertion' | grep -oE '[0-9]+' || echo "0")
 DIFF_DEL=$(git diff origin/<base> --stat | tail -1 | grep -oE '[0-9]+ deletion' | grep -oE '[0-9]+' || echo "0")
 DIFF_TOTAL=$((DIFF_INS + DIFF_DEL))
 which codex 2>/dev/null && echo "CODEX_AVAILABLE" || echo "CODEX_NOT_AVAILABLE"
-# Respect old opt-out
+# Respetar opt-out anterior
 OLD_CFG=$(~/.claude/skills/gstack/bin/gstack-config get codex_reviews 2>/dev/null || true)
 echo "DIFF_SIZE: $DIFF_TOTAL"
 echo "OLD_CFG: \${OLD_CFG:-not_set}"
 \`\`\`
 
-If \`OLD_CFG\` is \`disabled\`: skip this step silently. Continue to the next step.
+Si \`OLD_CFG\` es \`disabled\`: omite este paso silenciosamente. Continúa al siguiente paso.
 
-**User override:** If the user explicitly requested a specific tier (e.g., "run all passes", "paranoid review", "full adversarial", "do all 4 passes", "thorough review"), honor that request regardless of diff size. Jump to the matching tier section.
+**Anulación del usuario:** Si el usuario solicitó explícitamente un nivel específico (ej.: "ejecuta todos los pases", "revisión paranoica", "adversarial completo", "haz los 4 pases", "revisión exhaustiva"), honra esa solicitud independientemente del tamaño del diff. Salta a la sección del nivel correspondiente.
 
-**Auto-select tier based on diff size:**
-- **Small (< 50 lines changed):** Skip adversarial review entirely. Print: "Small diff ($DIFF_TOTAL lines) — adversarial review skipped." Continue to the next step.
-- **Medium (50–199 lines changed):** Run Codex adversarial challenge (or Claude adversarial subagent if Codex unavailable). Jump to the "Medium tier" section.
-- **Large (200+ lines changed):** Run all remaining passes — Codex structured review + Claude adversarial subagent + Codex adversarial. Jump to the "Large tier" section.
+**Auto-selección de nivel según tamaño del diff:**
+- **Pequeño (< 50 líneas cambiadas):** Omite la revisión adversarial por completo. Imprime: "Diff pequeño ($DIFF_TOTAL líneas) — revisión adversarial omitida." Continúa al siguiente paso.
+- **Mediano (50–199 líneas cambiadas):** Ejecuta el desafío adversarial de Codex (o subagente adversarial de Claude si Codex no está disponible). Salta a la sección "Nivel mediano".
+- **Grande (200+ líneas cambiadas):** Ejecuta todos los pases restantes — revisión estructurada de Codex + subagente adversarial de Claude + Codex adversarial. Salta a la sección "Nivel grande".
 
 ---
 
-### Medium tier (50–199 lines)
+### Nivel mediano (50–199 líneas)
 
-Claude's structured review already ran. Now add a **cross-model adversarial challenge**.
+La revisión estructurada de Claude ya se ejecutó. Ahora agrega un **desafío adversarial cross-model**.
 
-**If Codex is available:** run the Codex adversarial challenge. **If Codex is NOT available:** fall back to the Claude adversarial subagent instead.
+**Si Codex está disponible:** ejecuta el desafío adversarial de Codex. **Si Codex NO está disponible:** recurre al subagente adversarial de Claude.
 
 **Codex adversarial:**
 
@@ -373,98 +372,98 @@ TMPERR_ADV=$(mktemp /tmp/codex-adv-XXXXXXXX)
 codex exec "Review the changes on this branch against the base branch. Run git diff origin/<base> to see the diff. Your job is to find ways this code will fail in production. Think like an attacker and a chaos engineer. Find edge cases, race conditions, security holes, resource leaks, failure modes, and silent data corruption paths. Be adversarial. Be thorough. No compliments — just the problems." -C "$(git rev-parse --show-toplevel)" -s read-only -c 'model_reasoning_effort="xhigh"' --enable web_search_cached 2>"$TMPERR_ADV"
 \`\`\`
 
-Set the Bash tool's \`timeout\` parameter to \`300000\` (5 minutes). Do NOT use the \`timeout\` shell command — it doesn't exist on macOS. After the command completes, read stderr:
+Configura el parámetro \`timeout\` de la herramienta Bash a \`300000\` (5 minutos). NO uses el comando shell \`timeout\` — no existe en macOS. Después de que el comando termine, lee stderr:
 \`\`\`bash
 cat "$TMPERR_ADV"
 \`\`\`
 
-Present the full output verbatim. This is informational — it never blocks shipping.
+Presenta la salida completa textualmente. Esto es informativo — nunca bloquea el envío.
 
-**Error handling:** All errors are non-blocking — adversarial review is a quality enhancement, not a prerequisite.
-- **Auth failure:** If stderr contains "auth", "login", "unauthorized", or "API key": "Codex authentication failed. Run \\\`codex login\\\` to authenticate."
-- **Timeout:** "Codex timed out after 5 minutes."
-- **Empty response:** "Codex returned no response. Stderr: <paste relevant error>."
+**Manejo de errores:** Todos los errores son no bloqueantes — la revisión adversarial es una mejora de calidad, no un prerrequisito.
+- **Fallo de autenticación:** Si stderr contiene "auth", "login", "unauthorized" o "API key": "Fallo de autenticación de Codex. Ejecuta \\\`codex login\\\` para autenticarte."
+- **Timeout:** "Codex expiró después de 5 minutos."
+- **Respuesta vacía:** "Codex no devolvió respuesta. Stderr: <pegar error relevante>."
 
-On any Codex error, fall back to the Claude adversarial subagent automatically.
+Ante cualquier error de Codex, recurre automáticamente al subagente adversarial de Claude.
 
-**Claude adversarial subagent** (fallback when Codex unavailable or errored):
+**Subagente adversarial de Claude** (respaldo cuando Codex no está disponible o falló):
 
-Dispatch via the Agent tool. The subagent has fresh context — no checklist bias from the structured review. This genuine independence catches things the primary reviewer is blind to.
+Despacha mediante la herramienta Agent. El subagente tiene contexto fresco — sin sesgo de checklist de la revisión estructurada. Esta independencia genuina detecta cosas ante las que el revisor principal es ciego.
 
-Subagent prompt:
-"Read the diff for this branch with \`git diff origin/<base>\`. Think like an attacker and a chaos engineer. Your job is to find ways this code will fail in production. Look for: edge cases, race conditions, security holes, resource leaks, failure modes, silent data corruption, logic errors that produce wrong results silently, error handling that swallows failures, and trust boundary violations. Be adversarial. Be thorough. No compliments — just the problems. For each finding, classify as FIXABLE (you know how to fix it) or INVESTIGATE (needs human judgment)."
+Prompt del subagente:
+"Lee el diff de esta rama con \`git diff origin/<base>\`. Piensa como un atacante y un ingeniero del caos. Tu trabajo es encontrar formas en que este código fallará en producción. Busca: casos extremos, condiciones de carrera, vulnerabilidades de seguridad, fugas de recursos, modos de fallo, corrupción silenciosa de datos, errores lógicos que producen resultados incorrectos silenciosamente, manejo de errores que traga fallos, y violaciones de límites de confianza. Sé adversarial. Sé exhaustivo. Sin halagos — solo los problemas. Para cada hallazgo, clasifica como FIXABLE (sabes cómo corregirlo) o INVESTIGATE (requiere juicio humano)."
 
-Present findings under an \`ADVERSARIAL REVIEW (Claude subagent):\` header. **FIXABLE findings** flow into the same Fix-First pipeline as the structured review. **INVESTIGATE findings** are presented as informational.
+Presenta los hallazgos bajo un encabezado \`REVISIÓN ADVERSARIAL (subagente Claude):\`. Los hallazgos **FIXABLE** fluyen al mismo pipeline Fix-First que la revisión estructurada. Los hallazgos **INVESTIGATE** se presentan como informativos.
 
-If the subagent fails or times out: "Claude adversarial subagent unavailable. Continuing without adversarial review."
+Si el subagente falla o expira: "Subagente adversarial de Claude no disponible. Continuando sin revisión adversarial."
 
-**Persist the review result:**
+**Persistir el resultado de la revisión:**
 \`\`\`bash
 ~/.claude/skills/gstack/bin/gstack-review-log '{"skill":"adversarial-review","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","status":"STATUS","source":"SOURCE","tier":"medium","commit":"'"$(git rev-parse --short HEAD)"'"}'
 \`\`\`
-Substitute STATUS: "clean" if no findings, "issues_found" if findings exist. SOURCE: "codex" if Codex ran, "claude" if subagent ran. If both failed, do NOT persist.
+Sustituye STATUS: "clean" si no hay hallazgos, "issues_found" si existen hallazgos. SOURCE: "codex" si se ejecutó Codex, "claude" si se ejecutó el subagente. Si ambos fallaron, NO persistas.
 
-**Cleanup:** Run \`rm -f "$TMPERR_ADV"\` after processing (if Codex was used).
+**Limpieza:** Ejecuta \`rm -f "$TMPERR_ADV"\` después de procesar (si se usó Codex).
 
 ---
 
-### Large tier (200+ lines)
+### Nivel grande (200+ líneas)
 
-Claude's structured review already ran. Now run **all three remaining passes** for maximum coverage:
+La revisión estructurada de Claude ya se ejecutó. Ahora ejecuta **los tres pases restantes** para máxima cobertura:
 
-**1. Codex structured review (if available):**
+**1. Revisión estructurada de Codex (si está disponible):**
 \`\`\`bash
 TMPERR=$(mktemp /tmp/codex-review-XXXXXXXX)
 codex review --base <base> -c 'model_reasoning_effort="xhigh"' --enable web_search_cached 2>"$TMPERR"
 \`\`\`
 
-Set the Bash tool's \`timeout\` parameter to \`300000\` (5 minutes). Do NOT use the \`timeout\` shell command — it doesn't exist on macOS. Present output under \`CODEX SAYS (code review):\` header.
-Check for \`[P1]\` markers: found → \`GATE: FAIL\`, not found → \`GATE: PASS\`.
+Configura el parámetro \`timeout\` de la herramienta Bash a \`300000\` (5 minutos). NO uses el comando shell \`timeout\` — no existe en macOS. Presenta la salida bajo el encabezado \`CODEX DICE (revisión de código):\`.
+Busca marcadores \`[P1]\`: encontrados → \`GATE: FAIL\`, no encontrados → \`GATE: PASS\`.
 
-If GATE is FAIL, use AskUserQuestion:
+Si GATE es FAIL, usa AskUserQuestion:
 \`\`\`
-Codex found N critical issues in the diff.
+Codex encontró N incidencias críticas en el diff.
 
-A) Investigate and fix now (recommended)
-B) Continue — review will still complete
+A) Investigar y corregir ahora (recomendado)
+B) Continuar — la revisión seguirá completándose
 \`\`\`
 
-If A: address the findings${isShip ? '. After fixing, re-run tests (Step 3) since code has changed' : ''}. Re-run \`codex review\` to verify.
+Si A: aborda los hallazgos${isShip ? '. Después de corregir, re-ejecuta los tests (Paso 3) ya que el código ha cambiado' : ''}. Re-ejecuta \`codex review\` para verificar.
 
-Read stderr for errors (same error handling as medium tier).
+Lee stderr para errores (mismo manejo de errores que el nivel mediano).
 
-After stderr: \`rm -f "$TMPERR"\`
+Después de stderr: \`rm -f "$TMPERR"\`
 
-**2. Claude adversarial subagent:** Dispatch a subagent with the adversarial prompt (same prompt as medium tier). This always runs regardless of Codex availability.
+**2. Subagente adversarial de Claude:** Despacha un subagente con el prompt adversarial (mismo prompt que el nivel mediano). Esto siempre se ejecuta independientemente de la disponibilidad de Codex.
 
-**3. Codex adversarial challenge (if available):** Run \`codex exec\` with the adversarial prompt (same as medium tier).
+**3. Desafío adversarial de Codex (si está disponible):** Ejecuta \`codex exec\` con el prompt adversarial (mismo que el nivel mediano).
 
-If Codex is not available for steps 1 and 3, note to the user: "Codex CLI not found — large-diff review ran Claude structured + Claude adversarial (2 of 4 passes). Install Codex for full 4-pass coverage: \`npm install -g @openai/codex\`"
+Si Codex no está disponible para los pasos 1 y 3, informa al usuario: "CLI de Codex no encontrado — la revisión de diff grande ejecutó Claude estructurado + Claude adversarial (2 de 4 pases). Instala Codex para cobertura completa de 4 pases: \`npm install -g @openai/codex\`"
 
-**Persist the review result AFTER all passes complete** (not after each sub-step):
+**Persistir el resultado de la revisión DESPUÉS de que todos los pases terminen** (no después de cada sub-paso):
 \`\`\`bash
 ~/.claude/skills/gstack/bin/gstack-review-log '{"skill":"adversarial-review","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","status":"STATUS","source":"SOURCE","tier":"large","gate":"GATE","commit":"'"$(git rev-parse --short HEAD)"'"}'
 \`\`\`
-Substitute: STATUS = "clean" if no findings across ALL passes, "issues_found" if any pass found issues. SOURCE = "both" if Codex ran, "claude" if only Claude subagent ran. GATE = the Codex structured review gate result ("pass"/"fail"), or "informational" if Codex was unavailable. If all passes failed, do NOT persist.
+Sustituye: STATUS = "clean" si no hay hallazgos en TODOS los pases, "issues_found" si algún pase encontró incidencias. SOURCE = "both" si se ejecutó Codex, "claude" si solo se ejecutó el subagente de Claude. GATE = resultado del gate de la revisión estructurada de Codex ("pass"/"fail"), o "informational" si Codex no estaba disponible. Si todos los pases fallaron, NO persistas.
 
 ---
 
-### Cross-model synthesis (medium and large tiers)
+### Síntesis cross-model (niveles mediano y grande)
 
-After all passes complete, synthesize findings across all sources:
+Después de que todos los pases terminen, sintetiza los hallazgos de todas las fuentes:
 
 \`\`\`
-ADVERSARIAL REVIEW SYNTHESIS (auto: TIER, N lines):
+SÍNTESIS DE REVISIÓN ADVERSARIAL (auto: NIVEL, N líneas):
 ════════════════════════════════════════════════════════════
-  High confidence (found by multiple sources): [findings agreed on by >1 pass]
-  Unique to Claude structured review: [from earlier step]
-  Unique to Claude adversarial: [from subagent, if ran]
-  Unique to Codex: [from codex adversarial or code review, if ran]
-  Models used: Claude structured ✓  Claude adversarial ✓/✗  Codex ✓/✗
+  Alta confianza (encontrado por múltiples fuentes): [hallazgos acordados por >1 pase]
+  Único de la revisión estructurada de Claude: [del paso anterior]
+  Único del adversarial de Claude: [del subagente, si se ejecutó]
+  Único de Codex: [del adversarial de codex o revisión de código, si se ejecutó]
+  Modelos usados: Claude estructurado ✓  Claude adversarial ✓/✗  Codex ✓/✗
 ════════════════════════════════════════════════════════════
 \`\`\`
 
-High-confidence findings (agreed on by multiple sources) should be prioritized for fixes.
+Los hallazgos de alta confianza (acordados por múltiples fuentes) deben priorizarse para corrección.
 
 ---`;
 }
@@ -473,122 +472,121 @@ export function generateCodexPlanReview(ctx: TemplateContext): string {
   // Codex host: strip entirely — Codex should never invoke itself
   if (ctx.host === 'codex') return '';
 
-  return `## Outside Voice — Independent Plan Challenge (optional, recommended)
+  return `## Voz Externa — Desafío Independiente del Plan (opcional, recomendado)
 
-After all review sections are complete, offer an independent second opinion from a
-different AI system. Two models agreeing on a plan is stronger signal than one model's
-thorough review.
+Después de que todas las secciones de revisión estén completas, ofrece una segunda opinión independiente
+de un sistema de IA diferente. Dos modelos coincidiendo en un plan es una señal más fuerte que la
+revisión exhaustiva de un solo modelo.
 
-**Check tool availability:**
+**Verificar disponibilidad de herramientas:**
 
 \`\`\`bash
 which codex 2>/dev/null && echo "CODEX_AVAILABLE" || echo "CODEX_NOT_AVAILABLE"
 \`\`\`
 
-Use AskUserQuestion:
+Usa AskUserQuestion:
 
-> "All review sections are complete. Want an outside voice? A different AI system can
-> give a brutally honest, independent challenge of this plan — logical gaps, feasibility
-> risks, and blind spots that are hard to catch from inside the review. Takes about 2
-> minutes."
+> "Todas las secciones de revisión están completas. ¿Quieres una voz externa? Un sistema de IA diferente puede
+> dar un desafío brutalmente honesto e independiente de este plan — brechas lógicas, riesgos de viabilidad
+> y puntos ciegos difíciles de detectar desde dentro de la revisión. Toma unos 2 minutos."
 >
-> RECOMMENDATION: Choose A — an independent second opinion catches structural blind
-> spots. Two different AI models agreeing on a plan is stronger signal than one model's
-> thorough review. Completeness: A=9/10, B=7/10.
+> RECOMMENDATION: Elige A — una segunda opinión independiente detecta puntos ciegos
+> estructurales. Dos modelos de IA diferentes coincidiendo en un plan es una señal más fuerte que la
+> revisión exhaustiva de un solo modelo. Completitud: A=9/10, B=7/10.
 
-Options:
-- A) Get the outside voice (recommended)
-- B) Skip — proceed to outputs
+Opciones:
+- A) Obtener la voz externa (recomendado)
+- B) Omitir — proceder a las salidas
 
-**If B:** Print "Skipping outside voice." and continue to the next section.
+**Si B:** Imprime "Omitiendo voz externa." y continúa a la siguiente sección.
 
-**If A:** Construct the plan review prompt. Read the plan file being reviewed (the file
-the user pointed this review at, or the branch diff scope). If a CEO plan document
-was written in Step 0D-POST, read that too — it contains the scope decisions and vision.
+**Si A:** Construye el prompt de revisión del plan. Lee el archivo de plan que se está revisando (el archivo
+al que el usuario dirigió esta revisión, o el alcance del diff de la rama). Si se escribió un documento
+de plan CEO en el Paso 0D-POST, léelo también — contiene las decisiones de alcance y visión.
 
-Construct this prompt (substitute the actual plan content — if plan content exceeds 30KB,
-truncate to the first 30KB and note "Plan truncated for size"):
+Construye este prompt (sustituye el contenido real del plan — si el contenido del plan supera 30KB,
+trúncalo a los primeros 30KB e indica "Plan truncado por tamaño"):
 
-"You are a brutally honest technical reviewer examining a development plan that has
-already been through a multi-section review. Your job is NOT to repeat that review.
-Instead, find what it missed. Look for: logical gaps and unstated assumptions that
-survived the review scrutiny, overcomplexity (is there a fundamentally simpler
-approach the review was too deep in the weeds to see?), feasibility risks the review
-took for granted, missing dependencies or sequencing issues, and strategic
-miscalibration (is this the right thing to build at all?). Be direct. Be terse. No
-compliments. Just the problems.
+"Eres un revisor técnico brutalmente honesto examinando un plan de desarrollo que ya ha
+pasado por una revisión multi-sección. Tu trabajo NO es repetir esa revisión.
+En cambio, encuentra lo que se le escapó. Busca: brechas lógicas y suposiciones implícitas que
+sobrevivieron al escrutinio de la revisión, sobrecomplejidad (¿hay un enfoque fundamentalmente más simple
+que la revisión estaba demasiado metida en los detalles para ver?), riesgos de viabilidad que la revisión
+dio por sentados, dependencias faltantes o problemas de secuenciación, y
+descalibración estratégica (¿es esto lo correcto para construir?). Sé directo. Sé conciso. Sin
+halagos. Solo los problemas.
 
-THE PLAN:
-<plan content>"
+EL PLAN:
+<contenido del plan>"
 
-**If CODEX_AVAILABLE:**
+**Si CODEX_AVAILABLE:**
 
 \`\`\`bash
 TMPERR_PV=$(mktemp /tmp/codex-planreview-XXXXXXXX)
 codex exec "<prompt>" -C "$(git rev-parse --show-toplevel)" -s read-only -c 'model_reasoning_effort="xhigh"' --enable web_search_cached 2>"$TMPERR_PV"
 \`\`\`
 
-Use a 5-minute timeout (\`timeout: 300000\`). After the command completes, read stderr:
+Usa un timeout de 5 minutos (\`timeout: 300000\`). Después de que el comando termine, lee stderr:
 \`\`\`bash
 cat "$TMPERR_PV"
 \`\`\`
 
-Present the full output verbatim:
+Presenta la salida completa textualmente:
 
 \`\`\`
-CODEX SAYS (plan review — outside voice):
+CODEX DICE (revisión de plan — voz externa):
 ════════════════════════════════════════════════════════════
-<full codex output, verbatim — do not truncate or summarize>
+<salida completa de codex, textual — no truncar ni resumir>
 ════════════════════════════════════════════════════════════
 \`\`\`
 
-**Error handling:** All errors are non-blocking — the outside voice is informational.
-- Auth failure (stderr contains "auth", "login", "unauthorized"): "Codex auth failed. Run \\\`codex login\\\` to authenticate."
-- Timeout: "Codex timed out after 5 minutes."
-- Empty response: "Codex returned no response."
+**Manejo de errores:** Todos los errores son no bloqueantes — la voz externa es informativa.
+- Fallo de autenticación (stderr contiene "auth", "login", "unauthorized"): "Fallo de autenticación de Codex. Ejecuta \\\`codex login\\\` para autenticarte."
+- Timeout: "Codex expiró después de 5 minutos."
+- Respuesta vacía: "Codex no devolvió respuesta."
 
-On any Codex error, fall back to the Claude adversarial subagent.
+Ante cualquier error de Codex, recurre al subagente adversarial de Claude.
 
-**If CODEX_NOT_AVAILABLE (or Codex errored):**
+**Si CODEX_NOT_AVAILABLE (o Codex falló):**
 
-Dispatch via the Agent tool. The subagent has fresh context — genuine independence.
+Despacha mediante la herramienta Agent. El subagente tiene contexto fresco — independencia genuina.
 
-Subagent prompt: same plan review prompt as above.
+Prompt del subagente: mismo prompt de revisión de plan que el anterior.
 
-Present findings under an \`OUTSIDE VOICE (Claude subagent):\` header.
+Presenta los hallazgos bajo un encabezado \`VOZ EXTERNA (subagente Claude):\`.
 
-If the subagent fails or times out: "Outside voice unavailable. Continuing to outputs."
+Si el subagente falla o expira: "Voz externa no disponible. Continuando a las salidas."
 
-**Cross-model tension:**
+**Tensión cross-model:**
 
-After presenting the outside voice findings, note any points where the outside voice
-disagrees with the review findings from earlier sections. Flag these as:
+Después de presentar los hallazgos de la voz externa, anota cualquier punto donde la voz externa
+discrepe con los hallazgos de la revisión de secciones anteriores. Márcalos como:
 
 \`\`\`
-CROSS-MODEL TENSION:
-  [Topic]: Review said X. Outside voice says Y. [Your assessment of who's right.]
+TENSIÓN CROSS-MODEL:
+  [Tema]: La revisión dijo X. La voz externa dice Y. [Tu evaluación de quién tiene razón.]
 \`\`\`
 
-For each substantive tension point, auto-propose as a TODO via AskUserQuestion:
+Para cada punto de tensión sustantivo, propón automáticamente como TODO mediante AskUserQuestion:
 
-> "Cross-model disagreement on [topic]. The review found [X] but the outside voice
-> argues [Y]. Worth investigating further?"
+> "Desacuerdo cross-model sobre [tema]. La revisión encontró [X] pero la voz externa
+> argumenta [Y]. ¿Vale la pena investigar más?"
 
-Options:
-- A) Add to TODOS.md
-- B) Skip — not substantive
+Opciones:
+- A) Agregar a TODOS.md
+- B) Omitir — no es sustantivo
 
-If no tension points exist, note: "No cross-model tension — both reviewers agree."
+Si no existen puntos de tensión, indica: "Sin tensión cross-model — ambos revisores coinciden."
 
-**Persist the result:**
+**Persistir el resultado:**
 \`\`\`bash
 ~/.claude/skills/gstack/bin/gstack-review-log '{"skill":"codex-plan-review","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","status":"STATUS","source":"SOURCE","commit":"'"$(git rev-parse --short HEAD)"'"}'
 \`\`\`
 
-Substitute: STATUS = "clean" if no findings, "issues_found" if findings exist.
-SOURCE = "codex" if Codex ran, "claude" if subagent ran.
+Sustituye: STATUS = "clean" si no hay hallazgos, "issues_found" si existen hallazgos.
+SOURCE = "codex" si se ejecutó Codex, "claude" si se ejecutó el subagente.
 
-**Cleanup:** Run \`rm -f "$TMPERR_PV"\` after processing (if Codex was used).
+**Limpieza:** Ejecuta \`rm -f "$TMPERR_PV"\` después de procesar (si se usó Codex).
 
 ---`;
 }
@@ -596,29 +594,29 @@ SOURCE = "codex" if Codex ran, "claude" if subagent ran.
 // ─── Plan File Discovery (shared helper) ──────────────────────────────
 
 function generatePlanFileDiscovery(): string {
-  return `### Plan File Discovery
+  return `### Descubrimiento del Archivo de Plan
 
-1. **Conversation context (primary):** Check if there is an active plan file in this conversation — Claude Code system messages include plan file paths when in plan mode. Look for references like \`~/.claude/plans/*.md\` in system messages. If found, use it directly — this is the most reliable signal.
+1. **Contexto de la conversación (primario):** Comprueba si hay un archivo de plan activo en esta conversación — los mensajes del sistema de Claude Code incluyen rutas de archivos de plan cuando está en modo plan. Busca referencias como \`~/.claude/plans/*.md\` en los mensajes del sistema. Si se encuentra, úsalo directamente — esta es la señal más fiable.
 
-2. **Content-based search (fallback):** If no plan file is referenced in conversation context, search by content:
+2. **Búsqueda por contenido (respaldo):** Si no se hace referencia a un archivo de plan en el contexto de la conversación, busca por contenido:
 
 \`\`\`bash
 BRANCH=$(git branch --show-current 2>/dev/null | tr '/' '-')
 REPO=$(basename "$(git rev-parse --show-toplevel 2>/dev/null)")
-# Try branch name match first (most specific)
+# Intentar primero coincidencia por nombre de rama (más específico)
 PLAN=$(ls -t ~/.claude/plans/*.md 2>/dev/null | xargs grep -l "$BRANCH" 2>/dev/null | head -1)
-# Fall back to repo name match
+# Recurrir a coincidencia por nombre de repo
 [ -z "$PLAN" ] && PLAN=$(ls -t ~/.claude/plans/*.md 2>/dev/null | xargs grep -l "$REPO" 2>/dev/null | head -1)
-# Last resort: most recent plan modified in the last 24 hours
+# Último recurso: plan más reciente modificado en las últimas 24 horas
 [ -z "$PLAN" ] && PLAN=$(find ~/.claude/plans -name '*.md' -mmin -1440 -maxdepth 1 2>/dev/null | xargs ls -t 2>/dev/null | head -1)
 [ -n "$PLAN" ] && echo "PLAN_FILE: $PLAN" || echo "NO_PLAN_FILE"
 \`\`\`
 
-3. **Validation:** If a plan file was found via content-based search (not conversation context), read the first 20 lines and verify it is relevant to the current branch's work. If it appears to be from a different project or feature, treat as "no plan file found."
+3. **Validación:** Si se encontró un archivo de plan mediante búsqueda por contenido (no por contexto de conversación), lee las primeras 20 líneas y verifica que es relevante para el trabajo de la rama actual. Si parece ser de un proyecto o funcionalidad diferente, trata como "archivo de plan no encontrado."
 
-**Error handling:**
-- No plan file found → skip with "No plan file detected — skipping."
-- Plan file found but unreadable (permissions, encoding) → skip with "Plan file found but unreadable — skipping."`;
+**Manejo de errores:**
+- Archivo de plan no encontrado → omite con "Archivo de plan no detectado — omitiendo."
+- Archivo de plan encontrado pero ilegible (permisos, codificación) → omite con "Archivo de plan encontrado pero ilegible — omitiendo."`;
 }
 
 // ─── Plan Completion Audit ────────────────────────────────────────────
@@ -633,124 +631,124 @@ function generatePlanCompletionAuditInner(mode: PlanCompletionMode): string {
 
   // ── Item extraction ──
   sections.push(`
-### Actionable Item Extraction
+### Extracción de Elementos Accionables
 
-Read the plan file. Extract every actionable item — anything that describes work to be done. Look for:
+Lee el archivo de plan. Extrae cada elemento accionable — cualquier cosa que describa trabajo por hacer. Busca:
 
-- **Checkbox items:** \`- [ ] ...\` or \`- [x] ...\`
-- **Numbered steps** under implementation headings: "1. Create ...", "2. Add ...", "3. Modify ..."
-- **Imperative statements:** "Add X to Y", "Create a Z service", "Modify the W controller"
-- **File-level specifications:** "New file: path/to/file.ts", "Modify path/to/existing.rb"
-- **Test requirements:** "Test that X", "Add test for Y", "Verify Z"
-- **Data model changes:** "Add column X to table Y", "Create migration for Z"
+- **Elementos checkbox:** \`- [ ] ...\` o \`- [x] ...\`
+- **Pasos numerados** bajo encabezados de implementación: "1. Crear ...", "2. Agregar ...", "3. Modificar ..."
+- **Declaraciones imperativas:** "Agregar X a Y", "Crear un servicio Z", "Modificar el controlador W"
+- **Especificaciones a nivel de archivo:** "Nuevo archivo: ruta/al/archivo.ts", "Modificar ruta/al/existente.rb"
+- **Requisitos de tests:** "Probar que X", "Agregar test para Y", "Verificar Z"
+- **Cambios de modelo de datos:** "Agregar columna X a tabla Y", "Crear migración para Z"
 
-**Ignore:**
-- Context/Background sections (\`## Context\`, \`## Background\`, \`## Problem\`)
-- Questions and open items (marked with ?, "TBD", "TODO: decide")
-- Review report sections (\`## GSTACK REVIEW REPORT\`)
-- Explicitly deferred items ("Future:", "Out of scope:", "NOT in scope:", "P2:", "P3:", "P4:")
-- CEO Review Decisions sections (these record choices, not work items)
+**Ignorar:**
+- Secciones de contexto/antecedentes (\`## Contexto\`, \`## Antecedentes\`, \`## Problema\`)
+- Preguntas y elementos abiertos (marcados con ?, "TBD", "TODO: decidir")
+- Secciones de informe de revisión (\`## INFORME DE REVISIÓN GSTACK\`)
+- Elementos explícitamente diferidos ("Futuro:", "Fuera de alcance:", "NO en alcance:", "P2:", "P3:", "P4:")
+- Secciones de Decisiones de Revisión CEO (registran decisiones, no elementos de trabajo)
 
-**Cap:** Extract at most 50 items. If the plan has more, note: "Showing top 50 of N plan items — full list in plan file."
+**Límite:** Extrae como máximo 50 elementos. Si el plan tiene más, indica: "Mostrando los 50 principales de N elementos del plan — lista completa en el archivo de plan."
 
-**No items found:** If the plan contains no extractable actionable items, skip with: "Plan file contains no actionable items — skipping completion audit."
+**Sin elementos encontrados:** Si el plan no contiene elementos accionables extraíbles, omite con: "El archivo de plan no contiene elementos accionables — omitiendo auditoría de completitud."
 
-For each item, note:
-- The item text (verbatim or concise summary)
-- Its category: CODE | TEST | MIGRATION | CONFIG | DOCS`);
+Para cada elemento, anota:
+- El texto del elemento (textual o resumen conciso)
+- Su categoría: CODE | TEST | MIGRATION | CONFIG | DOCS`);
 
   // ── Cross-reference against diff ──
   sections.push(`
-### Cross-Reference Against Diff
+### Cruce con el Diff
 
-Run \`git diff origin/<base>...HEAD\` and \`git log origin/<base>..HEAD --oneline\` to understand what was implemented.
+Ejecuta \`git diff origin/<base>...HEAD\` y \`git log origin/<base>..HEAD --oneline\` para entender qué se implementó.
 
-For each extracted plan item, check the diff and classify:
+Para cada elemento del plan extraído, revisa el diff y clasifica:
 
-- **DONE** — Clear evidence in the diff that this item was implemented. Cite the specific file(s) changed.
-- **PARTIAL** — Some work toward this item exists in the diff but it's incomplete (e.g., model created but controller missing, function exists but edge cases not handled).
-- **NOT DONE** — No evidence in the diff that this item was addressed.
-- **CHANGED** — The item was implemented using a different approach than the plan described, but the same goal is achieved. Note the difference.
+- **DONE** — Evidencia clara en el diff de que este elemento fue implementado. Cita los archivos específicos cambiados.
+- **PARTIAL** — Existe algo de trabajo hacia este elemento en el diff pero está incompleto (ej.: modelo creado pero falta el controlador, función existe pero no se manejan casos extremos).
+- **NOT DONE** — Sin evidencia en el diff de que este elemento fue abordado.
+- **CHANGED** — El elemento fue implementado usando un enfoque diferente al descrito en el plan, pero se logra el mismo objetivo. Anota la diferencia.
 
-**Be conservative with DONE** — require clear evidence in the diff. A file being touched is not enough; the specific functionality described must be present.
-**Be generous with CHANGED** — if the goal is met by different means, that counts as addressed.`);
+**Sé conservador con DONE** — requiere evidencia clara en el diff. Que un archivo se haya tocado no es suficiente; la funcionalidad específica descrita debe estar presente.
+**Sé generoso con CHANGED** — si el objetivo se cumple por medios diferentes, cuenta como abordado.`);
 
   // ── Output format ──
   sections.push(`
-### Output Format
+### Formato de Salida
 
 \`\`\`
-PLAN COMPLETION AUDIT
+AUDITORÍA DE COMPLETITUD DEL PLAN
 ═══════════════════════════════
-Plan: {plan file path}
+Plan: {ruta del archivo de plan}
 
-## Implementation Items
-  [DONE]      Create UserService — src/services/user_service.rb (+142 lines)
-  [PARTIAL]   Add validation — model validates but missing controller checks
-  [NOT DONE]  Add caching layer — no cache-related changes in diff
-  [CHANGED]   "Redis queue" → implemented with Sidekiq instead
+## Elementos de Implementación
+  [DONE]      Crear UserService — src/services/user_service.rb (+142 líneas)
+  [PARTIAL]   Agregar validación — el modelo valida pero faltan verificaciones del controlador
+  [NOT DONE]  Agregar capa de caché — sin cambios relacionados con caché en el diff
+  [CHANGED]   "Cola Redis" → implementado con Sidekiq en su lugar
 
-## Test Items
-  [DONE]      Unit tests for UserService — test/services/user_service_test.rb
-  [NOT DONE]  E2E test for signup flow
+## Elementos de Test
+  [DONE]      Tests unitarios para UserService — test/services/user_service_test.rb
+  [NOT DONE]  Test E2E del flujo de registro
 
-## Migration Items
-  [DONE]      Create users table — db/migrate/20240315_create_users.rb
+## Elementos de Migración
+  [DONE]      Crear tabla users — db/migrate/20240315_create_users.rb
 
 ─────────────────────────────────
-COMPLETION: 4/7 DONE, 1 PARTIAL, 1 NOT DONE, 1 CHANGED
+COMPLETITUD: 4/7 DONE, 1 PARTIAL, 1 NOT DONE, 1 CHANGED
 ─────────────────────────────────
 \`\`\``);
 
   // ── Gate logic (mode-specific) ──
   if (mode === 'ship') {
     sections.push(`
-### Gate Logic
+### Lógica del Gate
 
-After producing the completion checklist:
+Después de producir la checklist de completitud:
 
-- **All DONE or CHANGED:** Pass. "Plan completion: PASS — all items addressed." Continue.
-- **Only PARTIAL items (no NOT DONE):** Continue with a note in the PR body. Not blocking.
-- **Any NOT DONE items:** Use AskUserQuestion:
-  - Show the completion checklist above
-  - "{N} items from the plan are NOT DONE. These were part of the original plan but are missing from the implementation."
-  - RECOMMENDATION: depends on item count and severity. If 1-2 minor items (docs, config), recommend B. If core functionality is missing, recommend A.
-  - Options:
-    A) Stop — implement the missing items before shipping
-    B) Ship anyway — defer these to a follow-up (will create P1 TODOs in Step 5.5)
-    C) These items were intentionally dropped — remove from scope
-  - If A: STOP. List the missing items for the user to implement.
-  - If B: Continue. For each NOT DONE item, create a P1 TODO in Step 5.5 with "Deferred from plan: {plan file path}".
-  - If C: Continue. Note in PR body: "Plan items intentionally dropped: {list}."
+- **Todos DONE o CHANGED:** Aprobado. "Completitud del plan: APROBADO — todos los elementos abordados." Continúa.
+- **Solo elementos PARTIAL (sin NOT DONE):** Continúa con una nota en el cuerpo del PR. No es bloqueante.
+- **Algún elemento NOT DONE:** Usa AskUserQuestion:
+  - Muestra la checklist de completitud anterior
+  - "{N} elementos del plan están NOT DONE. Estos eran parte del plan original pero faltan en la implementación."
+  - RECOMMENDATION: depende de la cantidad y gravedad de elementos. Si son 1-2 elementos menores (docs, config), recomienda B. Si falta funcionalidad principal, recomienda A.
+  - Opciones:
+    A) Detener — implementar los elementos faltantes antes de enviar
+    B) Enviar de todos modos — diferir estos a un seguimiento (se crearán TODOs P1 en el Paso 5.5)
+    C) Estos elementos fueron eliminados intencionalmente — remover del alcance
+  - Si A: DETENER. Lista los elementos faltantes para que el usuario los implemente.
+  - Si B: Continúa. Para cada elemento NOT DONE, crea un TODO P1 en el Paso 5.5 con "Diferido del plan: {ruta del archivo de plan}".
+  - Si C: Continúa. Indica en el cuerpo del PR: "Elementos del plan eliminados intencionalmente: {lista}."
 
-**No plan file found:** Skip entirely. "No plan file detected — skipping plan completion audit."
+**Archivo de plan no encontrado:** Omite por completo. "Archivo de plan no detectado — omitiendo auditoría de completitud del plan."
 
-**Include in PR body (Step 8):** Add a \`## Plan Completion\` section with the checklist summary.`);
+**Incluir en el cuerpo del PR (Paso 8):** Agrega una sección \`## Completitud del Plan\` con el resumen de la checklist.`);
   } else {
     // review mode
     sections.push(`
-### Integration with Scope Drift Detection
+### Integración con Detección de Desviación de Alcance
 
-The plan completion results augment the existing Scope Drift Detection. If a plan file is found:
+Los resultados de completitud del plan complementan la Detección de Desviación de Alcance existente. Si se encuentra un archivo de plan:
 
-- **NOT DONE items** become additional evidence for **MISSING REQUIREMENTS** in the scope drift report.
-- **Items in the diff that don't match any plan item** become evidence for **SCOPE CREEP** detection.
+- Los elementos **NOT DONE** se convierten en evidencia adicional para **REQUISITOS FALTANTES** en el informe de desviación de alcance.
+- Los **elementos en el diff que no coinciden con ningún elemento del plan** se convierten en evidencia para detección de **SCOPE CREEP**.
 
-This is **INFORMATIONAL** — does not block the review (consistent with existing scope drift behavior).
+Esto es **INFORMATIONAL** — no bloquea la revisión (consistente con el comportamiento existente de desviación de alcance).
 
-Update the scope drift output to include plan file context:
+Actualiza la salida de desviación de alcance para incluir contexto del archivo de plan:
 
 \`\`\`
-Scope Check: [CLEAN / DRIFT DETECTED / REQUIREMENTS MISSING]
-Intent: <from plan file — 1-line summary>
-Plan: <plan file path>
-Delivered: <1-line summary of what the diff actually does>
-Plan items: N DONE, M PARTIAL, K NOT DONE
-[If NOT DONE: list each missing item]
-[If scope creep: list each out-of-scope change not in the plan]
+Verificación de Alcance: [LIMPIO / DESVIACIÓN DETECTADA / REQUISITOS FALTANTES]
+Intención: <del archivo de plan — resumen en 1 línea>
+Plan: <ruta del archivo de plan>
+Entregado: <resumen en 1 línea de lo que el diff realmente hace>
+Elementos del plan: N DONE, M PARTIAL, K NOT DONE
+[Si NOT DONE: lista cada elemento faltante]
+[Si scope creep: lista cada cambio fuera de alcance que no está en el plan]
 \`\`\`
 
-**No plan file found:** Fall back to existing scope drift behavior (check TODOS.md and PR description only).`);
+**Archivo de plan no encontrado:** Recurre al comportamiento existente de desviación de alcance (verificar solo TODOS.md y descripción del PR).`);
   }
 
   return sections.join('\n');
@@ -767,20 +765,20 @@ export function generatePlanCompletionAuditReview(_ctx: TemplateContext): string
 // ─── Plan Verification Execution ──────────────────────────────────────
 
 export function generatePlanVerificationExec(_ctx: TemplateContext): string {
-  return `## Step 3.47: Plan Verification
+  return `## Paso 3.47: Verificación del Plan
 
-Automatically verify the plan's testing/verification steps using the \`/qa-only\` skill.
+Verifica automáticamente los pasos de testing/verificación del plan usando el skill \`/qa-only\`.
 
-### 1. Check for verification section
+### 1. Verificar si existe sección de verificación
 
-Using the plan file already discovered in Step 3.45, look for a verification section. Match any of these headings: \`## Verification\`, \`## Test plan\`, \`## Testing\`, \`## How to test\`, \`## Manual testing\`, or any section with verification-flavored items (URLs to visit, things to check visually, interactions to test).
+Usando el archivo de plan ya descubierto en el Paso 3.45, busca una sección de verificación. Coincide con cualquiera de estos encabezados: \`## Verificación\`, \`## Plan de tests\`, \`## Testing\`, \`## Cómo probar\`, \`## Testing manual\`, o cualquier sección con elementos con sabor a verificación (URLs a visitar, cosas a verificar visualmente, interacciones a probar).
 
-**If no verification section found:** Skip with "No verification steps found in plan — skipping auto-verification."
-**If no plan file was found in Step 3.45:** Skip (already handled).
+**Si no se encuentra sección de verificación:** Omite con "No se encontraron pasos de verificación en el plan — omitiendo auto-verificación."
+**Si no se encontró archivo de plan en el Paso 3.45:** Omite (ya manejado).
 
-### 2. Check for running dev server
+### 2. Verificar si hay servidor de desarrollo ejecutándose
 
-Before invoking browse-based verification, check if a dev server is reachable:
+Antes de invocar verificación basada en navegador, comprueba si un servidor de desarrollo es accesible:
 
 \`\`\`bash
 curl -s -o /dev/null -w '%{http_code}' http://localhost:3000 2>/dev/null || \\
@@ -789,39 +787,39 @@ curl -s -o /dev/null -w '%{http_code}' http://localhost:5173 2>/dev/null || \\
 curl -s -o /dev/null -w '%{http_code}' http://localhost:4000 2>/dev/null || echo "NO_SERVER"
 \`\`\`
 
-**If NO_SERVER:** Skip with "No dev server detected — skipping plan verification. Run /qa separately after deploying."
+**Si NO_SERVER:** Omite con "No se detectó servidor de desarrollo — omitiendo verificación del plan. Ejecuta /qa por separado después de desplegar."
 
-### 3. Invoke /qa-only inline
+### 3. Invocar /qa-only en línea
 
-Read the \`/qa-only\` skill from disk:
+Lee el skill \`/qa-only\` desde disco:
 
 \`\`\`bash
 cat \${CLAUDE_SKILL_DIR}/../qa-only/SKILL.md
 \`\`\`
 
-**If unreadable:** Skip with "Could not load /qa-only — skipping plan verification."
+**Si es ilegible:** Omite con "No se pudo cargar /qa-only — omitiendo verificación del plan."
 
-Follow the /qa-only workflow with these modifications:
-- **Skip the preamble** (already handled by /ship)
-- **Use the plan's verification section as the primary test input** — treat each verification item as a test case
-- **Use the detected dev server URL** as the base URL
-- **Skip the fix loop** — this is report-only verification during /ship
-- **Cap at the verification items from the plan** — do not expand into general site QA
+Sigue el flujo de trabajo de /qa-only con estas modificaciones:
+- **Omite el preámbulo** (ya manejado por /ship)
+- **Usa la sección de verificación del plan como entrada primaria de tests** — trata cada elemento de verificación como un caso de prueba
+- **Usa la URL del servidor de desarrollo detectado** como URL base
+- **Omite el bucle de corrección** — esto es verificación solo de reporte durante /ship
+- **Limita a los elementos de verificación del plan** — no expandas a QA general del sitio
 
-### 4. Gate logic
+### 4. Lógica del gate
 
-- **All verification items PASS:** Continue silently. "Plan verification: PASS."
-- **Any FAIL:** Use AskUserQuestion:
-  - Show the failures with screenshot evidence
-  - RECOMMENDATION: Choose A if failures indicate broken functionality. Choose B if cosmetic only.
-  - Options:
-    A) Fix the failures before shipping (recommended for functional issues)
-    B) Ship anyway — known issues (acceptable for cosmetic issues)
-- **No verification section / no server / unreadable skill:** Skip (non-blocking).
+- **Todos los elementos de verificación PASS:** Continúa silenciosamente. "Verificación del plan: APROBADO."
+- **Algún FAIL:** Usa AskUserQuestion:
+  - Muestra los fallos con evidencia en capturas de pantalla
+  - RECOMMENDATION: Elige A si los fallos indican funcionalidad rota. Elige B si son solo cosméticos.
+  - Opciones:
+    A) Corregir los fallos antes de enviar (recomendado para problemas funcionales)
+    B) Enviar de todos modos — incidencias conocidas (aceptable para problemas cosméticos)
+- **Sin sección de verificación / sin servidor / skill ilegible:** Omite (no bloqueante).
 
-### 5. Include in PR body
+### 5. Incluir en el cuerpo del PR
 
-Add a \`## Verification Results\` section to the PR body (Step 8):
-- If verification ran: summary of results (N PASS, M FAIL, K SKIPPED)
-- If skipped: reason for skipping (no plan, no server, no verification section)`;
+Agrega una sección \`## Resultados de Verificación\` al cuerpo del PR (Paso 8):
+- Si la verificación se ejecutó: resumen de resultados (N PASS, M FAIL, K OMITIDOS)
+- Si se omitió: razón de la omisión (sin plan, sin servidor, sin sección de verificación)`;
 }

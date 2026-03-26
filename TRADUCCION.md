@@ -39,12 +39,14 @@
 - [x] setup-deploy/SKILL.md.tmpl
 - [x] gstack-upgrade/SKILL.md.tmpl
 
-### Pendiente — Infraestructura compartida
-- [ ] Resolvers en scripts/resolvers/ (generan el {{PREAMBLE}} compartido)
-- [ ] SKILL.md.tmpl raíz (skill de browse)
-- [ ] ARCHITECTURE.md
-- [ ] BROWSER.md
-- [ ] CONTRIBUTING.md
+### Completado — Infraestructura compartida
+- [x] Resolvers en scripts/resolvers/ (preamble.ts, review.ts, design.ts, testing.ts, utility.ts, codex-helpers.ts, browse.ts)
+- [x] SKILL.md.tmpl raíz (skill de browse)
+- [x] ARCHITECTURE.md
+- [x] BROWSER.md
+- [x] CONTRIBUTING.md
+
+**TRADUCCIÓN 100% COMPLETADA** — Todos los skills, resolvers y documentación están en castellano.
 
 ## Qué se traduce y qué no
 

@@ -1,12 +1,14 @@
-# Architecture
+> Traducido de [garrytan/gstack](https://github.com/garrytan/gstack). Original en inglés por Garry Tan.
 
-This document explains **why** gstack is built the way it is. For setup and commands, see CLAUDE.md. For contributing, see CONTRIBUTING.md.
+# Arquitectura
 
-## The core idea
+Este documento explica **por qué** gstack está construido de la forma en que lo está. Para la configuración y los comandos, consulta CLAUDE.md. Para contribuir, consulta CONTRIBUTING.md.
 
-gstack gives Claude Code a persistent browser and a set of opinionated workflow skills. The browser is the hard part — everything else is Markdown.
+## La idea central
 
-The key insight: an AI agent interacting with a browser needs **sub-second latency** and **persistent state**. If every command cold-starts a browser, you're waiting 3-5 seconds per tool call. If the browser dies between commands, you lose cookies, tabs, and login sessions. So gstack runs a long-lived Chromium daemon that the CLI talks to over localhost HTTP.
+gstack proporciona a Claude Code un navegador persistente y un conjunto de skills de flujo de trabajo con criterio propio. El navegador es la parte difícil — todo lo demás es Markdown.
+
+La idea clave: un agente de IA que interactúa con un navegador necesita **latencia inferior al segundo** y **estado persistente**. Si cada comando arranca un navegador desde cero, esperas 3-5 segundos por cada llamada a herramienta. Si el navegador muere entre comandos, pierdes cookies, pestañas y sesiones de inicio de sesión. Por eso gstack ejecuta un daemon de Chromium de larga duración con el que el CLI se comunica a través de HTTP en localhost.
 
 ```
 Claude Code                     gstack
@@ -33,87 +35,87 @@ Claude Code                     gstack
                                └───────────────────────┘
 ```
 
-First call starts everything (~3s). Every call after: ~100-200ms.
+La primera llamada arranca todo (~3s). Cada llamada posterior: ~100-200ms.
 
-## Why Bun
+## Por qué Bun
 
-Node.js would work. Bun is better here for three reasons:
+Node.js funcionaría. Bun es mejor aquí por tres razones:
 
-1. **Compiled binaries.** `bun build --compile` produces a single ~58MB executable. No `node_modules` at runtime, no `npx`, no PATH configuration. The binary just runs. This matters because gstack installs into `~/.claude/skills/` where users don't expect to manage a Node.js project.
+1. **Binarios compilados.** `bun build --compile` produce un único ejecutable de ~58MB. Sin `node_modules` en tiempo de ejecución, sin `npx`, sin configuración de PATH. El binario simplemente funciona. Esto importa porque gstack se instala en `~/.claude/skills/` donde los usuarios no esperan tener que gestionar un proyecto Node.js.
 
-2. **Native SQLite.** Cookie decryption reads Chromium's SQLite cookie database directly. Bun has `new Database()` built in — no `better-sqlite3`, no native addon compilation, no gyp. One less thing that breaks on different machines.
+2. **SQLite nativo.** La desencriptación de cookies lee la base de datos SQLite de cookies de Chromium directamente. Bun trae `new Database()` integrado — sin `better-sqlite3`, sin compilación de addons nativos, sin gyp. Una cosa menos que puede fallar en diferentes máquinas.
 
-3. **Native TypeScript.** The server runs as `bun run server.ts` during development. No compilation step, no `ts-node`, no source maps to debug. The compiled binary is for deployment; source files are for development.
+3. **TypeScript nativo.** El servidor se ejecuta como `bun run server.ts` durante el desarrollo. Sin paso de compilación, sin `ts-node`, sin source maps que depurar. El binario compilado es para despliegue; los archivos fuente son para desarrollo.
 
-4. **Built-in HTTP server.** `Bun.serve()` is fast, simple, and doesn't need Express or Fastify. The server handles ~10 routes total. A framework would be overhead.
+4. **Servidor HTTP integrado.** `Bun.serve()` es rápido, simple y no necesita Express ni Fastify. El servidor gestiona unas ~10 rutas en total. Un framework sería sobrecarga innecesaria.
 
-The bottleneck is always Chromium, not the CLI or server. Bun's startup speed (~1ms for the compiled binary vs ~100ms for Node) is nice but not the reason we chose it. The compiled binary and native SQLite are.
+El cuello de botella siempre es Chromium, no el CLI ni el servidor. La velocidad de arranque de Bun (~1ms para el binario compilado vs ~100ms para Node) es agradable pero no es la razón por la que lo elegimos. Lo son el binario compilado y el SQLite nativo.
 
-## The daemon model
+## El modelo de daemon
 
-### Why not start a browser per command?
+### ¿Por qué no arrancar un navegador por comando?
 
-Playwright can launch Chromium in ~2-3 seconds. For a single screenshot, that's fine. For a QA session with 20+ commands, it's 40+ seconds of browser startup overhead. Worse: you lose all state between commands. Cookies, localStorage, login sessions, open tabs — all gone.
+Playwright puede lanzar Chromium en ~2-3 segundos. Para una sola captura de pantalla, está bien. Para una sesión de QA con más de 20 comandos, son más de 40 segundos de sobrecarga de arranque del navegador. Peor aún: pierdes todo el estado entre comandos. Cookies, localStorage, sesiones de inicio de sesión, pestañas abiertas — todo desaparece.
 
-The daemon model means:
+El modelo de daemon significa:
 
-- **Persistent state.** Log in once, stay logged in. Open a tab, it stays open. localStorage persists across commands.
-- **Sub-second commands.** After the first call, every command is just an HTTP POST. ~100-200ms round-trip including Chromium's work.
-- **Automatic lifecycle.** The server auto-starts on first use, auto-shuts down after 30 minutes idle. No process management needed.
+- **Estado persistente.** Inicia sesión una vez, permanece con la sesión iniciada. Abre una pestaña, permanece abierta. localStorage persiste entre comandos.
+- **Comandos en menos de un segundo.** Después de la primera llamada, cada comando es simplemente un HTTP POST. ~100-200ms de ida y vuelta incluyendo el trabajo de Chromium.
+- **Ciclo de vida automático.** El servidor se inicia automáticamente en el primer uso y se apaga automáticamente tras 30 minutos de inactividad. No se necesita gestión de procesos.
 
-### State file
+### Archivo de estado
 
-The server writes `.gstack/browse.json` (atomic write via tmp + rename, mode 0o600):
+El servidor escribe `.gstack/browse.json` (escritura atómica mediante tmp + rename, modo 0o600):
 
 ```json
 { "pid": 12345, "port": 34567, "token": "uuid-v4", "startedAt": "...", "binaryVersion": "abc123" }
 ```
 
-The CLI reads this file to find the server. If the file is missing or the server fails an HTTP health check, the CLI spawns a new server. On Windows, PID-based process detection is unreliable in Bun binaries, so the health check (GET /health) is the primary liveness signal on all platforms.
+El CLI lee este archivo para localizar el servidor. Si el archivo no existe o el servidor falla en la comprobación de salud HTTP, el CLI lanza un nuevo servidor. En Windows, la detección de procesos basada en PID no es fiable en binarios de Bun, por lo que la comprobación de salud (GET /health) es la señal principal de actividad en todas las plataformas.
 
-### Port selection
+### Selección de puerto
 
-Random port between 10000-60000 (retry up to 5 on collision). This means 10 Conductor workspaces can each run their own browse daemon with zero configuration and zero port conflicts. The old approach (scanning 9400-9409) broke constantly in multi-workspace setups.
+Puerto aleatorio entre 10000-60000 (hasta 5 reintentos en caso de colisión). Esto significa que 10 workspaces de Conductor pueden ejecutar cada uno su propio daemon de navegador con cero configuración y cero conflictos de puertos. El enfoque anterior (escanear 9400-9409) fallaba constantemente en configuraciones multi-workspace.
 
-### Version auto-restart
+### Reinicio automático por versión
 
-The build writes `git rev-parse HEAD` to `browse/dist/.version`. On each CLI invocation, if the binary's version doesn't match the running server's `binaryVersion`, the CLI kills the old server and starts a new one. This prevents the "stale binary" class of bugs entirely — rebuild the binary, next command picks it up automatically.
+El build escribe `git rev-parse HEAD` en `browse/dist/.version`. En cada invocación del CLI, si la versión del binario no coincide con el `binaryVersion` del servidor en ejecución, el CLI mata el servidor antiguo e inicia uno nuevo. Esto previene completamente la clase de bugs de "binario obsoleto" — recompila el binario, el siguiente comando lo recoge automáticamente.
 
-## Security model
+## Modelo de seguridad
 
-### Localhost only
+### Solo localhost
 
-The HTTP server binds to `localhost`, not `0.0.0.0`. It's not reachable from the network.
+El servidor HTTP se enlaza a `localhost`, no a `0.0.0.0`. No es accesible desde la red.
 
-### Bearer token auth
+### Autenticación con bearer token
 
-Every server session generates a random UUID token, written to the state file with mode 0o600 (owner-only read). Every HTTP request must include `Authorization: Bearer <token>`. If the token doesn't match, the server returns 401.
+Cada sesión del servidor genera un token UUID aleatorio, escrito en el archivo de estado con modo 0o600 (lectura solo para el propietario). Cada solicitud HTTP debe incluir `Authorization: Bearer <token>`. Si el token no coincide, el servidor devuelve 401.
 
-This prevents other processes on the same machine from talking to your browse server. The cookie picker UI (`/cookie-picker`) and health check (`/health`) are exempt — they're localhost-only and don't execute commands.
+Esto impide que otros procesos en la misma máquina se comuniquen con tu servidor de navegación. La interfaz de selección de cookies (`/cookie-picker`) y la comprobación de salud (`/health`) están exentas — son solo de localhost y no ejecutan comandos.
 
-### Cookie security
+### Seguridad de cookies
 
-Cookies are the most sensitive data gstack handles. The design:
+Las cookies son los datos más sensibles que maneja gstack. El diseño:
 
-1. **Keychain access requires user approval.** First cookie import per browser triggers a macOS Keychain dialog. The user must click "Allow" or "Always Allow." gstack never silently accesses credentials.
+1. **El acceso al Keychain requiere aprobación del usuario.** La primera importación de cookies por navegador activa un diálogo del Keychain de macOS. El usuario debe hacer clic en "Permitir" o "Permitir siempre". gstack nunca accede silenciosamente a las credenciales.
 
-2. **Decryption happens in-process.** Cookie values are decrypted in memory (PBKDF2 + AES-128-CBC), loaded into the Playwright context, and never written to disk in plaintext. The cookie picker UI never displays cookie values — only domain names and counts.
+2. **La desencriptación ocurre en el proceso.** Los valores de las cookies se desencriptan en memoria (PBKDF2 + AES-128-CBC), se cargan en el contexto de Playwright y nunca se escriben en disco en texto plano. La interfaz de selección de cookies nunca muestra los valores de las cookies — solo nombres de dominio y recuentos.
 
-3. **Database is read-only.** gstack copies the Chromium cookie DB to a temp file (to avoid SQLite lock conflicts with the running browser) and opens it read-only. It never modifies your real browser's cookie database.
+3. **La base de datos es de solo lectura.** gstack copia la base de datos de cookies de Chromium a un archivo temporal (para evitar conflictos de bloqueo de SQLite con el navegador en ejecución) y la abre en modo de solo lectura. Nunca modifica la base de datos de cookies de tu navegador real.
 
-4. **Key caching is per-session.** The Keychain password + derived AES key are cached in memory for the server's lifetime. When the server shuts down (idle timeout or explicit stop), the cache is gone.
+4. **La caché de claves es por sesión.** La contraseña del Keychain y la clave AES derivada se almacenan en caché en memoria durante la vida del servidor. Cuando el servidor se apaga (timeout por inactividad o parada explícita), la caché desaparece.
 
-5. **No cookie values in logs.** Console, network, and dialog logs never contain cookie values. The `cookies` command outputs cookie metadata (domain, name, expiry) but values are truncated.
+5. **Sin valores de cookies en los logs.** Los logs de consola, red y diálogos nunca contienen valores de cookies. El comando `cookies` genera metadatos de cookies (dominio, nombre, caducidad) pero los valores se truncan.
 
-### Shell injection prevention
+### Prevención de inyección de shell
 
-The browser registry (Comet, Chrome, Arc, Brave, Edge) is hardcoded. Database paths are constructed from known constants, never from user input. Keychain access uses `Bun.spawn()` with explicit argument arrays, not shell string interpolation.
+El registro de navegadores (Comet, Chrome, Arc, Brave, Edge) está hardcodeado. Las rutas a las bases de datos se construyen a partir de constantes conocidas, nunca de la entrada del usuario. El acceso al Keychain usa `Bun.spawn()` con arrays de argumentos explícitos, no interpolación de cadenas de shell.
 
-## The ref system
+## El sistema de refs
 
-Refs (`@e1`, `@e2`, `@c1`) are how the agent addresses page elements without writing CSS selectors or XPath.
+Los refs (`@e1`, `@e2`, `@c1`) son la forma en que el agente se dirige a los elementos de la página sin escribir CSS selectors ni XPath.
 
-### How it works
+### Cómo funciona
 
 ```
 1. Agent runs: $B snapshot -i
@@ -128,23 +130,23 @@ Later:
 8. Server resolves @e3 → Locator → locator.click()
 ```
 
-### Why Locators, not DOM mutation
+### Por qué Locators y no mutación del DOM
 
-The obvious approach is to inject `data-ref="@e1"` attributes into the DOM. This breaks on:
+El enfoque obvio sería inyectar atributos `data-ref="@e1"` en el DOM. Esto falla con:
 
-- **CSP (Content Security Policy).** Many production sites block DOM modification from scripts.
-- **React/Vue/Svelte hydration.** Framework reconciliation can strip injected attributes.
-- **Shadow DOM.** Can't reach inside shadow roots from the outside.
+- **CSP (Content Security Policy).** Muchos sitios en producción bloquean la modificación del DOM desde scripts.
+- **Hidratación de React/Vue/Svelte.** La reconciliación del framework puede eliminar los atributos inyectados.
+- **Shadow DOM.** No se puede acceder al interior de shadow roots desde el exterior.
 
-Playwright Locators are external to the DOM. They use the accessibility tree (which Chromium maintains internally) and `getByRole()` queries. No DOM mutation, no CSP issues, no framework conflicts.
+Los Locators de Playwright son externos al DOM. Usan el árbol de accesibilidad (que Chromium mantiene internamente) y consultas `getByRole()`. Sin mutación del DOM, sin problemas de CSP, sin conflictos con frameworks.
 
-### Ref lifecycle
+### Ciclo de vida de los refs
 
-Refs are cleared on navigation (the `framenavigated` event on the main frame). This is correct — after navigation, all locators are stale. The agent must run `snapshot` again to get fresh refs. This is by design: stale refs should fail loudly, not click the wrong element.
+Los refs se limpian en la navegación (el evento `framenavigated` en el frame principal). Esto es correcto — después de la navegación, todos los locators están obsoletos. El agente debe ejecutar `snapshot` de nuevo para obtener refs actualizados. Esto es por diseño: los refs obsoletos deben fallar de forma ruidosa, no hacer clic en el elemento equivocado.
 
-### Ref staleness detection
+### Detección de obsolescencia de refs
 
-SPAs can mutate the DOM without triggering `framenavigated` (e.g. React router transitions, tab switches, modal opens). This makes refs stale even though the page URL didn't change. To catch this, `resolveRef()` performs an async `count()` check before using any ref:
+Las SPAs pueden mutar el DOM sin disparar `framenavigated` (por ejemplo, transiciones de React router, cambios de pestaña, apertura de modales). Esto hace que los refs queden obsoletos aunque la URL de la página no haya cambiado. Para detectar esto, `resolveRef()` realiza una comprobación asíncrona con `count()` antes de usar cualquier ref:
 
 ```
 resolveRef(@e3) → entry = refMap.get("e3")
@@ -153,36 +155,36 @@ resolveRef(@e3) → entry = refMap.get("e3")
                 → if count > 0: return { locator }
 ```
 
-This fails fast (~5ms overhead) instead of letting Playwright's 30-second action timeout expire on a missing element. The `RefEntry` stores `role` and `name` metadata alongside the Locator so the error message can tell the agent what the element was.
+Esto falla rápidamente (~5ms de sobrecarga) en lugar de dejar que expire el timeout de acción de 30 segundos de Playwright sobre un elemento ausente. El `RefEntry` almacena metadatos de `role` y `name` junto al Locator para que el mensaje de error pueda indicar al agente qué era el elemento.
 
-### Cursor-interactive refs (@c)
+### Refs interactivos por cursor (@c)
 
-The `-C` flag finds elements that are clickable but not in the ARIA tree — things styled with `cursor: pointer`, elements with `onclick` attributes, or custom `tabindex`. These get `@c1`, `@c2` refs in a separate namespace. This catches custom components that frameworks render as `<div>` but are actually buttons.
+El flag `-C` encuentra elementos que son clicables pero no están en el árbol ARIA — cosas con estilo `cursor: pointer`, elementos con atributos `onclick` o `tabindex` personalizado. Estos obtienen refs `@c1`, `@c2` en un namespace separado. Esto captura componentes personalizados que los frameworks renderizan como `<div>` pero que en realidad son botones.
 
-## Logging architecture
+## Arquitectura de logging
 
-Three ring buffers (50,000 entries each, O(1) push):
+Tres buffers circulares (50.000 entradas cada uno, O(1) al insertar):
 
 ```
 Browser events → CircularBuffer (in-memory) → Async flush to .gstack/*.log
 ```
 
-Console messages, network requests, and dialog events each have their own buffer. Flushing happens every 1 second — the server appends only new entries since the last flush. This means:
+Los mensajes de consola, las solicitudes de red y los eventos de diálogo tienen cada uno su propio buffer. El vaciado a disco ocurre cada 1 segundo — el servidor solo añade las entradas nuevas desde el último vaciado. Esto significa:
 
-- HTTP request handling is never blocked by disk I/O
-- Logs survive server crashes (up to 1 second of data loss)
-- Memory is bounded (50K entries × 3 buffers)
-- Disk files are append-only, readable by external tools
+- El manejo de solicitudes HTTP nunca se bloquea por I/O de disco
+- Los logs sobreviven a caídas del servidor (con hasta 1 segundo de pérdida de datos)
+- La memoria está acotada (50K entradas x 3 buffers)
+- Los archivos en disco son de solo escritura incremental, legibles por herramientas externas
 
-The `console`, `network`, and `dialog` commands read from the in-memory buffers, not disk. Disk files are for post-mortem debugging.
+Los comandos `console`, `network` y `dialog` leen de los buffers en memoria, no del disco. Los archivos en disco son para depuración post-mortem.
 
-## SKILL.md template system
+## Sistema de plantillas SKILL.md
 
-### The problem
+### El problema
 
-SKILL.md files tell Claude how to use the browse commands. If the docs list a flag that doesn't exist, or miss a command that was added, the agent hits errors. Hand-maintained docs always drift from code.
+Los archivos SKILL.md le dicen a Claude cómo usar los comandos de navegación. Si la documentación lista un flag que no existe, o se olvida de un comando que se añadió, el agente encuentra errores. La documentación mantenida a mano siempre se desfasa del código.
 
-### The solution
+### La solución
 
 ```
 SKILL.md.tmpl          (human-written prose + placeholders)
@@ -192,60 +194,60 @@ gen-skill-docs.ts      (reads source code metadata)
 SKILL.md               (committed, auto-generated sections)
 ```
 
-Templates contain the workflows, tips, and examples that require human judgment. Placeholders are filled from source code at build time:
+Las plantillas contienen los flujos de trabajo, consejos y ejemplos que requieren juicio humano. Los placeholders se rellenan desde el código fuente en tiempo de build:
 
-| Placeholder | Source | What it generates |
-|-------------|--------|-------------------|
-| `{{COMMAND_REFERENCE}}` | `commands.ts` | Categorized command table |
-| `{{SNAPSHOT_FLAGS}}` | `snapshot.ts` | Flag reference with examples |
-| `{{PREAMBLE}}` | `gen-skill-docs.ts` | Startup block: update check, session tracking, contributor mode, AskUserQuestion format |
-| `{{BROWSE_SETUP}}` | `gen-skill-docs.ts` | Binary discovery + setup instructions |
-| `{{BASE_BRANCH_DETECT}}` | `gen-skill-docs.ts` | Dynamic base branch detection for PR-targeting skills (ship, review, qa, plan-ceo-review) |
-| `{{QA_METHODOLOGY}}` | `gen-skill-docs.ts` | Shared QA methodology block for /qa and /qa-only |
-| `{{DESIGN_METHODOLOGY}}` | `gen-skill-docs.ts` | Shared design audit methodology for /plan-design-review and /design-review |
-| `{{REVIEW_DASHBOARD}}` | `gen-skill-docs.ts` | Review Readiness Dashboard for /ship pre-flight |
-| `{{TEST_BOOTSTRAP}}` | `gen-skill-docs.ts` | Test framework detection, bootstrap, CI/CD setup for /qa, /ship, /design-review |
-| `{{CODEX_PLAN_REVIEW}}` | `gen-skill-docs.ts` | Optional cross-model plan review (Codex or Claude subagent fallback) for /plan-ceo-review and /plan-eng-review |
+| Placeholder | Fuente | Qué genera |
+|-------------|--------|------------|
+| `{{COMMAND_REFERENCE}}` | `commands.ts` | Tabla categorizada de comandos |
+| `{{SNAPSHOT_FLAGS}}` | `snapshot.ts` | Referencia de flags con ejemplos |
+| `{{PREAMBLE}}` | `gen-skill-docs.ts` | Bloque de inicio: comprobación de actualizaciones, seguimiento de sesiones, modo contribuidor, formato AskUserQuestion |
+| `{{BROWSE_SETUP}}` | `gen-skill-docs.ts` | Descubrimiento del binario + instrucciones de configuración |
+| `{{BASE_BRANCH_DETECT}}` | `gen-skill-docs.ts` | Detección dinámica de la rama base para skills orientadas a PR (ship, review, qa, plan-ceo-review) |
+| `{{QA_METHODOLOGY}}` | `gen-skill-docs.ts` | Bloque compartido de metodología QA para /qa y /qa-only |
+| `{{DESIGN_METHODOLOGY}}` | `gen-skill-docs.ts` | Metodología compartida de auditoría de diseño para /plan-design-review y /design-review |
+| `{{REVIEW_DASHBOARD}}` | `gen-skill-docs.ts` | Dashboard de preparación para revisión para el pre-vuelo de /ship |
+| `{{TEST_BOOTSTRAP}}` | `gen-skill-docs.ts` | Detección de framework de tests, bootstrap, configuración de CI/CD para /qa, /ship, /design-review |
+| `{{CODEX_PLAN_REVIEW}}` | `gen-skill-docs.ts` | Revisión opcional de plan cross-model (Codex o fallback a subagente Claude) para /plan-ceo-review y /plan-eng-review |
 
-This is structurally sound — if a command exists in code, it appears in docs. If it doesn't exist, it can't appear.
+Esto es estructuralmente sólido — si un comando existe en el código, aparece en la documentación. Si no existe, no puede aparecer.
 
-### The preamble
+### El preámbulo
 
-Every skill starts with a `{{PREAMBLE}}` block that runs before the skill's own logic. It handles five things in a single bash command:
+Cada skill comienza con un bloque `{{PREAMBLE}}` que se ejecuta antes de la lógica propia de la skill. Gestiona cinco cosas en un solo comando bash:
 
-1. **Update check** — calls `gstack-update-check`, reports if an upgrade is available.
-2. **Session tracking** — touches `~/.gstack/sessions/$PPID` and counts active sessions (files modified in the last 2 hours). When 3+ sessions are running, all skills enter "ELI16 mode" — every question re-grounds the user on context because they're juggling windows.
-3. **Contributor mode** — reads `gstack_contributor` from config. When true, the agent files casual field reports to `~/.gstack/contributor-logs/` when gstack itself misbehaves.
-4. **AskUserQuestion format** — universal format: context, question, `RECOMMENDATION: Choose X because ___`, lettered options. Consistent across all skills.
-5. **Search Before Building** — before building infrastructure or unfamiliar patterns, search first. Three layers of knowledge: tried-and-true (Layer 1), new-and-popular (Layer 2), first-principles (Layer 3). When first-principles reasoning reveals conventional wisdom is wrong, the agent names the "eureka moment" and logs it. See `ETHOS.md` for the full builder philosophy.
+1. **Comprobación de actualizaciones** — llama a `gstack-update-check`, informa si hay una actualización disponible.
+2. **Seguimiento de sesiones** — toca `~/.gstack/sessions/$PPID` y cuenta las sesiones activas (archivos modificados en las últimas 2 horas). Cuando hay 3+ sesiones ejecutándose, todas las skills entran en "modo ELI16" — cada pregunta recontextualiza al usuario porque está haciendo malabarismos entre ventanas.
+3. **Modo contribuidor** — lee `gstack_contributor` de la configuración. Cuando es true, el agente registra informes de campo informales en `~/.gstack/contributor-logs/` cuando gstack falla.
+4. **Formato AskUserQuestion** — formato universal: contexto, pregunta, `RECOMMENDATION: Choose X because ___`, opciones con letras. Consistente en todas las skills.
+5. **Buscar antes de construir** — antes de construir infraestructura o patrones desconocidos, buscar primero. Tres capas de conocimiento: probado y comprobado (Capa 1), nuevo y popular (Capa 2), primeros principios (Capa 3). Cuando el razonamiento desde primeros principios revela que la sabiduría convencional está equivocada, el agente nombra el "momento eureka" y lo registra. Consulta `ETHOS.md` para la filosofía completa del constructor.
 
-### Why committed, not generated at runtime?
+### ¿Por qué se commitea en lugar de generarse en tiempo de ejecución?
 
-Three reasons:
+Tres razones:
 
-1. **Claude reads SKILL.md at skill load time.** There's no build step when a user invokes `/browse`. The file must already exist and be correct.
-2. **CI can validate freshness.** `gen:skill-docs --dry-run` + `git diff --exit-code` catches stale docs before merge.
-3. **Git blame works.** You can see when a command was added and in which commit.
+1. **Claude lee SKILL.md al cargar la skill.** No hay paso de build cuando un usuario invoca `/browse`. El archivo ya debe existir y ser correcto.
+2. **CI puede validar la frescura.** `gen:skill-docs --dry-run` + `git diff --exit-code` detecta documentación obsoleta antes del merge.
+3. **Git blame funciona.** Puedes ver cuándo se añadió un comando y en qué commit.
 
-### Template test tiers
+### Niveles de pruebas de plantillas
 
-| Tier | What | Cost | Speed |
-|------|------|------|-------|
-| 1 — Static validation | Parse every `$B` command in SKILL.md, validate against registry | Free | <2s |
-| 2 — E2E via `claude -p` | Spawn real Claude session, run each skill, check for errors | ~$3.85 | ~20min |
-| 3 — LLM-as-judge | Sonnet scores docs on clarity/completeness/actionability | ~$0.15 | ~30s |
+| Nivel | Qué | Coste | Velocidad |
+|-------|-----|-------|-----------|
+| 1 — Validación estática | Parsear cada comando `$B` en SKILL.md, validar contra el registro | Gratis | <2s |
+| 2 — E2E via `claude -p` | Lanzar sesión real de Claude, ejecutar cada skill, comprobar errores | ~$3.85 | ~20min |
+| 3 — LLM como juez | Sonnet puntúa la documentación en claridad/completitud/accionabilidad | ~$0.15 | ~30s |
 
-Tier 1 runs on every `bun test`. Tiers 2+3 are gated behind `EVALS=1`. The idea is: catch 95% of issues for free, use LLMs only for judgment calls.
+El nivel 1 se ejecuta en cada `bun test`. Los niveles 2+3 están protegidos tras `EVALS=1`. La idea es: capturar el 95% de los problemas gratis, usar LLMs solo para juicios de valor.
 
-## Command dispatch
+## Despacho de comandos
 
-Commands are categorized by side effects:
+Los comandos se categorizan por efectos secundarios:
 
-- **READ** (text, html, links, console, cookies, ...): No mutations. Safe to retry. Returns page state.
-- **WRITE** (goto, click, fill, press, ...): Mutates page state. Not idempotent.
-- **META** (snapshot, screenshot, tabs, chain, ...): Server-level operations that don't fit neatly into read/write.
+- **READ** (text, html, links, console, cookies, ...): Sin mutaciones. Seguros de reintentar. Devuelven el estado de la página.
+- **WRITE** (goto, click, fill, press, ...): Mutan el estado de la página. No son idempotentes.
+- **META** (snapshot, screenshot, tabs, chain, ...): Operaciones a nivel de servidor que no encajan limpiamente en lectura/escritura.
 
-This isn't just organizational. The server uses it for dispatch:
+Esto no es solo organizativo. El servidor lo usa para el despacho:
 
 ```typescript
 if (READ_COMMANDS.has(cmd))  → handleReadCommand(cmd, args, bm)
@@ -253,37 +255,37 @@ if (WRITE_COMMANDS.has(cmd)) → handleWriteCommand(cmd, args, bm)
 if (META_COMMANDS.has(cmd))  → handleMetaCommand(cmd, args, bm, shutdown)
 ```
 
-The `help` command returns all three sets so agents can self-discover available commands.
+El comando `help` devuelve los tres conjuntos para que los agentes puedan auto-descubrir los comandos disponibles.
 
-## Error philosophy
+## Filosofía de errores
 
-Errors are for AI agents, not humans. Every error message must be actionable:
+Los errores son para agentes de IA, no para humanos. Cada mensaje de error debe ser accionable:
 
-- "Element not found" → "Element not found or not interactable. Run `snapshot -i` to see available elements."
-- "Selector matched multiple elements" → "Selector matched multiple elements. Use @refs from `snapshot` instead."
-- Timeout → "Navigation timed out after 30s. The page may be slow or the URL may be wrong."
+- "Element not found" -> "Element not found or not interactable. Run `snapshot -i` to see available elements."
+- "Selector matched multiple elements" -> "Selector matched multiple elements. Use @refs from `snapshot` instead."
+- Timeout -> "Navigation timed out after 30s. The page may be slow or the URL may be wrong."
 
-Playwright's native errors are rewritten through `wrapError()` to strip internal stack traces and add guidance. The agent should be able to read the error and know what to do next without human intervention.
+Los errores nativos de Playwright se reescriben a través de `wrapError()` para eliminar stack traces internos y añadir orientación. El agente debería poder leer el error y saber qué hacer a continuación sin intervención humana.
 
-### Crash recovery
+### Recuperación ante caídas
 
-The server doesn't try to self-heal. If Chromium crashes (`browser.on('disconnected')`), the server exits immediately. The CLI detects the dead server on the next command and auto-restarts. This is simpler and more reliable than trying to reconnect to a half-dead browser process.
+El servidor no intenta auto-repararse. Si Chromium se cae (`browser.on('disconnected')`), el servidor sale inmediatamente. El CLI detecta el servidor muerto en el siguiente comando y lo reinicia automáticamente. Esto es más simple y más fiable que intentar reconectarse a un proceso de navegador medio muerto.
 
-## E2E test infrastructure
+## Infraestructura de pruebas E2E
 
 ### Session runner (`test/helpers/session-runner.ts`)
 
-E2E tests spawn `claude -p` as a completely independent subprocess — not via the Agent SDK, which can't nest inside Claude Code sessions. The runner:
+Las pruebas E2E lanzan `claude -p` como un subproceso completamente independiente — no a través del Agent SDK, que no puede anidarse dentro de sesiones de Claude Code. El runner:
 
-1. Writes the prompt to a temp file (avoids shell escaping issues)
-2. Spawns `sh -c 'cat prompt | claude -p --output-format stream-json --verbose'`
-3. Streams NDJSON from stdout for real-time progress
-4. Races against a configurable timeout
-5. Parses the full NDJSON transcript into structured results
+1. Escribe el prompt en un archivo temporal (evita problemas de escape de shell)
+2. Lanza `sh -c 'cat prompt | claude -p --output-format stream-json --verbose'`
+3. Transmite NDJSON desde stdout para progreso en tiempo real
+4. Compite contra un timeout configurable
+5. Parsea la transcripción NDJSON completa en resultados estructurados
 
-The `parseNDJSON()` function is pure — no I/O, no side effects — making it independently testable.
+La función `parseNDJSON()` es pura — sin I/O, sin efectos secundarios — lo que la hace testeable de forma independiente.
 
-### Observability data flow
+### Flujo de datos de observabilidad
 
 ```
   skill-e2e-*.test.ts
@@ -323,38 +325,38 @@ The `parseNDJSON()` function is pure — no I/O, no side effects — making it i
   │        (stale >10min? warn)
 ```
 
-**Split ownership:** session-runner owns the heartbeat (current test state), eval-store owns partial results (completed test state). The watcher reads both. Neither component knows about the other — they share data only through the filesystem.
+**Propiedad dividida:** session-runner es dueño del heartbeat (estado actual del test), eval-store es dueño de los resultados parciales (estado de tests completados). El watcher lee ambos. Ningún componente sabe del otro — comparten datos solo a través del sistema de archivos.
 
-**Non-fatal everything:** All observability I/O is wrapped in try/catch. A write failure never causes a test to fail. The tests themselves are the source of truth; observability is best-effort.
+**Todo es no-fatal:** Todo el I/O de observabilidad está envuelto en try/catch. Un fallo de escritura nunca causa que un test falle. Los propios tests son la fuente de verdad; la observabilidad es de mejor esfuerzo.
 
-**Machine-readable diagnostics:** Each test result includes `exit_reason` (success, timeout, error_max_turns, error_api, exit_code_N), `timeout_at_turn`, and `last_tool_call`. This enables `jq` queries like:
+**Diagnósticos legibles por máquina:** Cada resultado de test incluye `exit_reason` (success, timeout, error_max_turns, error_api, exit_code_N), `timeout_at_turn` y `last_tool_call`. Esto permite consultas con `jq` como:
 ```bash
 jq '.tests[] | select(.exit_reason == "timeout") | .last_tool_call' ~/.gstack-dev/evals/_partial-e2e.json
 ```
 
-### Eval persistence (`test/helpers/eval-store.ts`)
+### Persistencia de evals (`test/helpers/eval-store.ts`)
 
-The `EvalCollector` accumulates test results and writes them in two ways:
+El `EvalCollector` acumula resultados de tests y los escribe de dos formas:
 
-1. **Incremental:** `savePartial()` writes `_partial-e2e.json` after each test (atomic: write `.tmp`, `fs.renameSync`). Survives kills.
-2. **Final:** `finalize()` writes a timestamped eval file (e.g. `e2e-20260314-143022.json`). The partial file is never cleaned up — it persists alongside the final file for observability.
+1. **Incremental:** `savePartial()` escribe `_partial-e2e.json` después de cada test (atómico: escribe `.tmp`, `fs.renameSync`). Sobrevive a kills.
+2. **Final:** `finalize()` escribe un archivo de eval con marca de tiempo (por ejemplo, `e2e-20260314-143022.json`). El archivo parcial nunca se limpia — persiste junto al archivo final para observabilidad.
 
-`eval:compare` diffs two eval runs. `eval:summary` aggregates stats across all runs in `~/.gstack-dev/evals/`.
+`eval:compare` compara dos ejecuciones de eval. `eval:summary` agrega estadísticas de todas las ejecuciones en `~/.gstack-dev/evals/`.
 
-### Test tiers
+### Niveles de pruebas
 
-| Tier | What | Cost | Speed |
-|------|------|------|-------|
-| 1 — Static validation | Parse `$B` commands, validate against registry, observability unit tests | Free | <5s |
-| 2 — E2E via `claude -p` | Spawn real Claude session, run each skill, scan for errors | ~$3.85 | ~20min |
-| 3 — LLM-as-judge | Sonnet scores docs on clarity/completeness/actionability | ~$0.15 | ~30s |
+| Nivel | Qué | Coste | Velocidad |
+|-------|-----|-------|-----------|
+| 1 — Validación estática | Parsear comandos `$B`, validar contra el registro, tests unitarios de observabilidad | Gratis | <5s |
+| 2 — E2E via `claude -p` | Lanzar sesión real de Claude, ejecutar cada skill, buscar errores | ~$3.85 | ~20min |
+| 3 — LLM como juez | Sonnet puntúa la documentación en claridad/completitud/accionabilidad | ~$0.15 | ~30s |
 
-Tier 1 runs on every `bun test`. Tiers 2+3 are gated behind `EVALS=1`. The idea: catch 95% of issues for free, use LLMs only for judgment calls and integration testing.
+El nivel 1 se ejecuta en cada `bun test`. Los niveles 2+3 están protegidos tras `EVALS=1`. La idea: capturar el 95% de los problemas gratis, usar LLMs solo para juicios de valor y pruebas de integración.
 
-## What's intentionally not here
+## Lo que intencionalmente no está aquí
 
-- **No WebSocket streaming.** HTTP request/response is simpler, debuggable with curl, and fast enough. Streaming would add complexity for marginal benefit.
-- **No MCP protocol.** MCP adds JSON schema overhead per request and requires a persistent connection. Plain HTTP + plain text output is lighter on tokens and easier to debug.
-- **No multi-user support.** One server per workspace, one user. The token auth is defense-in-depth, not multi-tenancy.
-- **No Windows/Linux cookie decryption.** macOS Keychain is the only supported credential store. Linux (GNOME Keyring/kwallet) and Windows (DPAPI) are architecturally possible but not implemented.
-- **No iframe support.** Playwright can handle iframes but the ref system doesn't cross frame boundaries yet. This is the most-requested missing feature.
+- **Sin streaming por WebSocket.** HTTP request/response es más simple, depurable con curl y suficientemente rápido. El streaming añadiría complejidad con beneficio marginal.
+- **Sin protocolo MCP.** MCP añade sobrecarga de JSON schema por solicitud y requiere una conexión persistente. HTTP plano + salida en texto plano es más ligero en tokens y más fácil de depurar.
+- **Sin soporte multi-usuario.** Un servidor por workspace, un usuario. La autenticación por token es defensa en profundidad, no multi-tenancy.
+- **Sin desencriptación de cookies en Windows/Linux.** El Keychain de macOS es el único almacén de credenciales soportado. Linux (GNOME Keyring/kwallet) y Windows (DPAPI) son arquitecturalmente posibles pero no están implementados.
+- **Sin soporte de iframes.** Playwright puede manejar iframes pero el sistema de refs aún no cruza los límites de frames. Esta es la funcionalidad ausente más solicitada.

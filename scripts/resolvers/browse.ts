@@ -26,7 +26,7 @@ export function generateCommandReference(_ctx: TemplateContext): string {
     commands.sort((a, b) => a.command.localeCompare(b.command));
 
     sections.push(`### ${category}`);
-    sections.push('| Command | Description |');
+    sections.push('| Comando | Descripción |');
     sections.push('|---------|-------------|');
     for (const cmd of commands) {
       const display = cmd.usage ? `\`${cmd.usage}\`` : `\`${cmd.command}\``;
@@ -40,7 +40,7 @@ export function generateCommandReference(_ctx: TemplateContext): string {
 
 export function generateSnapshotFlags(_ctx: TemplateContext): string {
   const lines: string[] = [
-    'The snapshot is your primary tool for understanding and interacting with pages.',
+    'El snapshot es tu herramienta principal para entender e interactuar con las páginas.',
     '',
     '```',
   ];
@@ -52,33 +52,33 @@ export function generateSnapshotFlags(_ctx: TemplateContext): string {
 
   lines.push('```');
   lines.push('');
-  lines.push('All flags can be combined freely. `-o` only applies when `-a` is also used.');
-  lines.push('Example: `$B snapshot -i -a -C -o /tmp/annotated.png`');
+  lines.push('Todos los flags se pueden combinar libremente. `-o` solo aplica cuando `-a` también se usa.');
+  lines.push('Ejemplo: `$B snapshot -i -a -C -o /tmp/annotated.png`');
   lines.push('');
-  lines.push('**Ref numbering:** @e refs are assigned sequentially (@e1, @e2, ...) in tree order.');
-  lines.push('@c refs from `-C` are numbered separately (@c1, @c2, ...).');
+  lines.push('**Numeración de refs:** Las refs @e se asignan secuencialmente (@e1, @e2, ...) en orden de árbol.');
+  lines.push('Las refs @c de `-C` se numeran por separado (@c1, @c2, ...).');
   lines.push('');
-  lines.push('After snapshot, use @refs as selectors in any command:');
+  lines.push('Después del snapshot, usa @refs como selectores en cualquier comando:');
   lines.push('```bash');
   lines.push('$B click @e3       $B fill @e4 "value"     $B hover @e1');
   lines.push('$B html @e2        $B css @e5 "color"      $B attrs @e6');
-  lines.push('$B click @c1       # cursor-interactive ref (from -C)');
+  lines.push('$B click @c1       # ref interactiva por cursor (de -C)');
   lines.push('```');
   lines.push('');
-  lines.push('**Output format:** indented accessibility tree with @ref IDs, one element per line.');
+  lines.push('**Formato de salida:** árbol de accesibilidad indentado con IDs @ref, un elemento por línea.');
   lines.push('```');
   lines.push('  @e1 [heading] "Welcome" [level=1]');
   lines.push('  @e2 [textbox] "Email"');
   lines.push('  @e3 [button] "Submit"');
   lines.push('```');
   lines.push('');
-  lines.push('Refs are invalidated on navigation — run `snapshot` again after `goto`.');
+  lines.push('Las refs se invalidan al navegar — ejecuta `snapshot` de nuevo después de `goto`.');
 
   return lines.join('\n');
 }
 
 export function generateBrowseSetup(ctx: TemplateContext): string {
-  return `## SETUP (run this check BEFORE any browse command)
+  return `## SETUP (ejecuta esta verificación ANTES de cualquier comando browse)
 
 \`\`\`bash
 _ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
@@ -92,8 +92,8 @@ else
 fi
 \`\`\`
 
-If \`NEEDS_SETUP\`:
-1. Tell the user: "gstack browse needs a one-time build (~10 seconds). OK to proceed?" Then STOP and wait.
-2. Run: \`cd <SKILL_DIR> && ./setup\`
-3. If \`bun\` is not installed: \`curl -fsSL https://bun.sh/install | bash\``;
+Si \`NEEDS_SETUP\`:
+1. Dile al usuario: "gstack browse necesita una compilación inicial (~10 segundos). ¿Proceder?" Luego DETENTE y espera.
+2. Ejecuta: \`cd <SKILL_DIR> && ./setup\`
+3. Si \`bun\` no está instalado: \`curl -fsSL https://bun.sh/install | bash\``;
 }

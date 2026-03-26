@@ -9,33 +9,33 @@ export function generateSlugSetup(ctx: TemplateContext): string {
 }
 
 export function generateBaseBranchDetect(_ctx: TemplateContext): string {
-  return `## Step 0: Detect base branch
+  return `## Paso 0: Detectar rama base
 
-Determine which branch this PR targets. Use the result as "the base branch" in all subsequent steps.
+Determina a qué rama apunta este PR. Usa el resultado como "la rama base" en todos los pasos siguientes.
 
-1. Check if a PR already exists for this branch:
+1. Comprueba si ya existe un PR para esta rama:
    \`gh pr view --json baseRefName -q .baseRefName\`
-   If this succeeds, use the printed branch name as the base branch.
+   Si tiene éxito, usa el nombre de rama impreso como la rama base.
 
-2. If no PR exists (command fails), detect the repo's default branch:
+2. Si no existe PR (el comando falla), detecta la rama por defecto del repositorio:
    \`gh repo view --json defaultBranchRef -q .defaultBranchRef.name\`
 
-3. If both commands fail, fall back to \`main\`.
+3. Si ambos comandos fallan, recurre a \`main\`.
 
-Print the detected base branch name. In every subsequent \`git diff\`, \`git log\`,
-\`git fetch\`, \`git merge\`, and \`gh pr create\` command, substitute the detected
-branch name wherever the instructions say "the base branch."
+Imprime el nombre de la rama base detectada. En cada comando posterior de \`git diff\`, \`git log\`,
+\`git fetch\`, \`git merge\` y \`gh pr create\`, sustituye el nombre de rama detectado
+donde las instrucciones digan "la rama base."
 
 ---`;
 }
 
 export function generateDeployBootstrap(_ctx: TemplateContext): string {
   return `\`\`\`bash
-# Check for persisted deploy config in CLAUDE.md
+# Comprobar configuración de deploy persistida en CLAUDE.md
 DEPLOY_CONFIG=$(grep -A 20 "## Deploy Configuration" CLAUDE.md 2>/dev/null || echo "NO_CONFIG")
 echo "$DEPLOY_CONFIG"
 
-# If config exists, parse it
+# Si existe configuración, analizarla
 if [ "$DEPLOY_CONFIG" != "NO_CONFIG" ]; then
   PROD_URL=$(echo "$DEPLOY_CONFIG" | grep -i "production.*url" | head -1 | sed 's/.*: *//')
   PLATFORM=$(echo "$DEPLOY_CONFIG" | grep -i "platform" | head -1 | sed 's/.*: *//')
@@ -43,7 +43,7 @@ if [ "$DEPLOY_CONFIG" != "NO_CONFIG" ]; then
   echo "PERSISTED_URL:$PROD_URL"
 fi
 
-# Auto-detect platform from config files
+# Auto-detectar plataforma desde archivos de configuración
 [ -f fly.toml ] && echo "PLATFORM:fly"
 [ -f render.yaml ] && echo "PLATFORM:render"
 ([ -f vercel.json ] || [ -d .vercel ]) && echo "PLATFORM:vercel"
@@ -51,135 +51,135 @@ fi
 [ -f Procfile ] && echo "PLATFORM:heroku"
 ([ -f railway.json ] || [ -f railway.toml ]) && echo "PLATFORM:railway"
 
-# Detect deploy workflows
+# Detectar workflows de deploy
 for f in .github/workflows/*.yml .github/workflows/*.yaml; do
   [ -f "$f" ] && grep -qiE "deploy|release|production|staging|cd" "$f" 2>/dev/null && echo "DEPLOY_WORKFLOW:$f"
 done
 \`\`\`
 
-If \`PERSISTED_PLATFORM\` and \`PERSISTED_URL\` were found in CLAUDE.md, use them directly
-and skip manual detection. If no persisted config exists, use the auto-detected platform
-to guide deploy verification. If nothing is detected, ask the user via AskUserQuestion
-in the decision tree below.
+Si se encontraron \`PERSISTED_PLATFORM\` y \`PERSISTED_URL\` en CLAUDE.md, úsalos directamente
+y omite la detección manual. Si no existe configuración persistida, usa la plataforma auto-detectada
+para guiar la verificación del deploy. Si no se detecta nada, pregunta al usuario mediante AskUserQuestion
+en el árbol de decisión a continuación.
 
-If you want to persist deploy settings for future runs, suggest the user run \`/setup-deploy\`.`;
+Si quieres persistir la configuración de deploy para futuras ejecuciones, sugiere al usuario ejecutar \`/setup-deploy\`.`;
 }
 
 export function generateQAMethodology(_ctx: TemplateContext): string {
-  return `## Modes
+  return `## Modos
 
-### Diff-aware (automatic when on a feature branch with no URL)
+### Consciente del diff (automático cuando se está en una rama de funcionalidad sin URL)
 
-This is the **primary mode** for developers verifying their work. When the user says \`/qa\` without a URL and the repo is on a feature branch, automatically:
+Este es el **modo principal** para desarrolladores que verifican su trabajo. Cuando el usuario dice \`/qa\` sin URL y el repositorio está en una rama de funcionalidad, automáticamente:
 
-1. **Analyze the branch diff** to understand what changed:
+1. **Analizar el diff de la rama** para entender qué cambió:
    \`\`\`bash
    git diff main...HEAD --name-only
    git log main..HEAD --oneline
    \`\`\`
 
-2. **Identify affected pages/routes** from the changed files:
-   - Controller/route files → which URL paths they serve
-   - View/template/component files → which pages render them
-   - Model/service files → which pages use those models (check controllers that reference them)
-   - CSS/style files → which pages include those stylesheets
-   - API endpoints → test them directly with \`$B js "await fetch('/api/...')"\`
-   - Static pages (markdown, HTML) → navigate to them directly
+2. **Identificar páginas/rutas afectadas** a partir de los archivos cambiados:
+   - Archivos de controlador/ruta → qué rutas URL sirven
+   - Archivos de vista/plantilla/componente → qué páginas los renderizan
+   - Archivos de modelo/servicio → qué páginas usan esos modelos (verificar controladores que los referencian)
+   - Archivos CSS/estilos → qué páginas incluyen esas hojas de estilo
+   - Endpoints de API → probarlos directamente con \`$B js "await fetch('/api/...')"\`
+   - Páginas estáticas (markdown, HTML) → navegar a ellas directamente
 
-   **If no obvious pages/routes are identified from the diff:** Do not skip browser testing. The user invoked /qa because they want browser-based verification. Fall back to Quick mode — navigate to the homepage, follow the top 5 navigation targets, check console for errors, and test any interactive elements found. Backend, config, and infrastructure changes affect app behavior — always verify the app still works.
+   **Si no se identifican páginas/rutas obvias del diff:** No omitas las pruebas de navegador. El usuario invocó /qa porque quiere verificación basada en navegador. Recurre al modo Rápido — navega a la página principal, sigue los 5 principales objetivos de navegación, verifica la consola en busca de errores y prueba cualquier elemento interactivo encontrado. Los cambios de backend, configuración e infraestructura afectan el comportamiento de la app — siempre verifica que la app siga funcionando.
 
-3. **Detect the running app** — check common local dev ports:
+3. **Detectar la app en ejecución** — comprobar puertos locales de desarrollo comunes:
    \`\`\`bash
    $B goto http://localhost:3000 2>/dev/null && echo "Found app on :3000" || \\
    $B goto http://localhost:4000 2>/dev/null && echo "Found app on :4000" || \\
    $B goto http://localhost:8080 2>/dev/null && echo "Found app on :8080"
    \`\`\`
-   If no local app is found, check for a staging/preview URL in the PR or environment. If nothing works, ask the user for the URL.
+   Si no se encuentra app local, busca una URL de staging/preview en el PR o entorno. Si nada funciona, pregunta al usuario por la URL.
 
-4. **Test each affected page/route:**
-   - Navigate to the page
-   - Take a screenshot
-   - Check console for errors
-   - If the change was interactive (forms, buttons, flows), test the interaction end-to-end
-   - Use \`snapshot -D\` before and after actions to verify the change had the expected effect
+4. **Probar cada página/ruta afectada:**
+   - Navega a la página
+   - Toma una captura de pantalla
+   - Revisa la consola en busca de errores
+   - Si el cambio fue interactivo (formularios, botones, flujos), prueba la interacción de extremo a extremo
+   - Usa \`snapshot -D\` antes y después de acciones para verificar que el cambio tuvo el efecto esperado
 
-5. **Cross-reference with commit messages and PR description** to understand *intent* — what should the change do? Verify it actually does that.
+5. **Cruzar con mensajes de commit y descripción del PR** para entender la *intención* — ¿qué debería hacer el cambio? Verifica que realmente lo hace.
 
-6. **Check TODOS.md** (if it exists) for known bugs or issues related to the changed files. If a TODO describes a bug that this branch should fix, add it to your test plan. If you find a new bug during QA that isn't in TODOS.md, note it in the report.
+6. **Verificar TODOS.md** (si existe) buscando bugs conocidos o incidencias relacionadas con los archivos cambiados. Si un TODO describe un bug que esta rama debería corregir, agrégalo a tu plan de pruebas. Si encuentras un nuevo bug durante el QA que no está en TODOS.md, anótalo en el informe.
 
-7. **Report findings** scoped to the branch changes:
-   - "Changes tested: N pages/routes affected by this branch"
-   - For each: does it work? Screenshot evidence.
-   - Any regressions on adjacent pages?
+7. **Informar hallazgos** limitados a los cambios de la rama:
+   - "Cambios probados: N páginas/rutas afectadas por esta rama"
+   - Para cada una: ¿funciona? Evidencia en capturas de pantalla.
+   - ¿Alguna regresión en páginas adyacentes?
 
-**If the user provides a URL with diff-aware mode:** Use that URL as the base but still scope testing to the changed files.
+**Si el usuario proporciona una URL en modo consciente del diff:** Usa esa URL como base pero sigue limitando las pruebas a los archivos cambiados.
 
-### Full (default when URL is provided)
-Systematic exploration. Visit every reachable page. Document 5-10 well-evidenced issues. Produce health score. Takes 5-15 minutes depending on app size.
+### Completo (por defecto cuando se proporciona URL)
+Exploración sistemática. Visitar cada página accesible. Documentar 5-10 incidencias bien evidenciadas. Producir puntuación de salud. Toma 5-15 minutos dependiendo del tamaño de la app.
 
-### Quick (\`--quick\`)
-30-second smoke test. Visit homepage + top 5 navigation targets. Check: page loads? Console errors? Broken links? Produce health score. No detailed issue documentation.
+### Rápido (\`--quick\`)
+Test smoke de 30 segundos. Visitar página principal + 5 principales objetivos de navegación. Verificar: ¿carga la página? ¿Errores en consola? ¿Enlaces rotos? Producir puntuación de salud. Sin documentación detallada de incidencias.
 
-### Regression (\`--regression <baseline>\`)
-Run full mode, then load \`baseline.json\` from a previous run. Diff: which issues are fixed? Which are new? What's the score delta? Append regression section to report.
+### Regresión (\`--regression <baseline>\`)
+Ejecutar modo completo, luego cargar \`baseline.json\` de una ejecución anterior. Diff: ¿qué incidencias se corrigieron? ¿Cuáles son nuevas? ¿Cuál es el delta de puntuación? Agregar sección de regresión al informe.
 
 ---
 
-## Workflow
+## Flujo de Trabajo
 
-### Phase 1: Initialize
+### Fase 1: Inicializar
 
-1. Find browse binary (see Setup above)
-2. Create output directories
-3. Copy report template from \`qa/templates/qa-report-template.md\` to output dir
-4. Start timer for duration tracking
+1. Encontrar el binario browse (ver Setup arriba)
+2. Crear directorios de salida
+3. Copiar plantilla de informe de \`qa/templates/qa-report-template.md\` al directorio de salida
+4. Iniciar temporizador para seguimiento de duración
 
-### Phase 2: Authenticate (if needed)
+### Fase 2: Autenticar (si es necesario)
 
-**If the user specified auth credentials:**
+**Si el usuario especificó credenciales de autenticación:**
 
 \`\`\`bash
 $B goto <login-url>
-$B snapshot -i                    # find the login form
+$B snapshot -i                    # encontrar el formulario de login
 $B fill @e3 "user@example.com"
-$B fill @e4 "[REDACTED]"         # NEVER include real passwords in report
-$B click @e5                      # submit
-$B snapshot -D                    # verify login succeeded
+$B fill @e4 "[REDACTED]"         # NUNCA incluir contraseñas reales en el informe
+$B click @e5                      # enviar
+$B snapshot -D                    # verificar que el login fue exitoso
 \`\`\`
 
-**If the user provided a cookie file:**
+**Si el usuario proporcionó un archivo de cookies:**
 
 \`\`\`bash
 $B cookie-import cookies.json
 $B goto <target-url>
 \`\`\`
 
-**If 2FA/OTP is required:** Ask the user for the code and wait.
+**Si se requiere 2FA/OTP:** Pregunta al usuario por el código y espera.
 
-**If CAPTCHA blocks you:** Tell the user: "Please complete the CAPTCHA in the browser, then tell me to continue."
+**Si un CAPTCHA te bloquea:** Dile al usuario: "Por favor completa el CAPTCHA en el navegador, luego dime que continúe."
 
-### Phase 3: Orient
+### Fase 3: Orientar
 
-Get a map of the application:
+Obtener un mapa de la aplicación:
 
 \`\`\`bash
 $B goto <target-url>
 $B snapshot -i -a -o "$REPORT_DIR/screenshots/initial.png"
-$B links                          # map navigation structure
-$B console --errors               # any errors on landing?
+$B links                          # mapear estructura de navegación
+$B console --errors               # ¿errores al llegar?
 \`\`\`
 
-**Detect framework** (note in report metadata):
-- \`__next\` in HTML or \`_next/data\` requests → Next.js
-- \`csrf-token\` meta tag → Rails
-- \`wp-content\` in URLs → WordPress
-- Client-side routing with no page reloads → SPA
+**Detectar framework** (anotar en metadatos del informe):
+- \`__next\` en HTML o requests a \`_next/data\` → Next.js
+- Meta tag \`csrf-token\` → Rails
+- \`wp-content\` en URLs → WordPress
+- Enrutamiento client-side sin recarga de página → SPA
 
-**For SPAs:** The \`links\` command may return few results because navigation is client-side. Use \`snapshot -i\` to find nav elements (buttons, menu items) instead.
+**Para SPAs:** El comando \`links\` puede devolver pocos resultados porque la navegación es client-side. Usa \`snapshot -i\` para encontrar elementos de navegación (botones, elementos de menú) en su lugar.
 
-### Phase 4: Explore
+### Fase 4: Explorar
 
-Visit pages systematically. At each page:
+Visitar páginas sistemáticamente. En cada página:
 
 \`\`\`bash
 $B goto <page-url>
@@ -187,37 +187,37 @@ $B snapshot -i -a -o "$REPORT_DIR/screenshots/page-name.png"
 $B console --errors
 \`\`\`
 
-Then follow the **per-page exploration checklist** (see \`qa/references/issue-taxonomy.md\`):
+Luego sigue el **checklist de exploración por página** (ver \`qa/references/issue-taxonomy.md\`):
 
-1. **Visual scan** — Look at the annotated screenshot for layout issues
-2. **Interactive elements** — Click buttons, links, controls. Do they work?
-3. **Forms** — Fill and submit. Test empty, invalid, edge cases
-4. **Navigation** — Check all paths in and out
-5. **States** — Empty state, loading, error, overflow
-6. **Console** — Any new JS errors after interactions?
-7. **Responsiveness** — Check mobile viewport if relevant:
+1. **Escaneo visual** — Mira la captura anotada buscando problemas de layout
+2. **Elementos interactivos** — Clic en botones, enlaces, controles. ¿Funcionan?
+3. **Formularios** — Rellenar y enviar. Probar vacío, inválido, casos extremos
+4. **Navegación** — Verificar todas las rutas de entrada y salida
+5. **Estados** — Estado vacío, cargando, error, desbordamiento
+6. **Consola** — ¿Nuevos errores JS después de las interacciones?
+7. **Responsividad** — Verificar viewport móvil si es relevante:
    \`\`\`bash
    $B viewport 375x812
    $B screenshot "$REPORT_DIR/screenshots/page-mobile.png"
    $B viewport 1280x720
    \`\`\`
 
-**Depth judgment:** Spend more time on core features (homepage, dashboard, checkout, search) and less on secondary pages (about, terms, privacy).
+**Criterio de profundidad:** Dedica más tiempo a funcionalidades principales (página principal, dashboard, checkout, búsqueda) y menos a páginas secundarias (acerca de, términos, privacidad).
 
-**Quick mode:** Only visit homepage + top 5 navigation targets from the Orient phase. Skip the per-page checklist — just check: loads? Console errors? Broken links visible?
+**Modo rápido:** Solo visita la página principal + los 5 principales objetivos de navegación de la fase de Orientación. Omite el checklist por página — solo verifica: ¿carga? ¿Errores en consola? ¿Enlaces rotos visibles?
 
-### Phase 5: Document
+### Fase 5: Documentar
 
-Document each issue **immediately when found** — don't batch them.
+Documenta cada incidencia **inmediatamente cuando se encuentre** — no las acumules.
 
-**Two evidence tiers:**
+**Dos niveles de evidencia:**
 
-**Interactive bugs** (broken flows, dead buttons, form failures):
-1. Take a screenshot before the action
-2. Perform the action
-3. Take a screenshot showing the result
-4. Use \`snapshot -D\` to show what changed
-5. Write repro steps referencing screenshots
+**Bugs interactivos** (flujos rotos, botones muertos, fallos de formulario):
+1. Toma una captura de pantalla antes de la acción
+2. Realiza la acción
+3. Toma una captura de pantalla mostrando el resultado
+4. Usa \`snapshot -D\` para mostrar qué cambió
+5. Escribe pasos de reproducción referenciando las capturas
 
 \`\`\`bash
 $B screenshot "$REPORT_DIR/screenshots/issue-001-step-1.png"
@@ -226,24 +226,24 @@ $B screenshot "$REPORT_DIR/screenshots/issue-001-result.png"
 $B snapshot -D
 \`\`\`
 
-**Static bugs** (typos, layout issues, missing images):
-1. Take a single annotated screenshot showing the problem
-2. Describe what's wrong
+**Bugs estáticos** (erratas, problemas de layout, imágenes faltantes):
+1. Toma una sola captura anotada mostrando el problema
+2. Describe qué está mal
 
 \`\`\`bash
 $B snapshot -i -a -o "$REPORT_DIR/screenshots/issue-002.png"
 \`\`\`
 
-**Write each issue to the report immediately** using the template format from \`qa/templates/qa-report-template.md\`.
+**Escribe cada incidencia en el informe inmediatamente** usando el formato de plantilla de \`qa/templates/qa-report-template.md\`.
 
-### Phase 6: Wrap Up
+### Fase 6: Cierre
 
-1. **Compute health score** using the rubric below
-2. **Write "Top 3 Things to Fix"** — the 3 highest-severity issues
-3. **Write console health summary** — aggregate all console errors seen across pages
-4. **Update severity counts** in the summary table
-5. **Fill in report metadata** — date, duration, pages visited, screenshot count, framework
-6. **Save baseline** — write \`baseline.json\` with:
+1. **Calcular puntuación de salud** usando la rúbrica a continuación
+2. **Escribir "Top 3 Cosas a Corregir"** — las 3 incidencias de mayor severidad
+3. **Escribir resumen de salud de consola** — agregar todos los errores de consola vistos en todas las páginas
+4. **Actualizar conteos de severidad** en la tabla resumen
+5. **Rellenar metadatos del informe** — fecha, duración, páginas visitadas, conteo de capturas, framework
+6. **Guardar línea base** — escribir \`baseline.json\` con:
    \`\`\`json
    {
      "date": "YYYY-MM-DD",
@@ -254,93 +254,93 @@ $B snapshot -i -a -o "$REPORT_DIR/screenshots/issue-002.png"
    }
    \`\`\`
 
-**Regression mode:** After writing the report, load the baseline file. Compare:
-- Health score delta
-- Issues fixed (in baseline but not current)
-- New issues (in current but not baseline)
-- Append the regression section to the report
+**Modo regresión:** Después de escribir el informe, carga el archivo de línea base. Compara:
+- Delta de puntuación de salud
+- Incidencias corregidas (en la línea base pero no en el actual)
+- Nuevas incidencias (en el actual pero no en la línea base)
+- Agrega la sección de regresión al informe
 
 ---
 
-## Health Score Rubric
+## Rúbrica de Puntuación de Salud
 
-Compute each category score (0-100), then take the weighted average.
+Calcula la puntuación de cada categoría (0-100), luego toma el promedio ponderado.
 
-### Console (weight: 15%)
-- 0 errors → 100
-- 1-3 errors → 70
-- 4-10 errors → 40
-- 10+ errors → 10
+### Consola (peso: 15%)
+- 0 errores → 100
+- 1-3 errores → 70
+- 4-10 errores → 40
+- 10+ errores → 10
 
-### Links (weight: 10%)
-- 0 broken → 100
-- Each broken link → -15 (minimum 0)
+### Enlaces (peso: 10%)
+- 0 rotos → 100
+- Cada enlace roto → -15 (mínimo 0)
 
-### Per-Category Scoring (Visual, Functional, UX, Content, Performance, Accessibility)
-Each category starts at 100. Deduct per finding:
-- Critical issue → -25
-- High issue → -15
-- Medium issue → -8
-- Low issue → -3
-Minimum 0 per category.
+### Puntuación por Categoría (Visual, Funcional, UX, Contenido, Rendimiento, Accesibilidad)
+Cada categoría empieza en 100. Deducción por hallazgo:
+- Incidencia crítica → -25
+- Incidencia alta → -15
+- Incidencia media → -8
+- Incidencia baja → -3
+Mínimo 0 por categoría.
 
-### Weights
-| Category | Weight |
-|----------|--------|
-| Console | 15% |
-| Links | 10% |
+### Pesos
+| Categoría | Peso |
+|-----------|------|
+| Consola | 15% |
+| Enlaces | 10% |
 | Visual | 10% |
-| Functional | 20% |
+| Funcional | 20% |
 | UX | 15% |
-| Performance | 10% |
-| Content | 5% |
-| Accessibility | 15% |
+| Rendimiento | 10% |
+| Contenido | 5% |
+| Accesibilidad | 15% |
 
-### Final Score
-\`score = Σ (category_score × weight)\`
+### Puntuación Final
+\`score = Σ (puntuación_categoría × peso)\`
 
 ---
 
-## Framework-Specific Guidance
+## Guía Específica por Framework
 
 ### Next.js
-- Check console for hydration errors (\`Hydration failed\`, \`Text content did not match\`)
-- Monitor \`_next/data\` requests in network — 404s indicate broken data fetching
-- Test client-side navigation (click links, don't just \`goto\`) — catches routing issues
-- Check for CLS (Cumulative Layout Shift) on pages with dynamic content
+- Verificar consola en busca de errores de hidratación (\`Hydration failed\`, \`Text content did not match\`)
+- Monitorear requests a \`_next/data\` en la red — los 404 indican fetching de datos roto
+- Probar navegación client-side (clic en enlaces, no solo \`goto\`) — detecta problemas de enrutamiento
+- Verificar CLS (Cumulative Layout Shift) en páginas con contenido dinámico
 
 ### Rails
-- Check for N+1 query warnings in console (if development mode)
-- Verify CSRF token presence in forms
-- Test Turbo/Stimulus integration — do page transitions work smoothly?
-- Check for flash messages appearing and dismissing correctly
+- Verificar advertencias de queries N+1 en consola (si está en modo desarrollo)
+- Verificar presencia de token CSRF en formularios
+- Probar integración Turbo/Stimulus — ¿las transiciones de página funcionan suavemente?
+- Verificar que los mensajes flash aparecen y se descartan correctamente
 
 ### WordPress
-- Check for plugin conflicts (JS errors from different plugins)
-- Verify admin bar visibility for logged-in users
-- Test REST API endpoints (\`/wp-json/\`)
-- Check for mixed content warnings (common with WP)
+- Verificar conflictos de plugins (errores JS de diferentes plugins)
+- Verificar visibilidad de la barra de admin para usuarios logueados
+- Probar endpoints de la API REST (\`/wp-json/\`)
+- Verificar advertencias de contenido mixto (común con WP)
 
-### General SPA (React, Vue, Angular)
-- Use \`snapshot -i\` for navigation — \`links\` command misses client-side routes
-- Check for stale state (navigate away and back — does data refresh?)
-- Test browser back/forward — does the app handle history correctly?
-- Check for memory leaks (monitor console after extended use)
+### SPA General (React, Vue, Angular)
+- Usar \`snapshot -i\` para navegación — el comando \`links\` no detecta rutas client-side
+- Verificar estado obsoleto (navegar lejos y volver — ¿se refrescan los datos?)
+- Probar botón atrás/adelante del navegador — ¿la app maneja el historial correctamente?
+- Verificar fugas de memoria (monitorear consola después de uso prolongado)
 
 ---
 
-## Important Rules
+## Reglas Importantes
 
-1. **Repro is everything.** Every issue needs at least one screenshot. No exceptions.
-2. **Verify before documenting.** Retry the issue once to confirm it's reproducible, not a fluke.
-3. **Never include credentials.** Write \`[REDACTED]\` for passwords in repro steps.
-4. **Write incrementally.** Append each issue to the report as you find it. Don't batch.
-5. **Never read source code.** Test as a user, not a developer.
-6. **Check console after every interaction.** JS errors that don't surface visually are still bugs.
-7. **Test like a user.** Use realistic data. Walk through complete workflows end-to-end.
-8. **Depth over breadth.** 5-10 well-documented issues with evidence > 20 vague descriptions.
-9. **Never delete output files.** Screenshots and reports accumulate — that's intentional.
-10. **Use \`snapshot -C\` for tricky UIs.** Finds clickable divs that the accessibility tree misses.
-11. **Show screenshots to the user.** After every \`$B screenshot\`, \`$B snapshot -a -o\`, or \`$B responsive\` command, use the Read tool on the output file(s) so the user can see them inline. For \`responsive\` (3 files), Read all three. This is critical — without it, screenshots are invisible to the user.
-12. **Never refuse to use the browser.** When the user invokes /qa or /qa-only, they are requesting browser-based testing. Never suggest evals, unit tests, or other alternatives as a substitute. Even if the diff appears to have no UI changes, backend changes affect app behavior — always open the browser and test.`;
+1. **La reproducción es todo.** Cada incidencia necesita al menos una captura de pantalla. Sin excepciones.
+2. **Verificar antes de documentar.** Reintenta la incidencia una vez para confirmar que es reproducible, no casual.
+3. **Nunca incluir credenciales.** Escribe \`[REDACTED]\` para contraseñas en los pasos de reproducción.
+4. **Escribir incrementalmente.** Agrega cada incidencia al informe conforme la encuentres. No acumules.
+5. **Nunca leer código fuente.** Prueba como un usuario, no como un desarrollador.
+6. **Verificar consola después de cada interacción.** Los errores JS que no se manifiestan visualmente siguen siendo bugs.
+7. **Probar como un usuario.** Usa datos realistas. Recorre flujos de trabajo completos de extremo a extremo.
+8. **Profundidad sobre amplitud.** 5-10 incidencias bien documentadas con evidencia > 20 descripciones vagas.
+9. **Nunca eliminar archivos de salida.** Las capturas de pantalla e informes se acumulan — es intencional.
+10. **Usar \`snapshot -C\` para UIs complicadas.** Encuentra divs clicables que el árbol de accesibilidad no detecta.
+11. **Mostrar capturas de pantalla al usuario.** Después de cada comando \`$B screenshot\`, \`$B snapshot -a -o\`, o \`$B responsive\`, usa la herramienta Read en los archivos de salida para que el usuario pueda verlos en línea. Para \`responsive\` (3 archivos), lee los tres. Esto es crítico — sin ello, las capturas son invisibles para el usuario.
+12. **Nunca negarte a usar el navegador.** Cuando el usuario invoca /qa o /qa-only, está solicitando pruebas basadas en navegador. Nunca sugieras evals, tests unitarios u otras alternativas como sustituto. Incluso si el diff parece no tener cambios de UI, los cambios de backend afectan el comportamiento de la app — siempre abre el navegador y prueba.`;
 }

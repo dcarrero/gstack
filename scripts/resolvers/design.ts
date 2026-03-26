@@ -7,138 +7,138 @@ export function generateDesignReviewLite(ctx: TemplateContext): string {
   // Codex block only for Claude host
   const codexBlock = ctx.host === 'codex' ? '' : `
 
-7. **Codex design voice** (optional, automatic if available):
+7. **Voz de diseño de Codex** (opcional, automática si está disponible):
 
 \`\`\`bash
 which codex 2>/dev/null && echo "CODEX_AVAILABLE" || echo "CODEX_NOT_AVAILABLE"
 \`\`\`
 
-If Codex is available, run a lightweight design check on the diff:
+Si Codex está disponible, ejecuta una verificación de diseño ligera sobre el diff:
 
 \`\`\`bash
 TMPERR_DRL=$(mktemp /tmp/codex-drl-XXXXXXXX)
 codex exec "Review the git diff on this branch. Run 7 litmus checks (YES/NO each): ${litmusList} Flag any hard rejections: ${rejectionList} 5 most important design findings only. Reference file:line." -C "$(git rev-parse --show-toplevel)" -s read-only -c 'model_reasoning_effort="high"' --enable web_search_cached 2>"$TMPERR_DRL"
 \`\`\`
 
-Use a 5-minute timeout (\`timeout: 300000\`). After the command completes, read stderr:
+Usa un timeout de 5 minutos (\`timeout: 300000\`). Después de que el comando termine, lee stderr:
 \`\`\`bash
 cat "$TMPERR_DRL" && rm -f "$TMPERR_DRL"
 \`\`\`
 
-**Error handling:** All errors are non-blocking. On auth failure, timeout, or empty response — skip with a brief note and continue.
+**Manejo de errores:** Todos los errores son no bloqueantes. Ante fallo de autenticación, timeout o respuesta vacía — omite con una breve nota y continúa.
 
-Present Codex output under a \`CODEX (design):\` header, merged with the checklist findings above.`;
+Presenta la salida de Codex bajo un encabezado \`CODEX (diseño):\`, fusionado con los hallazgos del checklist anterior.`;
 
-  return `## Design Review (conditional, diff-scoped)
+  return `## Revisión de Diseño (condicional, alcance del diff)
 
-Check if the diff touches frontend files using \`gstack-diff-scope\`:
+Comprueba si el diff toca archivos de frontend usando \`gstack-diff-scope\`:
 
 \`\`\`bash
 source <(${ctx.paths.binDir}/gstack-diff-scope <base> 2>/dev/null)
 \`\`\`
 
-**If \`SCOPE_FRONTEND=false\`:** Skip design review silently. No output.
+**Si \`SCOPE_FRONTEND=false\`:** Omite la revisión de diseño silenciosamente. Sin salida.
 
-**If \`SCOPE_FRONTEND=true\`:**
+**Si \`SCOPE_FRONTEND=true\`:**
 
-1. **Check for DESIGN.md.** If \`DESIGN.md\` or \`design-system.md\` exists in the repo root, read it. All design findings are calibrated against it — patterns blessed in DESIGN.md are not flagged. If not found, use universal design principles.
+1. **Buscar DESIGN.md.** Si \`DESIGN.md\` o \`design-system.md\` existe en la raíz del repositorio, léelo. Todos los hallazgos de diseño se calibran contra él — los patrones aprobados en DESIGN.md no se señalizan. Si no se encuentra, usa principios universales de diseño.
 
-2. **Read \`.claude/skills/review/design-checklist.md\`.** If the file cannot be read, skip design review with a note: "Design checklist not found — skipping design review."
+2. **Leer \`.claude/skills/review/design-checklist.md\`.** Si el archivo no se puede leer, omite la revisión de diseño con una nota: "Checklist de diseño no encontrado — omitiendo revisión de diseño."
 
-3. **Read each changed frontend file** (full file, not just diff hunks). Frontend files are identified by the patterns listed in the checklist.
+3. **Leer cada archivo de frontend cambiado** (archivo completo, no solo fragmentos del diff). Los archivos de frontend se identifican por los patrones listados en el checklist.
 
-4. **Apply the design checklist** against the changed files. For each item:
-   - **[HIGH] mechanical CSS fix** (\`outline: none\`, \`!important\`, \`font-size < 16px\`): classify as AUTO-FIX
-   - **[HIGH/MEDIUM] design judgment needed**: classify as ASK
-   - **[LOW] intent-based detection**: present as "Possible — verify visually or run /design-review"
+4. **Aplicar el checklist de diseño** contra los archivos cambiados. Para cada elemento:
+   - **[HIGH] corrección mecánica de CSS** (\`outline: none\`, \`!important\`, \`font-size < 16px\`): clasificar como AUTO-FIX
+   - **[HIGH/MEDIUM] se necesita criterio de diseño**: clasificar como ASK
+   - **[LOW] detección basada en intención**: presentar como "Posible — verificar visualmente o ejecutar /design-review"
 
-5. **Include findings** in the review output under a "Design Review" header, following the output format in the checklist. Design findings merge with code review findings into the same Fix-First flow.
+5. **Incluir hallazgos** en la salida de revisión bajo un encabezado "Revisión de Diseño", siguiendo el formato de salida del checklist. Los hallazgos de diseño se fusionan con los hallazgos de revisión de código en el mismo flujo Fix-First.
 
-6. **Log the result** for the Review Readiness Dashboard:
+6. **Registrar el resultado** para el Panel de Estado de Revisiones:
 
 \`\`\`bash
 ${ctx.paths.binDir}/gstack-review-log '{"skill":"design-review-lite","timestamp":"TIMESTAMP","status":"STATUS","findings":N,"auto_fixed":M,"commit":"COMMIT"}'
 \`\`\`
 
-Substitute: TIMESTAMP = ISO 8601 datetime, STATUS = "clean" if 0 findings or "issues_found", N = total findings, M = auto-fixed count, COMMIT = output of \`git rev-parse --short HEAD\`.${codexBlock}`;
+Sustituye: TIMESTAMP = fecha y hora ISO 8601, STATUS = "clean" si 0 hallazgos o "issues_found", N = hallazgos totales, M = cantidad de auto-correcciones, COMMIT = salida de \`git rev-parse --short HEAD\`.${codexBlock}`;
 }
 
 // NOTE: design-checklist.md is a subset of this methodology for code-level detection.
 // When adding items here, also update review/design-checklist.md, and vice versa.
 export function generateDesignMethodology(_ctx: TemplateContext): string {
-  return `## Modes
+  return `## Modos
 
-### Full (default)
-Systematic review of all pages reachable from homepage. Visit 5-8 pages. Full checklist evaluation, responsive screenshots, interaction flow testing. Produces complete design audit report with letter grades.
+### Completo (por defecto)
+Revisión sistemática de todas las páginas accesibles desde la página principal. Visitar 5-8 páginas. Evaluación completa del checklist, capturas responsive, prueba de flujos de interacción. Produce un informe completo de auditoría de diseño con calificaciones por letra.
 
-### Quick (\`--quick\`)
-Homepage + 2 key pages only. First Impression + Design System Extraction + abbreviated checklist. Fastest path to a design score.
+### Rápido (\`--quick\`)
+Solo página principal + 2 páginas clave. Primera Impresión + Extracción del Sistema de Diseño + checklist abreviado. El camino más rápido a una puntuación de diseño.
 
-### Deep (\`--deep\`)
-Comprehensive review: 10-15 pages, every interaction flow, exhaustive checklist. For pre-launch audits or major redesigns.
+### Profundo (\`--deep\`)
+Revisión exhaustiva: 10-15 páginas, cada flujo de interacción, checklist exhaustivo. Para auditorías pre-lanzamiento o rediseños importantes.
 
-### Diff-aware (automatic when on a feature branch with no URL)
-When on a feature branch, scope to pages affected by the branch changes:
-1. Analyze the branch diff: \`git diff main...HEAD --name-only\`
-2. Map changed files to affected pages/routes
-3. Detect running app on common local ports (3000, 4000, 8080)
-4. Audit only affected pages, compare design quality before/after
+### Consciente del diff (automático cuando se está en una rama de funcionalidad sin URL)
+Cuando se está en una rama de funcionalidad, se limita a las páginas afectadas por los cambios de la rama:
+1. Analizar el diff de la rama: \`git diff main...HEAD --name-only\`
+2. Mapear archivos cambiados a páginas/rutas afectadas
+3. Detectar aplicación ejecutándose en puertos locales comunes (3000, 4000, 8080)
+4. Auditar solo las páginas afectadas, comparar calidad de diseño antes/después
 
-### Regression (\`--regression\` or previous \`design-baseline.json\` found)
-Run full audit, then load previous \`design-baseline.json\`. Compare: per-category grade deltas, new findings, resolved findings. Output regression table in report.
-
----
-
-## Phase 1: First Impression
-
-The most uniquely designer-like output. Form a gut reaction before analyzing anything.
-
-1. Navigate to the target URL
-2. Take a full-page desktop screenshot: \`$B screenshot "$REPORT_DIR/screenshots/first-impression.png"\`
-3. Write the **First Impression** using this structured critique format:
-   - "The site communicates **[what]**." (what it says at a glance — competence? playfulness? confusion?)
-   - "I notice **[observation]**." (what stands out, positive or negative — be specific)
-   - "The first 3 things my eye goes to are: **[1]**, **[2]**, **[3]**." (hierarchy check — are these intentional?)
-   - "If I had to describe this in one word: **[word]**." (gut verdict)
-
-This is the section users read first. Be opinionated. A designer doesn't hedge — they react.
+### Regresión (\`--regression\` o \`design-baseline.json\` previo encontrado)
+Ejecutar auditoría completa, luego cargar \`design-baseline.json\` previo. Comparar: deltas de calificación por categoría, nuevos hallazgos, hallazgos resueltos. Generar tabla de regresión en el informe.
 
 ---
 
-## Phase 2: Design System Extraction
+## Fase 1: Primera Impresión
 
-Extract the actual design system the site uses (not what a DESIGN.md says, but what's rendered):
+La salida más única y similar a la de un diseñador. Forma una reacción visceral antes de analizar nada.
+
+1. Navegar a la URL objetivo
+2. Tomar una captura de pantalla de escritorio a página completa: \`$B screenshot "$REPORT_DIR/screenshots/first-impression.png"\`
+3. Escribir la **Primera Impresión** usando este formato de crítica estructurada:
+   - "El sitio comunica **[qué]**." (lo que dice a primera vista — ¿competencia? ¿diversión? ¿confusión?)
+   - "Noto **[observación]**." (qué destaca, positivo o negativo — sé específico)
+   - "Las 3 primeras cosas a las que va mi mirada son: **[1]**, **[2]**, **[3]**." (verificación de jerarquía — ¿son intencionales?)
+   - "Si tuviera que describir esto en una palabra: **[palabra]**." (veredicto visceral)
+
+Esta es la sección que los usuarios leen primero. Sé opinado. Un diseñador no se cubre — reacciona.
+
+---
+
+## Fase 2: Extracción del Sistema de Diseño
+
+Extrae el sistema de diseño real que el sitio usa (no lo que dice un DESIGN.md, sino lo que se renderiza):
 
 \`\`\`bash
-# Fonts in use (capped at 500 elements to avoid timeout)
+# Fuentes en uso (limitado a 500 elementos para evitar timeout)
 $B js "JSON.stringify([...new Set([...document.querySelectorAll('*')].slice(0,500).map(e => getComputedStyle(e).fontFamily))])"
 
-# Color palette in use
+# Paleta de colores en uso
 $B js "JSON.stringify([...new Set([...document.querySelectorAll('*')].slice(0,500).flatMap(e => [getComputedStyle(e).color, getComputedStyle(e).backgroundColor]).filter(c => c !== 'rgba(0, 0, 0, 0)'))])"
 
-# Heading hierarchy
+# Jerarquía de encabezados
 $B js "JSON.stringify([...document.querySelectorAll('h1,h2,h3,h4,h5,h6')].map(h => ({tag:h.tagName, text:h.textContent.trim().slice(0,50), size:getComputedStyle(h).fontSize, weight:getComputedStyle(h).fontWeight})))"
 
-# Touch target audit (find undersized interactive elements)
+# Auditoría de objetivos táctiles (encontrar elementos interactivos de tamaño insuficiente)
 $B js "JSON.stringify([...document.querySelectorAll('a,button,input,[role=button]')].filter(e => {const r=e.getBoundingClientRect(); return r.width>0 && (r.width<44||r.height<44)}).map(e => ({tag:e.tagName, text:(e.textContent||'').trim().slice(0,30), w:Math.round(e.getBoundingClientRect().width), h:Math.round(e.getBoundingClientRect().height)})).slice(0,20))"
 
-# Performance baseline
+# Línea base de rendimiento
 $B perf
 \`\`\`
 
-Structure findings as an **Inferred Design System**:
-- **Fonts:** list with usage counts. Flag if >3 distinct font families.
-- **Colors:** palette extracted. Flag if >12 unique non-gray colors. Note warm/cool/mixed.
-- **Heading Scale:** h1-h6 sizes. Flag skipped levels, non-systematic size jumps.
-- **Spacing Patterns:** sample padding/margin values. Flag non-scale values.
+Estructura los hallazgos como un **Sistema de Diseño Inferido**:
+- **Fuentes:** lista con conteos de uso. Señalizar si hay >3 familias tipográficas distintas.
+- **Colores:** paleta extraída. Señalizar si hay >12 colores únicos no grises. Indicar cálido/frío/mixto.
+- **Escala de Encabezados:** tamaños h1-h6. Señalizar niveles omitidos, saltos de tamaño no sistemáticos.
+- **Patrones de Espaciado:** valores de ejemplo de padding/margin. Señalizar valores fuera de escala.
 
-After extraction, offer: *"Want me to save this as your DESIGN.md? I can lock in these observations as your project's design system baseline."*
+Después de la extracción, ofrecer: *"¿Quieres que guarde esto como tu DESIGN.md? Puedo fijar estas observaciones como la línea base del sistema de diseño de tu proyecto."*
 
 ---
 
-## Phase 3: Page-by-Page Visual Audit
+## Fase 3: Auditoría Visual Página por Página
 
-For each page in scope:
+Para cada página en el alcance:
 
 \`\`\`bash
 $B goto <url>
@@ -148,169 +148,169 @@ $B console --errors
 $B perf
 \`\`\`
 
-### Auth Detection
+### Detección de Autenticación
 
-After the first navigation, check if the URL changed to a login-like path:
+Después de la primera navegación, comprueba si la URL cambió a una ruta similar a login:
 \`\`\`bash
 $B url
 \`\`\`
-If URL contains \`/login\`, \`/signin\`, \`/auth\`, or \`/sso\`: the site requires authentication. AskUserQuestion: "This site requires authentication. Want to import cookies from your browser? Run \`/setup-browser-cookies\` first if needed."
+Si la URL contiene \`/login\`, \`/signin\`, \`/auth\`, o \`/sso\`: el sitio requiere autenticación. AskUserQuestion: "Este sitio requiere autenticación. ¿Quieres importar cookies de tu navegador? Ejecuta \`/setup-browser-cookies\` primero si es necesario."
 
-### Design Audit Checklist (10 categories, ~80 items)
+### Checklist de Auditoría de Diseño (10 categorías, ~80 elementos)
 
-Apply these at each page. Each finding gets an impact rating (high/medium/polish) and category.
+Aplica estos en cada página. Cada hallazgo recibe una calificación de impacto (alto/medio/pulido) y categoría.
 
-**1. Visual Hierarchy & Composition** (8 items)
-- Clear focal point? One primary CTA per view?
-- Eye flows naturally top-left to bottom-right?
-- Visual noise — competing elements fighting for attention?
-- Information density appropriate for content type?
-- Z-index clarity — nothing unexpectedly overlapping?
-- Above-the-fold content communicates purpose in 3 seconds?
-- Squint test: hierarchy still visible when blurred?
-- White space is intentional, not leftover?
+**1. Jerarquía Visual y Composición** (8 elementos)
+- ¿Punto focal claro? ¿Un CTA principal por vista?
+- ¿La mirada fluye naturalmente de arriba-izquierda a abajo-derecha?
+- Ruido visual — ¿elementos compitiendo por atención?
+- ¿Densidad de información apropiada para el tipo de contenido?
+- Claridad de z-index — ¿nada se superpone inesperadamente?
+- ¿El contenido sobre el pliegue comunica el propósito en 3 segundos?
+- Test de entrecerrar los ojos: ¿la jerarquía sigue visible cuando se difumina?
+- ¿El espacio en blanco es intencional, no sobrante?
 
-**2. Typography** (15 items)
-- Font count <=3 (flag if more)
-- Scale follows ratio (1.25 major third or 1.333 perfect fourth)
-- Line-height: 1.5x body, 1.15-1.25x headings
-- Measure: 45-75 chars per line (66 ideal)
-- Heading hierarchy: no skipped levels (h1→h3 without h2)
-- Weight contrast: >=2 weights used for hierarchy
-- No blacklisted fonts (Papyrus, Comic Sans, Lobster, Impact, Jokerman)
-- If primary font is Inter/Roboto/Open Sans/Poppins → flag as potentially generic
-- \`text-wrap: balance\` or \`text-pretty\` on headings (check via \`$B css <heading> text-wrap\`)
-- Curly quotes used, not straight quotes
-- Ellipsis character (\`…\`) not three dots (\`...\`)
-- \`font-variant-numeric: tabular-nums\` on number columns
-- Body text >= 16px
-- Caption/label >= 12px
-- No letterspacing on lowercase text
+**2. Tipografía** (15 elementos)
+- Conteo de fuentes <=3 (señalizar si más)
+- La escala sigue una proporción (1.25 tercera mayor o 1.333 cuarta perfecta)
+- Interlineado: 1.5x cuerpo, 1.15-1.25x encabezados
+- Medida: 45-75 caracteres por línea (66 ideal)
+- Jerarquía de encabezados: sin niveles omitidos (h1→h3 sin h2)
+- Contraste de peso: >=2 pesos usados para jerarquía
+- Sin fuentes en lista negra (Papyrus, Comic Sans, Lobster, Impact, Jokerman)
+- Si la fuente principal es Inter/Roboto/Open Sans/Poppins → señalizar como potencialmente genérica
+- \`text-wrap: balance\` o \`text-pretty\` en encabezados (verificar con \`$B css <heading> text-wrap\`)
+- Comillas tipográficas usadas, no rectas
+- Carácter de puntos suspensivos (\`…\`) no tres puntos (\`...\`)
+- \`font-variant-numeric: tabular-nums\` en columnas numéricas
+- Texto del cuerpo >= 16px
+- Leyenda/etiqueta >= 12px
+- Sin letterspacing en texto en minúsculas
 
-**3. Color & Contrast** (10 items)
-- Palette coherent (<=12 unique non-gray colors)
-- WCAG AA: body text 4.5:1, large text (18px+) 3:1, UI components 3:1
-- Semantic colors consistent (success=green, error=red, warning=yellow/amber)
-- No color-only encoding (always add labels, icons, or patterns)
-- Dark mode: surfaces use elevation, not just lightness inversion
-- Dark mode: text off-white (~#E0E0E0), not pure white
-- Primary accent desaturated 10-20% in dark mode
-- \`color-scheme: dark\` on html element (if dark mode present)
-- No red/green only combinations (8% of men have red-green deficiency)
-- Neutral palette is warm or cool consistently — not mixed
+**3. Color y Contraste** (10 elementos)
+- Paleta coherente (<=12 colores únicos no grises)
+- WCAG AA: texto del cuerpo 4.5:1, texto grande (18px+) 3:1, componentes de UI 3:1
+- Colores semánticos consistentes (éxito=verde, error=rojo, advertencia=amarillo/ámbar)
+- Sin codificación solo por color (siempre agregar etiquetas, iconos o patrones)
+- Modo oscuro: superficies usan elevación, no solo inversión de luminosidad
+- Modo oscuro: texto blanco apagado (~#E0E0E0), no blanco puro
+- Acento primario desaturado 10-20% en modo oscuro
+- \`color-scheme: dark\` en elemento html (si hay modo oscuro presente)
+- Sin combinaciones solo rojo/verde (8% de los hombres tienen deficiencia rojo-verde)
+- Paleta neutral es cálida o fría consistentemente — no mixta
 
-**4. Spacing & Layout** (12 items)
-- Grid consistent at all breakpoints
-- Spacing uses a scale (4px or 8px base), not arbitrary values
-- Alignment is consistent — nothing floats outside the grid
-- Rhythm: related items closer together, distinct sections further apart
-- Border-radius hierarchy (not uniform bubbly radius on everything)
-- Inner radius = outer radius - gap (nested elements)
-- No horizontal scroll on mobile
-- Max content width set (no full-bleed body text)
-- \`env(safe-area-inset-*)\` for notch devices
-- URL reflects state (filters, tabs, pagination in query params)
-- Flex/grid used for layout (not JS measurement)
-- Breakpoints: mobile (375), tablet (768), desktop (1024), wide (1440)
+**4. Espaciado y Layout** (12 elementos)
+- Grid consistente en todos los breakpoints
+- El espaciado usa una escala (base 4px u 8px), no valores arbitrarios
+- La alineación es consistente — nada flota fuera del grid
+- Ritmo: elementos relacionados más cerca, secciones distintas más separadas
+- Jerarquía de border-radius (no radio burbuja uniforme en todo)
+- Radio interior = radio exterior - gap (elementos anidados)
+- Sin scroll horizontal en móvil
+- Ancho máximo de contenido establecido (sin texto de cuerpo a ancho completo)
+- \`env(safe-area-inset-*)\` para dispositivos con notch
+- La URL refleja el estado (filtros, pestañas, paginación en parámetros de consulta)
+- Flex/grid usado para layout (no medición con JS)
+- Breakpoints: móvil (375), tablet (768), escritorio (1024), ancho (1440)
 
-**5. Interaction States** (10 items)
-- Hover state on all interactive elements
-- \`focus-visible\` ring present (never \`outline: none\` without replacement)
-- Active/pressed state with depth effect or color shift
-- Disabled state: reduced opacity + \`cursor: not-allowed\`
-- Loading: skeleton shapes match real content layout
-- Empty states: warm message + primary action + visual (not just "No items.")
-- Error messages: specific + include fix/next step
-- Success: confirmation animation or color, auto-dismiss
-- Touch targets >= 44px on all interactive elements
-- \`cursor: pointer\` on all clickable elements
+**5. Estados de Interacción** (10 elementos)
+- Estado hover en todos los elementos interactivos
+- Anillo \`focus-visible\` presente (nunca \`outline: none\` sin reemplazo)
+- Estado activo/presionado con efecto de profundidad o cambio de color
+- Estado deshabilitado: opacidad reducida + \`cursor: not-allowed\`
+- Carga: formas skeleton que coinciden con el layout del contenido real
+- Estados vacíos: mensaje cálido + acción principal + visual (no solo "Sin elementos.")
+- Mensajes de error: específicos + incluyen corrección/siguiente paso
+- Éxito: animación o color de confirmación, auto-descarte
+- Objetivos táctiles >= 44px en todos los elementos interactivos
+- \`cursor: pointer\` en todos los elementos clicables
 
-**6. Responsive Design** (8 items)
-- Mobile layout makes *design* sense (not just stacked desktop columns)
-- Touch targets sufficient on mobile (>= 44px)
-- No horizontal scroll on any viewport
-- Images handle responsive (srcset, sizes, or CSS containment)
-- Text readable without zooming on mobile (>= 16px body)
-- Navigation collapses appropriately (hamburger, bottom nav, etc.)
-- Forms usable on mobile (correct input types, no autoFocus on mobile)
-- No \`user-scalable=no\` or \`maximum-scale=1\` in viewport meta
+**6. Diseño Responsive** (8 elementos)
+- El layout móvil tiene sentido de *diseño* (no solo columnas de escritorio apiladas)
+- Objetivos táctiles suficientes en móvil (>= 44px)
+- Sin scroll horizontal en ningún viewport
+- Las imágenes manejan responsive (srcset, sizes, o contención CSS)
+- Texto legible sin zoom en móvil (>= 16px cuerpo)
+- La navegación colapsa apropiadamente (hamburguesa, nav inferior, etc.)
+- Formularios usables en móvil (tipos de input correctos, sin autoFocus en móvil)
+- Sin \`user-scalable=no\` o \`maximum-scale=1\` en meta viewport
 
-**7. Motion & Animation** (6 items)
-- Easing: ease-out for entering, ease-in for exiting, ease-in-out for moving
-- Duration: 50-700ms range (nothing slower unless page transition)
-- Purpose: every animation communicates something (state change, attention, spatial relationship)
-- \`prefers-reduced-motion\` respected (check: \`$B js "matchMedia('(prefers-reduced-motion: reduce)').matches"\`)
-- No \`transition: all\` — properties listed explicitly
-- Only \`transform\` and \`opacity\` animated (not layout properties like width, height, top, left)
+**7. Movimiento y Animación** (6 elementos)
+- Easing: ease-out para entrar, ease-in para salir, ease-in-out para moverse
+- Duración: rango 50-700ms (nada más lento a menos que sea transición de página)
+- Propósito: cada animación comunica algo (cambio de estado, atención, relación espacial)
+- \`prefers-reduced-motion\` respetado (verificar: \`$B js "matchMedia('(prefers-reduced-motion: reduce)').matches"\`)
+- Sin \`transition: all\` — propiedades listadas explícitamente
+- Solo \`transform\` y \`opacity\` animados (no propiedades de layout como width, height, top, left)
 
-**8. Content & Microcopy** (8 items)
-- Empty states designed with warmth (message + action + illustration/icon)
-- Error messages specific: what happened + why + what to do next
-- Button labels specific ("Save API Key" not "Continue" or "Submit")
-- No placeholder/lorem ipsum text visible in production
-- Truncation handled (\`text-overflow: ellipsis\`, \`line-clamp\`, or \`break-words\`)
-- Active voice ("Install the CLI" not "The CLI will be installed")
-- Loading states end with \`…\` ("Saving…" not "Saving...")
-- Destructive actions have confirmation modal or undo window
+**8. Contenido y Microcopy** (8 elementos)
+- Estados vacíos diseñados con calidez (mensaje + acción + ilustración/icono)
+- Mensajes de error específicos: qué pasó + por qué + qué hacer ahora
+- Etiquetas de botón específicas ("Guardar Clave API" no "Continuar" o "Enviar")
+- Sin texto de placeholder/lorem ipsum visible en producción
+- Truncado manejado (\`text-overflow: ellipsis\`, \`line-clamp\`, o \`break-words\`)
+- Voz activa ("Instala el CLI" no "El CLI será instalado")
+- Los estados de carga terminan con \`…\` ("Guardando…" no "Guardando...")
+- Las acciones destructivas tienen modal de confirmación o ventana de deshacer
 
-**9. AI Slop Detection** (10 anti-patterns — the blacklist)
+**9. Detección de AI Slop** (10 anti-patrones — la lista negra)
 
-The test: would a human designer at a respected studio ever ship this?
+La prueba: ¿un diseñador humano en un estudio respetado enviaría esto?
 
 ${AI_SLOP_BLACKLIST.map(item => `- ${item}`).join('\n')}
 
-**10. Performance as Design** (6 items)
-- LCP < 2.0s (web apps), < 1.5s (informational sites)
-- CLS < 0.1 (no visible layout shifts during load)
-- Skeleton quality: shapes match real content layout, shimmer animation
-- Images: \`loading="lazy"\`, width/height dimensions set, WebP/AVIF format
-- Fonts: \`font-display: swap\`, preconnect to CDN origins
-- No visible font swap flash (FOUT) — critical fonts preloaded
+**10. Rendimiento como Diseño** (6 elementos)
+- LCP < 2.0s (aplicaciones web), < 1.5s (sitios informativos)
+- CLS < 0.1 (sin cambios visibles de layout durante la carga)
+- Calidad del skeleton: formas coinciden con layout del contenido real, animación shimmer
+- Imágenes: \`loading="lazy"\`, dimensiones width/height establecidas, formato WebP/AVIF
+- Fuentes: \`font-display: swap\`, preconnect a orígenes CDN
+- Sin destello visible de intercambio de fuente (FOUT) — fuentes críticas precargadas
 
 ---
 
-## Phase 4: Interaction Flow Review
+## Fase 4: Revisión de Flujos de Interacción
 
-Walk 2-3 key user flows and evaluate the *feel*, not just the function:
+Recorre 2-3 flujos de usuario clave y evalúa la *sensación*, no solo la función:
 
 \`\`\`bash
 $B snapshot -i
-$B click @e3           # perform action
-$B snapshot -D          # diff to see what changed
+$B click @e3           # ejecutar acción
+$B snapshot -D          # diff para ver qué cambió
 \`\`\`
 
-Evaluate:
-- **Response feel:** Does clicking feel responsive? Any delays or missing loading states?
-- **Transition quality:** Are transitions intentional or generic/absent?
-- **Feedback clarity:** Did the action clearly succeed or fail? Is the feedback immediate?
-- **Form polish:** Focus states visible? Validation timing correct? Errors near the source?
+Evalúa:
+- **Sensación de respuesta:** ¿Al hacer clic se siente responsivo? ¿Algún retraso o estados de carga faltantes?
+- **Calidad de transición:** ¿Las transiciones son intencionales o genéricas/ausentes?
+- **Claridad del feedback:** ¿La acción claramente tuvo éxito o falló? ¿El feedback es inmediato?
+- **Pulido de formularios:** ¿Estados de foco visibles? ¿Timing de validación correcto? ¿Errores cerca del origen?
 
 ---
 
-## Phase 5: Cross-Page Consistency
+## Fase 5: Consistencia Entre Páginas
 
-Compare screenshots and observations across pages for:
-- Navigation bar consistent across all pages?
-- Footer consistent?
-- Component reuse vs one-off designs (same button styled differently on different pages?)
-- Tone consistency (one page playful while another is corporate?)
-- Spacing rhythm carries across pages?
+Compara capturas de pantalla y observaciones entre páginas para:
+- ¿Barra de navegación consistente en todas las páginas?
+- ¿Footer consistente?
+- Reutilización de componentes vs diseños únicos (¿mismo botón con estilo diferente en páginas diferentes?)
+- Consistencia de tono (¿una página lúdica mientras otra es corporativa?)
+- ¿El ritmo de espaciado se mantiene entre páginas?
 
 ---
 
-## Phase 6: Compile Report
+## Fase 6: Compilar Informe
 
-### Output Locations
+### Ubicaciones de Salida
 
 **Local:** \`.gstack/design-reports/design-audit-{domain}-{YYYY-MM-DD}.md\`
 
-**Project-scoped:**
+**Alcance del proyecto:**
 \`\`\`bash
 eval "$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)" && mkdir -p ~/.gstack/projects/$SLUG
 \`\`\`
-Write to: \`~/.gstack/projects/{slug}/{user}-{branch}-design-audit-{datetime}.md\`
+Escribir en: \`~/.gstack/projects/{slug}/{user}-{branch}-design-audit-{datetime}.md\`
 
-**Baseline:** Write \`design-baseline.json\` for regression mode:
+**Línea base:** Escribir \`design-baseline.json\` para modo regresión:
 \`\`\`json
 {
   "date": "YYYY-MM-DD",
@@ -322,160 +322,160 @@ Write to: \`~/.gstack/projects/{slug}/{user}-{branch}-design-audit-{datetime}.md
 }
 \`\`\`
 
-### Scoring System
+### Sistema de Puntuación
 
-**Dual headline scores:**
-- **Design Score: {A-F}** — weighted average of all 10 categories
-- **AI Slop Score: {A-F}** — standalone grade with pithy verdict
+**Doble puntuación titular:**
+- **Puntuación de Diseño: {A-F}** — promedio ponderado de las 10 categorías
+- **Puntuación de AI Slop: {A-F}** — calificación independiente con veredicto conciso
 
-**Per-category grades:**
-- **A:** Intentional, polished, delightful. Shows design thinking.
-- **B:** Solid fundamentals, minor inconsistencies. Looks professional.
-- **C:** Functional but generic. No major problems, no design point of view.
-- **D:** Noticeable problems. Feels unfinished or careless.
-- **F:** Actively hurting user experience. Needs significant rework.
+**Calificaciones por categoría:**
+- **A:** Intencional, pulido, encantador. Muestra pensamiento de diseño.
+- **B:** Fundamentos sólidos, inconsistencias menores. Se ve profesional.
+- **C:** Funcional pero genérico. Sin problemas graves, sin punto de vista de diseño.
+- **D:** Problemas notables. Se siente inacabado o descuidado.
+- **F:** Perjudicando activamente la experiencia del usuario. Necesita retrabajo significativo.
 
-**Grade computation:** Each category starts at A. Each High-impact finding drops one letter grade. Each Medium-impact finding drops half a letter grade. Polish findings are noted but do not affect grade. Minimum is F.
+**Cálculo de calificación:** Cada categoría empieza en A. Cada hallazgo de impacto Alto baja una letra. Cada hallazgo de impacto Medio baja media letra. Los hallazgos de Pulido se anotan pero no afectan la calificación. Mínimo es F.
 
-**Category weights for Design Score:**
-| Category | Weight |
+**Pesos de categoría para Puntuación de Diseño:**
+| Categoría | Peso |
 |----------|--------|
-| Visual Hierarchy | 15% |
-| Typography | 15% |
-| Spacing & Layout | 15% |
-| Color & Contrast | 10% |
-| Interaction States | 10% |
+| Jerarquía Visual | 15% |
+| Tipografía | 15% |
+| Espaciado y Layout | 15% |
+| Color y Contraste | 10% |
+| Estados de Interacción | 10% |
 | Responsive | 10% |
-| Content Quality | 10% |
+| Calidad de Contenido | 10% |
 | AI Slop | 5% |
-| Motion | 5% |
-| Performance Feel | 5% |
+| Movimiento | 5% |
+| Sensación de Rendimiento | 5% |
 
-AI Slop is 5% of Design Score but also graded independently as a headline metric.
+AI Slop es 5% de la Puntuación de Diseño pero también se califica independientemente como métrica titular.
 
-### Regression Output
+### Salida de Regresión
 
-When previous \`design-baseline.json\` exists or \`--regression\` flag is used:
-- Load baseline grades
-- Compare: per-category deltas, new findings, resolved findings
-- Append regression table to report
-
----
-
-## Design Critique Format
-
-Use structured feedback, not opinions:
-- "I notice..." — observation (e.g., "I notice the primary CTA competes with the secondary action")
-- "I wonder..." — question (e.g., "I wonder if users will understand what 'Process' means here")
-- "What if..." — suggestion (e.g., "What if we moved search to a more prominent position?")
-- "I think... because..." — reasoned opinion (e.g., "I think the spacing between sections is too uniform because it doesn't create hierarchy")
-
-Tie everything to user goals and product objectives. Always suggest specific improvements alongside problems.
+Cuando existe un \`design-baseline.json\` previo o se usa el flag \`--regression\`:
+- Cargar calificaciones de la línea base
+- Comparar: deltas por categoría, nuevos hallazgos, hallazgos resueltos
+- Agregar tabla de regresión al informe
 
 ---
 
-## Important Rules
+## Formato de Crítica de Diseño
 
-1. **Think like a designer, not a QA engineer.** You care whether things feel right, look intentional, and respect the user. You do NOT just care whether things "work."
-2. **Screenshots are evidence.** Every finding needs at least one screenshot. Use annotated screenshots (\`snapshot -a\`) to highlight elements.
-3. **Be specific and actionable.** "Change X to Y because Z" — not "the spacing feels off."
-4. **Never read source code.** Evaluate the rendered site, not the implementation. (Exception: offer to write DESIGN.md from extracted observations.)
-5. **AI Slop detection is your superpower.** Most developers can't evaluate whether their site looks AI-generated. You can. Be direct about it.
-6. **Quick wins matter.** Always include a "Quick Wins" section — the 3-5 highest-impact fixes that take <30 minutes each.
-7. **Use \`snapshot -C\` for tricky UIs.** Finds clickable divs that the accessibility tree misses.
-8. **Responsive is design, not just "not broken."** A stacked desktop layout on mobile is not responsive design — it's lazy. Evaluate whether the mobile layout makes *design* sense.
-9. **Document incrementally.** Write each finding to the report as you find it. Don't batch.
-10. **Depth over breadth.** 5-10 well-documented findings with screenshots and specific suggestions > 20 vague observations.
-11. **Show screenshots to the user.** After every \`$B screenshot\`, \`$B snapshot -a -o\`, or \`$B responsive\` command, use the Read tool on the output file(s) so the user can see them inline. For \`responsive\` (3 files), Read all three. This is critical — without it, screenshots are invisible to the user.`;
+Usa feedback estructurado, no opiniones:
+- "Noto..." — observación (ej.: "Noto que el CTA principal compite con la acción secundaria")
+- "Me pregunto..." — pregunta (ej.: "Me pregunto si los usuarios entenderán qué significa 'Procesar' aquí")
+- "¿Qué tal si..." — sugerencia (ej.: "¿Qué tal si movemos la búsqueda a una posición más prominente?")
+- "Creo que... porque..." — opinión razonada (ej.: "Creo que el espaciado entre secciones es demasiado uniforme porque no crea jerarquía")
+
+Vincula todo a objetivos del usuario y del producto. Siempre sugiere mejoras específicas junto con los problemas.
+
+---
+
+## Reglas Importantes
+
+1. **Piensa como un diseñador, no como un ingeniero de QA.** Te importa si las cosas se sienten bien, se ven intencionales y respetan al usuario. NO solo te importa si las cosas "funcionan."
+2. **Las capturas de pantalla son evidencia.** Cada hallazgo necesita al menos una captura de pantalla. Usa capturas anotadas (\`snapshot -a\`) para resaltar elementos.
+3. **Sé específico y accionable.** "Cambiar X a Y porque Z" — no "el espaciado se siente raro."
+4. **Nunca leas código fuente.** Evalúa el sitio renderizado, no la implementación. (Excepción: ofrecer escribir DESIGN.md a partir de observaciones extraídas.)
+5. **La detección de AI Slop es tu superpoder.** La mayoría de los desarrolladores no pueden evaluar si su sitio se ve generado por IA. Tú sí. Sé directo al respecto.
+6. **Las victorias rápidas importan.** Siempre incluye una sección de "Victorias Rápidas" — las 3-5 correcciones de mayor impacto que toman <30 minutos cada una.
+7. **Usa \`snapshot -C\` para UIs complicadas.** Encuentra divs clicables que el árbol de accesibilidad no detecta.
+8. **Responsive es diseño, no solo "no está roto".** Un layout de escritorio apilado en móvil no es diseño responsive — es pereza. Evalúa si el layout móvil tiene sentido de *diseño*.
+9. **Documenta incrementalmente.** Escribe cada hallazgo en el informe conforme lo encuentres. No acumules.
+10. **Profundidad sobre amplitud.** 5-10 hallazgos bien documentados con capturas de pantalla y sugerencias específicas > 20 observaciones vagas.
+11. **Muestra capturas de pantalla al usuario.** Después de cada comando \`$B screenshot\`, \`$B snapshot -a -o\`, o \`$B responsive\`, usa la herramienta Read en los archivos de salida para que el usuario pueda verlos en línea. Para \`responsive\` (3 archivos), lee los tres. Esto es crítico — sin ello, las capturas son invisibles para el usuario.`;
 }
 
 export function generateDesignSketch(_ctx: TemplateContext): string {
-  return `## Visual Sketch (UI ideas only)
+  return `## Boceto Visual (solo ideas de UI)
 
-If the chosen approach involves user-facing UI (screens, pages, forms, dashboards,
-or interactive elements), generate a rough wireframe to help the user visualize it.
-If the idea is backend-only, infrastructure, or has no UI component — skip this
-section silently.
+Si el enfoque elegido involucra UI visible al usuario (pantallas, páginas, formularios, dashboards,
+o elementos interactivos), genera un wireframe aproximado para ayudar al usuario a visualizarlo.
+Si la idea es solo de backend, infraestructura, o no tiene componente de UI — omite esta
+sección silenciosamente.
 
-**Step 1: Gather design context**
+**Paso 1: Recopilar contexto de diseño**
 
-1. Check if \`DESIGN.md\` exists in the repo root. If it does, read it for design
-   system constraints (colors, typography, spacing, component patterns). Use these
-   constraints in the wireframe.
-2. Apply core design principles:
-   - **Information hierarchy** — what does the user see first, second, third?
-   - **Interaction states** — loading, empty, error, success, partial
-   - **Edge case paranoia** — what if the name is 47 chars? Zero results? Network fails?
-   - **Subtraction default** — "as little design as possible" (Rams). Every element earns its pixels.
-   - **Design for trust** — every interface element builds or erodes user trust.
+1. Comprueba si \`DESIGN.md\` existe en la raíz del repositorio. Si existe, léelo para
+   restricciones del sistema de diseño (colores, tipografía, espaciado, patrones de componentes). Usa estas
+   restricciones en el wireframe.
+2. Aplica principios fundamentales de diseño:
+   - **Jerarquía de información** — ¿qué ve el usuario primero, segundo, tercero?
+   - **Estados de interacción** — carga, vacío, error, éxito, parcial
+   - **Paranoia de casos extremos** — ¿qué pasa si el nombre tiene 47 caracteres? ¿Cero resultados? ¿Falla la red?
+   - **Sustracción por defecto** — "tan poco diseño como sea posible" (Rams). Cada elemento se gana sus píxeles.
+   - **Diseñar para la confianza** — cada elemento de interfaz construye o erosiona la confianza del usuario.
 
-**Step 2: Generate wireframe HTML**
+**Paso 2: Generar wireframe HTML**
 
-Generate a single-page HTML file with these constraints:
-- **Intentionally rough aesthetic** — use system fonts, thin gray borders, no color,
-  hand-drawn-style elements. This is a sketch, not a polished mockup.
-- Self-contained — no external dependencies, no CDN links, inline CSS only
-- Show the core interaction flow (1-3 screens/states max)
-- Include realistic placeholder content (not "Lorem ipsum" — use content that
-  matches the actual use case)
-- Add HTML comments explaining design decisions
+Genera un archivo HTML de una sola página con estas restricciones:
+- **Estética intencionalmente tosca** — usa fuentes del sistema, bordes grises finos, sin color,
+  elementos estilo dibujado a mano. Esto es un boceto, no un mockup pulido.
+- Autocontenido — sin dependencias externas, sin links a CDN, solo CSS inline
+- Muestra el flujo de interacción principal (1-3 pantallas/estados máximo)
+- Incluye contenido placeholder realista (no "Lorem ipsum" — usa contenido que
+  coincida con el caso de uso real)
+- Agrega comentarios HTML explicando las decisiones de diseño
 
-Write to a temp file:
+Escribe en un archivo temporal:
 \`\`\`bash
 SKETCH_FILE="/tmp/gstack-sketch-$(date +%s).html"
 \`\`\`
 
-**Step 3: Render and capture**
+**Paso 3: Renderizar y capturar**
 
 \`\`\`bash
 $B goto "file://$SKETCH_FILE"
 $B screenshot /tmp/gstack-sketch.png
 \`\`\`
 
-If \`$B\` is not available (browse binary not set up), skip the render step. Tell the
-user: "Visual sketch requires the browse binary. Run the setup script to enable it."
+Si \`$B\` no está disponible (binario browse no configurado), omite el paso de renderizado. Dile al
+usuario: "El boceto visual requiere el binario browse. Ejecuta el script de setup para habilitarlo."
 
-**Step 4: Present and iterate**
+**Paso 4: Presentar e iterar**
 
-Show the screenshot to the user. Ask: "Does this feel right? Want to iterate on the layout?"
+Muestra la captura de pantalla al usuario. Pregunta: "¿Esto se siente correcto? ¿Quieres iterar sobre el layout?"
 
-If they want changes, regenerate the HTML with their feedback and re-render.
-If they approve or say "good enough," proceed.
+Si quieren cambios, regenera el HTML con su feedback y re-renderiza.
+Si aprueban o dicen "suficiente", procede.
 
-**Step 5: Include in design doc**
+**Paso 5: Incluir en el documento de diseño**
 
-Reference the wireframe screenshot in the design doc's "Recommended Approach" section.
-The screenshot file at \`/tmp/gstack-sketch.png\` can be referenced by downstream skills
-(\`/plan-design-review\`, \`/design-review\`) to see what was originally envisioned.
+Referencia la captura del wireframe en la sección "Enfoque Recomendado" del documento de diseño.
+El archivo de captura en \`/tmp/gstack-sketch.png\` puede ser referenciado por skills posteriores
+(\`/plan-design-review\`, \`/design-review\`) para ver lo que se planificó originalmente.
 
-**Step 6: Outside design voices** (optional)
+**Paso 6: Voces externas de diseño** (opcional)
 
-After the wireframe is approved, offer outside design perspectives:
+Después de que el wireframe sea aprobado, ofrece perspectivas externas de diseño:
 
 \`\`\`bash
 which codex 2>/dev/null && echo "CODEX_AVAILABLE" || echo "CODEX_NOT_AVAILABLE"
 \`\`\`
 
-If Codex is available, use AskUserQuestion:
-> "Want outside design perspectives on the chosen approach? Codex proposes a visual thesis, content plan, and interaction ideas. A Claude subagent proposes an alternative aesthetic direction."
+Si Codex está disponible, usa AskUserQuestion:
+> "¿Quieres perspectivas externas de diseño sobre el enfoque elegido? Codex propone una tesis visual, plan de contenido e ideas de interacción. Un subagente de Claude propone una dirección estética alternativa."
 >
-> A) Yes — get outside design voices
-> B) No — proceed without
+> A) Sí — obtener voces externas de diseño
+> B) No — proceder sin ellas
 
-If user chooses A, launch both voices simultaneously:
+Si el usuario elige A, lanza ambas voces simultáneamente:
 
-1. **Codex** (via Bash, \`model_reasoning_effort="medium"\`):
+1. **Codex** (vía Bash, \`model_reasoning_effort="medium"\`):
 \`\`\`bash
 TMPERR_SKETCH=$(mktemp /tmp/codex-sketch-XXXXXXXX)
 codex exec "For this product approach, provide: a visual thesis (one sentence — mood, material, energy), a content plan (hero → support → detail → CTA), and 2 interaction ideas that change page feel. Apply beautiful defaults: composition-first, brand-first, cardless, poster not document. Be opinionated." -C "$(git rev-parse --show-toplevel)" -s read-only -c 'model_reasoning_effort="medium"' --enable web_search_cached 2>"$TMPERR_SKETCH"
 \`\`\`
-Use a 5-minute timeout (\`timeout: 300000\`). After completion: \`cat "$TMPERR_SKETCH" && rm -f "$TMPERR_SKETCH"\`
+Usa un timeout de 5 minutos (\`timeout: 300000\`). Después de completar: \`cat "$TMPERR_SKETCH" && rm -f "$TMPERR_SKETCH"\`
 
-2. **Claude subagent** (via Agent tool):
-"For this product approach, what design direction would you recommend? What aesthetic, typography, and interaction patterns fit? What would make this approach feel inevitable to the user? Be specific — font names, hex colors, spacing values."
+2. **Subagente de Claude** (vía herramienta Agent):
+"Para este enfoque de producto, ¿qué dirección de diseño recomendarías? ¿Qué estética, tipografía y patrones de interacción encajan? ¿Qué haría que este enfoque se sienta inevitable para el usuario? Sé específico — nombres de fuentes, colores hex, valores de espaciado."
 
-Present Codex output under \`CODEX SAYS (design sketch):\` and subagent output under \`CLAUDE SUBAGENT (design direction):\`.
-Error handling: all non-blocking. On failure, skip and continue.`;
+Presenta la salida de Codex bajo \`CODEX DICE (boceto de diseño):\` y la salida del subagente bajo \`SUBAGENTE DE CLAUDE (dirección de diseño):\`.
+Manejo de errores: todo no bloqueante. Ante fallo, omite y continúa.`;
 }
 
 export function generateDesignOutsideVoices(ctx: TemplateContext): string {
@@ -574,95 +574,95 @@ Be bold. Be specific. No hedging.`;
 
   // Build the opt-in section
   const optInSection = isAutomatic ? `
-**Automatic:** Outside voices run automatically when Codex is available. No opt-in needed.` : `
-Use AskUserQuestion:
-> "Want outside design voices${isPlanDesignReview ? ' before the detailed review' : ''}? Codex evaluates against OpenAI's design hard rules + litmus checks; Claude subagent does an independent ${isDesignConsultation ? 'design direction proposal' : 'completeness review'}."
+**Automático:** Las voces externas se ejecutan automáticamente cuando Codex está disponible. No se necesita opt-in.` : `
+Usa AskUserQuestion:
+> "¿Quieres voces externas de diseño${isPlanDesignReview ? ' antes de la revisión detallada' : ''}? Codex evalúa contra las reglas duras de diseño de OpenAI + verificaciones litmus; el subagente de Claude hace una ${isDesignConsultation ? 'propuesta de dirección de diseño' : 'revisión de completitud'} independiente."
 >
-> A) Yes — run outside design voices
-> B) No — proceed without
+> A) Sí — ejecutar voces externas de diseño
+> B) No — proceder sin ellas
 
-If user chooses B, skip this step and continue.`;
+Si el usuario elige B, omite este paso y continúa.`;
 
   // Build the synthesis section
   const synthesisSection = isPlanDesignReview ? `
-**Synthesis — Litmus scorecard:**
+**Síntesis — Cuadro de mando litmus:**
 
 \`\`\`
-DESIGN OUTSIDE VOICES — LITMUS SCORECARD:
+VOCES EXTERNAS DE DISEÑO — CUADRO DE MANDO LITMUS:
 ═══════════════════════════════════════════════════════════════
-  Check                                    Claude  Codex  Consensus
+  Verificación                               Claude  Codex  Consenso
   ─────────────────────────────────────── ─────── ─────── ─────────
-  1. Brand unmistakable in first screen?   —       —      —
-  2. One strong visual anchor?             —       —      —
-  3. Scannable by headlines only?          —       —      —
-  4. Each section has one job?             —       —      —
-  5. Cards actually necessary?             —       —      —
-  6. Motion improves hierarchy?            —       —      —
-  7. Premium without decorative shadows?   —       —      —
+  1. ¿Marca inconfundible en 1.ª pantalla?  —       —      —
+  2. ¿Un ancla visual fuerte?               —       —      —
+  3. ¿Escaneable solo por titulares?         —       —      —
+  4. ¿Cada sección tiene un trabajo?         —       —      —
+  5. ¿Las tarjetas son realmente necesarias? —       —      —
+  6. ¿El movimiento mejora la jerarquía?     —       —      —
+  7. ¿Premium sin sombras decorativas?       —       —      —
   ─────────────────────────────────────── ─────── ─────── ─────────
-  Hard rejections triggered:               —       —      —
+  Rechazos duros activados:                  —       —      —
 ═══════════════════════════════════════════════════════════════
 \`\`\`
 
-Fill in each cell from the Codex and subagent outputs. CONFIRMED = both agree. DISAGREE = models differ. NOT SPEC'D = not enough info to evaluate.
+Rellena cada celda a partir de las salidas de Codex y el subagente. CONFIRMED = ambos coinciden. DISAGREE = los modelos difieren. NOT SPEC'D = no hay suficiente información para evaluar.
 
-**Pass integration (respects existing 7-pass contract):**
-- Hard rejections → raised as the FIRST items in Pass 1, tagged \`[HARD REJECTION]\`
-- Litmus DISAGREE items → raised in the relevant pass with both perspectives
-- Litmus CONFIRMED failures → pre-loaded as known issues in the relevant pass
-- Passes can skip discovery and go straight to fixing for pre-identified issues` :
+**Integración con pases (respeta el contrato existente de 7 pases):**
+- Rechazos duros → se plantean como los PRIMEROS elementos en el Pase 1, etiquetados \`[HARD REJECTION]\`
+- Elementos litmus DISAGREE → se plantean en el pase relevante con ambas perspectivas
+- Fallos litmus CONFIRMED → precargados como incidencias conocidas en el pase relevante
+- Los pases pueden omitir el descubrimiento e ir directamente a corregir para incidencias pre-identificadas` :
     isDesignConsultation ? `
-**Synthesis:** Claude main references both Codex and subagent proposals in the Phase 3 proposal. Present:
-- Areas of agreement between all three voices (Claude main + Codex + subagent)
-- Genuine divergences as creative alternatives for the user to choose from
-- "Codex and I agree on X. Codex suggested Y where I'm proposing Z — here's why..."` : `
-**Synthesis — Litmus scorecard:**
+**Síntesis:** Claude principal referencia ambas propuestas de Codex y del subagente en la propuesta de la Fase 3. Presenta:
+- Áreas de acuerdo entre las tres voces (Claude principal + Codex + subagente)
+- Divergencias genuinas como alternativas creativas para que el usuario elija
+- "Codex y yo coincidimos en X. Codex sugirió Y donde yo propongo Z — esta es la razón..."` : `
+**Síntesis — Cuadro de mando litmus:**
 
-Use the same scorecard format as /plan-design-review (shown above). Fill in from both outputs.
-Merge findings into the triage with \`[codex]\` / \`[subagent]\` / \`[cross-model]\` tags.`;
+Usa el mismo formato de cuadro de mando que /plan-design-review (mostrado arriba). Rellena a partir de ambas salidas.
+Fusiona los hallazgos en la clasificación con etiquetas \`[codex]\` / \`[subagent]\` / \`[cross-model]\`.`;
 
   const escapedCodexPrompt = codexPrompt.replace(/`/g, '\\`').replace(/\$/g, '\\$');
 
-  return `## Design Outside Voices (parallel)
+  return `## Voces Externas de Diseño (en paralelo)
 ${optInSection}
 
-**Check Codex availability:**
+**Verificar disponibilidad de Codex:**
 \`\`\`bash
 which codex 2>/dev/null && echo "CODEX_AVAILABLE" || echo "CODEX_NOT_AVAILABLE"
 \`\`\`
 
-**If Codex is available**, launch both voices simultaneously:
+**Si Codex está disponible**, lanza ambas voces simultáneamente:
 
-1. **Codex design voice** (via Bash):
+1. **Voz de diseño de Codex** (vía Bash):
 \`\`\`bash
 TMPERR_DESIGN=$(mktemp /tmp/codex-design-XXXXXXXX)
 codex exec "${escapedCodexPrompt}" -C "$(git rev-parse --show-toplevel)" -s read-only -c 'model_reasoning_effort="${reasoningEffort}"' --enable web_search_cached 2>"$TMPERR_DESIGN"
 \`\`\`
-Use a 5-minute timeout (\`timeout: 300000\`). After the command completes, read stderr:
+Usa un timeout de 5 minutos (\`timeout: 300000\`). Después de que el comando termine, lee stderr:
 \`\`\`bash
 cat "$TMPERR_DESIGN" && rm -f "$TMPERR_DESIGN"
 \`\`\`
 
-2. **Claude design subagent** (via Agent tool):
-Dispatch a subagent with this prompt:
+2. **Subagente de diseño de Claude** (vía herramienta Agent):
+Despacha un subagente con este prompt:
 "${subagentPrompt}"
 
-**Error handling (all non-blocking):**
-- **Auth failure:** If stderr contains "auth", "login", "unauthorized", or "API key": "Codex authentication failed. Run \`codex login\` to authenticate."
-- **Timeout:** "Codex timed out after 5 minutes."
-- **Empty response:** "Codex returned no response."
-- On any Codex error: proceed with Claude subagent output only, tagged \`[single-model]\`.
-- If Claude subagent also fails: "Outside voices unavailable — continuing with primary review."
+**Manejo de errores (todo no bloqueante):**
+- **Fallo de autenticación:** Si stderr contiene "auth", "login", "unauthorized" o "API key": "Fallo de autenticación de Codex. Ejecuta \`codex login\` para autenticarte."
+- **Timeout:** "Codex expiró después de 5 minutos."
+- **Respuesta vacía:** "Codex no devolvió respuesta."
+- Ante cualquier error de Codex: procede solo con la salida del subagente de Claude, etiquetada \`[single-model]\`.
+- Si el subagente de Claude también falla: "Voces externas no disponibles — continuando con la revisión principal."
 
-Present Codex output under a \`CODEX SAYS (design ${isPlanDesignReview ? 'critique' : isDesignReview ? 'source audit' : 'direction'}):\` header.
-Present subagent output under a \`CLAUDE SUBAGENT (design ${isPlanDesignReview ? 'completeness' : isDesignReview ? 'consistency' : 'direction'}):\` header.
+Presenta la salida de Codex bajo un encabezado \`CODEX DICE (diseño ${isPlanDesignReview ? 'crítica' : isDesignReview ? 'auditoría de código' : 'dirección'}):\`.
+Presenta la salida del subagente bajo un encabezado \`SUBAGENTE DE CLAUDE (diseño ${isPlanDesignReview ? 'completitud' : isDesignReview ? 'consistencia' : 'dirección'}):\`.
 ${synthesisSection}
 
-**Log the result:**
+**Registrar el resultado:**
 \`\`\`bash
 ${ctx.paths.binDir}/gstack-review-log '{"skill":"design-outside-voices","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","status":"STATUS","source":"SOURCE","commit":"'"$(git rev-parse --short HEAD)"'"}'
 \`\`\`
-Replace STATUS with "clean" or "issues_found", SOURCE with "codex+subagent", "codex-only", "subagent-only", or "unavailable".`;
+Sustituye STATUS con "clean" o "issues_found", SOURCE con "codex+subagent", "codex-only", "subagent-only", o "unavailable".`;
 }
 
 // ─── Design Hard Rules (OpenAI framework + gstack slop blacklist) ───
@@ -671,51 +671,51 @@ export function generateDesignHardRules(_ctx: TemplateContext): string {
   const rejectionItems = OPENAI_HARD_REJECTIONS.map((item, i) => `${i + 1}. ${item}`).join('\n');
   const litmusItems = OPENAI_LITMUS_CHECKS.map((item, i) => `${i + 1}. ${item}`).join('\n');
 
-  return `### Design Hard Rules
+  return `### Reglas Duras de Diseño
 
-**Classifier — determine rule set before evaluating:**
-- **MARKETING/LANDING PAGE** (hero-driven, brand-forward, conversion-focused) → apply Landing Page Rules
-- **APP UI** (workspace-driven, data-dense, task-focused: dashboards, admin, settings) → apply App UI Rules
-- **HYBRID** (marketing shell with app-like sections) → apply Landing Page Rules to hero/marketing sections, App UI Rules to functional sections
+**Clasificador — determina el conjunto de reglas antes de evaluar:**
+- **MARKETING/LANDING PAGE** (orientado a hero, marca primero, enfocado en conversión) → aplicar Reglas de Landing Page
+- **APP UI** (orientado a workspace, denso en datos, enfocado en tareas: dashboards, admin, configuración) → aplicar Reglas de App UI
+- **HYBRID** (carcasa de marketing con secciones tipo app) → aplicar Reglas de Landing Page a secciones hero/marketing, Reglas de App UI a secciones funcionales
 
-**Hard rejection criteria** (instant-fail patterns — flag if ANY apply):
+**Criterios de rechazo duro** (patrones de fallo instantáneo — señalizar si ALGUNO aplica):
 ${rejectionItems}
 
-**Litmus checks** (answer YES/NO for each — used for cross-model consensus scoring):
+**Verificaciones litmus** (responder SÍ/NO para cada una — usadas para puntuación de consenso cross-model):
 ${litmusItems}
 
-**Landing page rules** (apply when classifier = MARKETING/LANDING):
-- First viewport reads as one composition, not a dashboard
-- Brand-first hierarchy: brand > headline > body > CTA
-- Typography: expressive, purposeful — no default stacks (Inter, Roboto, Arial, system)
-- No flat single-color backgrounds — use gradients, images, subtle patterns
-- Hero: full-bleed, edge-to-edge, no inset/tiled/rounded variants
-- Hero budget: brand, one headline, one supporting sentence, one CTA group, one image
-- No cards in hero. Cards only when card IS the interaction
-- One job per section: one purpose, one headline, one short supporting sentence
-- Motion: 2-3 intentional motions minimum (entrance, scroll-linked, hover/reveal)
-- Color: define CSS variables, avoid purple-on-white defaults, one accent color default
-- Copy: product language not design commentary. "If deleting 30% improves it, keep deleting"
-- Beautiful defaults: composition-first, brand as loudest text, two typefaces max, cardless by default, first viewport as poster not document
+**Reglas de landing page** (aplicar cuando clasificador = MARKETING/LANDING):
+- El primer viewport se lee como una composición, no un dashboard
+- Jerarquía marca primero: marca > titular > cuerpo > CTA
+- Tipografía: expresiva, con propósito — sin stacks por defecto (Inter, Roboto, Arial, system)
+- Sin fondos planos de un solo color — usar gradientes, imágenes, patrones sutiles
+- Hero: de borde a borde, sin variantes con inset/mosaico/redondeado
+- Presupuesto del hero: marca, un titular, una oración de apoyo, un grupo de CTA, una imagen
+- Sin tarjetas en el hero. Tarjetas solo cuando la tarjeta ES la interacción
+- Un trabajo por sección: un propósito, un titular, una oración corta de apoyo
+- Movimiento: mínimo 2-3 movimientos intencionales (entrada, vinculado al scroll, hover/revelación)
+- Color: definir variables CSS, evitar defaults púrpura sobre blanco, un color de acento por defecto
+- Copy: lenguaje de producto no comentario de diseño. "Si eliminar el 30% lo mejora, sigue eliminando"
+- Defaults hermosos: composición primero, marca como texto más prominente, máximo dos tipografías, sin tarjetas por defecto, primer viewport como póster no documento
 
-**App UI rules** (apply when classifier = APP UI):
-- Calm surface hierarchy, strong typography, few colors
-- Dense but readable, minimal chrome
-- Organize: primary workspace, navigation, secondary context, one accent
-- Avoid: dashboard-card mosaics, thick borders, decorative gradients, ornamental icons
-- Copy: utility language — orientation, status, action. Not mood/brand/aspiration
-- Cards only when card IS the interaction
-- Section headings state what area is or what user can do ("Selected KPIs", "Plan status")
+**Reglas de App UI** (aplicar cuando clasificador = APP UI):
+- Jerarquía de superficies tranquila, tipografía fuerte, pocos colores
+- Denso pero legible, cromo mínimo
+- Organizar: workspace principal, navegación, contexto secundario, un acento
+- Evitar: mosaicos de tarjetas de dashboard, bordes gruesos, gradientes decorativos, iconos ornamentales
+- Copy: lenguaje utilitario — orientación, estado, acción. No humor/marca/aspiración
+- Tarjetas solo cuando la tarjeta ES la interacción
+- Encabezados de sección indican qué es el área o qué puede hacer el usuario ("KPIs seleccionados", "Estado del plan")
 
-**Universal rules** (apply to ALL types):
-- Define CSS variables for color system
-- No default font stacks (Inter, Roboto, Arial, system)
-- One job per section
-- "If deleting 30% of the copy improves it, keep deleting"
-- Cards earn their existence — no decorative card grids
+**Reglas universales** (aplicar a TODOS los tipos):
+- Definir variables CSS para el sistema de color
+- Sin stacks de fuentes por defecto (Inter, Roboto, Arial, system)
+- Un trabajo por sección
+- "Si eliminar el 30% del copy lo mejora, sigue eliminando"
+- Las tarjetas se ganan su existencia — sin grids decorativos de tarjetas
 
-**AI Slop blacklist** (the 10 patterns that scream "AI-generated"):
+**Lista negra de AI Slop** (los 10 patrones que gritan "generado por IA"):
 ${slopItems}
 
-Source: [OpenAI "Designing Delightful Frontends with GPT-5.4"](https://developers.openai.com/blog/designing-delightful-frontends-with-gpt-5-4) (Mar 2026) + gstack design methodology.`;
+Fuente: [OpenAI "Designing Delightful Frontends with GPT-5.4"](https://developers.openai.com/blog/designing-delightful-frontends-with-gpt-5-4) (Mar 2026) + metodología de diseño gstack.`;
 }
