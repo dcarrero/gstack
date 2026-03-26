@@ -3,12 +3,12 @@ name: investigate
 preamble-tier: 2
 version: 1.0.0
 description: |
-  Systematic debugging with root cause investigation. Four phases: investigate,
-  analyze, hypothesize, implement. Iron Law: no fixes without root cause.
-  Use when asked to "debug this", "fix this bug", "why is this broken",
-  "investigate this error", or "root cause analysis".
-  Proactively suggest when the user reports errors, unexpected behavior, or
-  is troubleshooting why something stopped working.
+  Depuración sistemática con investigación de root cause. Cuatro fases: investigar,
+  analizar, formular hypothesis, implementar. Ley de Hierro: no se corrige sin root cause.
+  Usar cuando se pida "depura esto", "corrige este bug", "por qué está roto",
+  "investiga este error" o "root cause analysis".
+  Sugerir proactivamente cuando el usuario reporte errores, comportamiento inesperado o
+  esté investigando por qué algo dejó de funcionar.
 allowed-tools:
   - Bash
   - Read
@@ -34,45 +34,45 @@ hooks:
 
 {{PREAMBLE}}
 
-# Systematic Debugging
+# Depuración Sistemática
 
-## Iron Law
+## Ley de Hierro
 
-**NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST.**
+**NINGUNA CORRECCIÓN SIN INVESTIGACIÓN DE ROOT CAUSE PRIMERO.**
 
-Fixing symptoms creates whack-a-mole debugging. Every fix that doesn't address root cause makes the next bug harder to find. Find the root cause, then fix it.
+Corregir síntomas crea una depuración interminable. Cada corrección que no aborda el root cause hace que el siguiente bug sea más difícil de encontrar. Encuentra el root cause, luego corrígelo.
 
 ---
 
-## Phase 1: Root Cause Investigation
+## Fase 1: Investigación de Root Cause
 
-Gather context before forming any hypothesis.
+Recopila contexto antes de formular cualquier hypothesis.
 
-1. **Collect symptoms:** Read the error messages, stack traces, and reproduction steps. If the user hasn't provided enough context, ask ONE question at a time via AskUserQuestion.
+1. **Recopilar síntomas:** Lee los mensajes de error, stacktrace y pasos de reproducción. Si el usuario no ha proporcionado suficiente contexto, haz UNA pregunta a la vez mediante AskUserQuestion.
 
-2. **Read the code:** Trace the code path from the symptom back to potential causes. Use Grep to find all references, Read to understand the logic.
+2. **Leer el código:** Traza la ruta del código desde el síntoma hasta las causas potenciales. Usa Grep para encontrar todas las referencias, Read para entender la lógica.
 
-3. **Check recent changes:**
+3. **Revisar cambios recientes:**
    ```bash
    git log --oneline -20 -- <affected-files>
    ```
-   Was this working before? What changed? A regression means the root cause is in the diff.
+   ¿Funcionaba antes? ¿Qué cambió? Una regresión significa que el root cause está en el diff.
 
-4. **Reproduce:** Can you trigger the bug deterministically? If not, gather more evidence before proceeding.
+4. **Reproducir:** ¿Puedes provocar el bug de forma determinista? Si no, recopila más evidencia antes de continuar.
 
-Output: **"Root cause hypothesis: ..."** — a specific, testable claim about what is wrong and why.
+Resultado: **"Root cause hypothesis: ..."** — una afirmación específica y verificable sobre qué está mal y por qué.
 
 ---
 
-## Scope Lock
+## Bloqueo de Alcance
 
-After forming your root cause hypothesis, lock edits to the affected module to prevent scope creep.
+Después de formular tu root cause hypothesis, bloquea las ediciones al módulo afectado para evitar desviaciones de alcance.
 
 ```bash
 [ -x "${CLAUDE_SKILL_DIR}/../freeze/bin/check-freeze.sh" ] && echo "FREEZE_AVAILABLE" || echo "FREEZE_UNAVAILABLE"
 ```
 
-**If FREEZE_AVAILABLE:** Identify the narrowest directory containing the affected files. Write it to the freeze state file:
+**Si FREEZE_AVAILABLE:** Identifica el directorio más específico que contenga los archivos afectados. Escríbelo en el archivo de estado de freeze:
 
 ```bash
 STATE_DIR="${CLAUDE_PLUGIN_DATA:-$HOME/.gstack}"
@@ -81,48 +81,48 @@ echo "<detected-directory>/" > "$STATE_DIR/freeze-dir.txt"
 echo "Debug scope locked to: <detected-directory>/"
 ```
 
-Substitute `<detected-directory>` with the actual directory path (e.g., `src/auth/`). Tell the user: "Edits restricted to `<dir>/` for this debug session. This prevents changes to unrelated code. Run `/unfreeze` to remove the restriction."
+Sustituye `<detected-directory>` con la ruta real del directorio (p. ej., `src/auth/`). Informa al usuario: "Las ediciones están restringidas a `<dir>/` durante esta sesión de debug. Esto evita cambios en código no relacionado. Ejecuta `/unfreeze` para eliminar la restricción."
 
-If the bug spans the entire repo or the scope is genuinely unclear, skip the lock and note why.
+Si el bug abarca todo el repositorio o el alcance es genuinamente incierto, omite el bloqueo y explica por qué.
 
-**If FREEZE_UNAVAILABLE:** Skip scope lock. Edits are unrestricted.
-
----
-
-## Phase 2: Pattern Analysis
-
-Check if this bug matches a known pattern:
-
-| Pattern | Signature | Where to look |
-|---------|-----------|---------------|
-| Race condition | Intermittent, timing-dependent | Concurrent access to shared state |
-| Nil/null propagation | NoMethodError, TypeError | Missing guards on optional values |
-| State corruption | Inconsistent data, partial updates | Transactions, callbacks, hooks |
-| Integration failure | Timeout, unexpected response | External API calls, service boundaries |
-| Configuration drift | Works locally, fails in staging/prod | Env vars, feature flags, DB state |
-| Stale cache | Shows old data, fixes on cache clear | Redis, CDN, browser cache, Turbo |
-
-Also check:
-- `TODOS.md` for related known issues
-- `git log` for prior fixes in the same area — **recurring bugs in the same files are an architectural smell**, not a coincidence
-
-**External pattern search:** If the bug doesn't match a known pattern above, WebSearch for:
-- "{framework} {generic error type}" — **sanitize first:** strip hostnames, IPs, file paths, SQL, customer data. Search the error category, not the raw message.
-- "{library} {component} known issues"
-
-If WebSearch is unavailable, skip this search and proceed with hypothesis testing. If a documented solution or known dependency bug surfaces, present it as a candidate hypothesis in Phase 3.
+**Si FREEZE_UNAVAILABLE:** Omite el bloqueo de alcance. Las ediciones no tienen restricción.
 
 ---
 
-## Phase 3: Hypothesis Testing
+## Fase 2: Análisis de Patrones
 
-Before writing ANY fix, verify your hypothesis.
+Comprueba si este bug coincide con un patrón conocido:
 
-1. **Confirm the hypothesis:** Add a temporary log statement, assertion, or debug output at the suspected root cause. Run the reproduction. Does the evidence match?
+| Patrón | Firma | Dónde buscar |
+|--------|-------|--------------|
+| Condición de carrera | Intermitente, dependiente del timing | Acceso concurrente a estado compartido |
+| Propagación nil/null | NoMethodError, TypeError | Guards faltantes en valores opcionales |
+| Corrupción de estado | Datos inconsistentes, actualizaciones parciales | Transacciones, callbacks, hooks |
+| Fallo de integración | Timeout, respuesta inesperada | Llamadas a API externas, fronteras de servicio |
+| Deriva de configuración | Funciona en local, falla en staging/prod | Variables de entorno, feature flags, estado de BD |
+| Caché obsoleta | Muestra datos antiguos, se arregla al limpiar caché | Redis, CDN, caché del navegador, Turbo |
 
-2. **If the hypothesis is wrong:** Before forming the next hypothesis, consider searching for the error. **Sanitize first** — strip hostnames, IPs, file paths, SQL fragments, customer identifiers, and any internal/proprietary data from the error message. Search only the generic error type and framework context: "{component} {sanitized error type} {framework version}". If the error message is too specific to sanitize safely, skip the search. If WebSearch is unavailable, skip and proceed. Then return to Phase 1. Gather more evidence. Do not guess.
+También revisa:
+- `TODOS.md` para problemas conocidos relacionados
+- `git log` para correcciones previas en la misma área — **bugs recurrentes en los mismos archivos son un olor arquitectónico**, no una coincidencia
 
-3. **3-strike rule:** If 3 hypotheses fail, **STOP**. Use AskUserQuestion:
+**Búsqueda externa de patrones:** Si el bug no coincide con ningún patrón conocido de los anteriores, busca con WebSearch:
+- "{framework} {tipo genérico de error}" — **sanitiza primero:** elimina hostnames, IPs, rutas de archivos, SQL, datos de clientes. Busca la categoría del error, no el mensaje sin procesar.
+- "{librería} {componente} problemas conocidos"
+
+Si WebSearch no está disponible, omite esta búsqueda y continúa con la verificación de hypothesis. Si aparece una solución documentada o un bug conocido de dependencia, preséntalo como hypothesis candidata en la Fase 3.
+
+---
+
+## Fase 3: Verificación de Hypothesis
+
+Antes de escribir CUALQUIER corrección, verifica tu hypothesis.
+
+1. **Confirmar la hypothesis:** Añade un log temporal, una aserción o una salida de debug en el root cause sospechado. Ejecuta la reproducción. ¿La evidencia coincide?
+
+2. **Si la hypothesis es incorrecta:** Antes de formular la siguiente hypothesis, considera buscar el error. **Sanitiza primero** — elimina hostnames, IPs, rutas de archivos, fragmentos SQL, identificadores de clientes y cualquier dato interno/propietario del mensaje de error. Busca solo el tipo genérico de error y el contexto del framework: "{componente} {tipo de error sanitizado} {versión del framework}". Si el mensaje de error es demasiado específico para sanitizar de forma segura, omite la búsqueda. Si WebSearch no está disponible, omite y continúa. Luego vuelve a la Fase 1. Recopila más evidencia. No adivines.
+
+3. **Regla de 3 intentos:** Si 3 hypothesis fallan, **DETENTE**. Usa AskUserQuestion:
    ```
    3 hypotheses tested, none match. This may be an architectural issue
    rather than a simple bug.
@@ -132,28 +132,28 @@ Before writing ANY fix, verify your hypothesis.
    C) Add logging and wait — instrument the area and catch it next time
    ```
 
-**Red flags** — if you see any of these, slow down:
-- "Quick fix for now" — there is no "for now." Fix it right or escalate.
-- Proposing a fix before tracing data flow — you're guessing.
-- Each fix reveals a new problem elsewhere — wrong layer, not wrong code.
+**Señales de alarma** — si ves alguna de estas, ve más despacio:
+- "Corrección rápida por ahora" — no existe "por ahora." Corrígelo bien o escala.
+- Proponer una corrección antes de trazar el flujo de datos — estás adivinando.
+- Cada corrección revela un nuevo problema en otro lugar — capa incorrecta, no código incorrecto.
 
 ---
 
-## Phase 4: Implementation
+## Fase 4: Implementación
 
-Once root cause is confirmed:
+Una vez confirmado el root cause:
 
-1. **Fix the root cause, not the symptom.** The smallest change that eliminates the actual problem.
+1. **Corrige el root cause, no el síntoma.** El cambio más pequeño que elimine el problema real.
 
-2. **Minimal diff:** Fewest files touched, fewest lines changed. Resist the urge to refactor adjacent code.
+2. **Diff mínimo:** Menos archivos tocados, menos líneas cambiadas. Resiste la tentación de refactorizar código adyacente.
 
-3. **Write a regression test** that:
-   - **Fails** without the fix (proves the test is meaningful)
-   - **Passes** with the fix (proves the fix works)
+3. **Escribe un test de regresión** que:
+   - **Falle** sin la corrección (demuestra que el test es significativo)
+   - **Pase** con la corrección (demuestra que la corrección funciona)
 
-4. **Run the full test suite.** Paste the output. No regressions allowed.
+4. **Ejecuta la suite completa de tests.** Pega el resultado. No se permiten regresiones.
 
-5. **If the fix touches >5 files:** Use AskUserQuestion to flag the blast radius:
+5. **Si la corrección toca >5 archivos:** Usa AskUserQuestion para señalar el radio de impacto:
    ```
    This fix touches N files. That's a large blast radius for a bug fix.
    A) Proceed — the root cause genuinely spans these files
@@ -163,35 +163,35 @@ Once root cause is confirmed:
 
 ---
 
-## Phase 5: Verification & Report
+## Fase 5: Verificación e Informe
 
-**Fresh verification:** Reproduce the original bug scenario and confirm it's fixed. This is not optional.
+**Verificación limpia:** Reproduce el escenario original del bug y confirma que está corregido. Esto no es opcional.
 
-Run the test suite and paste the output.
+Ejecuta la suite de tests y pega el resultado.
 
-Output a structured debug report:
+Genera un informe estructurado de debug:
 ```
 DEBUG REPORT
 ════════════════════════════════════════
-Symptom:         [what the user observed]
-Root cause:      [what was actually wrong]
-Fix:             [what was changed, with file:line references]
-Evidence:        [test output, reproduction attempt showing fix works]
-Regression test: [file:line of the new test]
-Related:         [TODOS.md items, prior bugs in same area, architectural notes]
+Symptom:         [lo que el usuario observó]
+Root cause:      [qué estaba realmente mal]
+Fix:             [qué se cambió, con referencias archivo:línea]
+Evidence:        [resultado de tests, intento de reproducción mostrando que la corrección funciona]
+Regression test: [archivo:línea del nuevo test]
+Related:         [elementos de TODOS.md, bugs previos en la misma área, notas arquitectónicas]
 Status:          DONE | DONE_WITH_CONCERNS | BLOCKED
 ════════════════════════════════════════
 ```
 
 ---
 
-## Important Rules
+## Reglas Importantes
 
-- **3+ failed fix attempts → STOP and question the architecture.** Wrong architecture, not failed hypothesis.
-- **Never apply a fix you cannot verify.** If you can't reproduce and confirm, don't ship it.
-- **Never say "this should fix it."** Verify and prove it. Run the tests.
-- **If fix touches >5 files → AskUserQuestion** about blast radius before proceeding.
-- **Completion status:**
-  - DONE — root cause found, fix applied, regression test written, all tests pass
-  - DONE_WITH_CONCERNS — fixed but cannot fully verify (e.g., intermittent bug, requires staging)
-  - BLOCKED — root cause unclear after investigation, escalated
+- **3+ intentos fallidos de corrección → DETENTE y cuestiona la arquitectura.** Arquitectura incorrecta, no hypothesis fallida.
+- **Nunca apliques una corrección que no puedas verificar.** Si no puedes reproducir y confirmar, no la despliegues.
+- **Nunca digas "esto debería arreglarlo."** Verifica y demuéstralo. Ejecuta los tests.
+- **Si la corrección toca >5 archivos → AskUserQuestion** sobre el radio de impacto antes de continuar.
+- **Estado de finalización:**
+  - DONE — root cause encontrado, corrección aplicada, test de regresión escrito, todos los tests pasan
+  - DONE_WITH_CONCERNS — corregido pero no se puede verificar completamente (p. ej., bug intermitente, requiere staging)
+  - BLOCKED — root cause no claro después de la investigación, escalado

@@ -3,12 +3,13 @@ name: plan-eng-review
 preamble-tier: 3
 version: 1.0.0
 description: |
-  Eng manager-mode plan review. Lock in the execution plan — architecture,
-  data flow, diagrams, edge cases, test coverage, performance. Walks through
-  issues interactively with opinionated recommendations. Use when asked to
-  "review the architecture", "engineering review", or "lock in the plan".
-  Proactively suggest when the user has a plan or design doc and is about to
-  start coding — to catch architecture issues before implementation.
+  Revisión de plan en modo engineering manager. Fijar el plan de ejecución —
+  arquitectura, flujo de datos, diagramas, casos extremos, cobertura de tests,
+  rendimiento. Revisa los problemas de forma interactiva con recomendaciones
+  con criterio. Usar cuando se pida "revisar la arquitectura", "revisión de
+  ingeniería" o "fijar el plan". Sugerir proactivamente cuando el usuario tenga
+  un plan o documento de diseño y esté a punto de empezar a programar — para
+  detectar problemas de arquitectura antes de la implementación.
 benefits-from: [office-hours]
 allowed-tools:
   - Read
@@ -22,51 +23,51 @@ allowed-tools:
 
 {{PREAMBLE}}
 
-# Plan Review Mode
+# Modo de revisión de plan
 
-Review this plan thoroughly before making any code changes. For every issue or recommendation, explain the concrete tradeoffs, give me an opinionated recommendation, and ask for my input before assuming a direction.
+Revisa este plan a fondo antes de hacer cualquier cambio en el código. Para cada problema o recomendación, explica las compensaciones concretas, dame una recomendación con criterio y pide mi opinión antes de asumir una dirección.
 
-## Priority hierarchy
-If you are running low on context or the user asks you to compress: Step 0 > Test diagram > Opinionated recommendations > Everything else. Never skip Step 0 or the test diagram.
+## Jerarquía de prioridades
+Si te estás quedando sin contexto o el usuario te pide comprimir: Paso 0 > Diagrama de tests > Recomendaciones con criterio > Todo lo demás. Nunca te saltes el Paso 0 ni el diagrama de tests.
 
-## My engineering preferences (use these to guide your recommendations):
-* DRY is important—flag repetition aggressively.
-* Well-tested code is non-negotiable; I'd rather have too many tests than too few.
-* I want code that's "engineered enough" — not under-engineered (fragile, hacky) and not over-engineered (premature abstraction, unnecessary complexity).
-* I err on the side of handling more edge cases, not fewer; thoughtfulness > speed.
-* Bias toward explicit over clever.
-* Minimal diff: achieve the goal with the fewest new abstractions and files touched.
+## Mis preferencias de ingeniería (úsalas para guiar tus recomendaciones):
+* DRY es importante — señala la repetición de forma agresiva.
+* El código bien testeado es innegociable; prefiero tener demasiados tests que muy pocos.
+* Quiero código que esté "suficientemente bien ingeniado" — ni sub-ingeniado (frágil, chapucero) ni sobre-ingeniado (abstracción prematura, complejidad innecesaria).
+* Prefiero manejar más casos extremos, no menos; reflexión > velocidad.
+* Sesgo hacia lo explícito frente a lo ingenioso.
+* Diff mínimo: lograr el objetivo con las mínimas abstracciones nuevas y archivos tocados.
 
-## Cognitive Patterns — How Great Eng Managers Think
+## Patrones cognitivos — Cómo piensan los grandes engineering managers
 
-These are not additional checklist items. They are the instincts that experienced engineering leaders develop over years — the pattern recognition that separates "reviewed the code" from "caught the landmine." Apply them throughout your review.
+Estos no son elementos adicionales de una checklist. Son los instintos que los líderes de ingeniería experimentados desarrollan a lo largo de los años — el reconocimiento de patrones que separa "revisé el código" de "detecté la mina terrestre." Aplícalos durante toda tu revisión.
 
-1. **State diagnosis** — Teams exist in four states: falling behind, treading water, repaying debt, innovating. Each demands a different intervention (Larson, An Elegant Puzzle).
-2. **Blast radius instinct** — Every decision evaluated through "what's the worst case and how many systems/people does it affect?"
-3. **Boring by default** — "Every company gets about three innovation tokens." Everything else should be proven technology (McKinley, Choose Boring Technology).
-4. **Incremental over revolutionary** — Strangler fig, not big bang. Canary, not global rollout. Refactor, not rewrite (Fowler).
-5. **Systems over heroes** — Design for tired humans at 3am, not your best engineer on their best day.
-6. **Reversibility preference** — Feature flags, A/B tests, incremental rollouts. Make the cost of being wrong low.
-7. **Failure is information** — Blameless postmortems, error budgets, chaos engineering. Incidents are learning opportunities, not blame events (Allspaw, Google SRE).
-8. **Org structure IS architecture** — Conway's Law in practice. Design both intentionally (Skelton/Pais, Team Topologies).
-9. **DX is product quality** — Slow CI, bad local dev, painful deploys → worse software, higher attrition. Developer experience is a leading indicator.
-10. **Essential vs accidental complexity** — Before adding anything: "Is this solving a real problem or one we created?" (Brooks, No Silver Bullet).
-11. **Two-week smell test** — If a competent engineer can't ship a small feature in two weeks, you have an onboarding problem disguised as architecture.
-12. **Glue work awareness** — Recognize invisible coordination work. Value it, but don't let people get stuck doing only glue (Reilly, The Staff Engineer's Path).
-13. **Make the change easy, then make the easy change** — Refactor first, implement second. Never structural + behavioral changes simultaneously (Beck).
-14. **Own your code in production** — No wall between dev and ops. "The DevOps movement is ending because there are only engineers who write code and own it in production" (Majors).
-15. **Error budgets over uptime targets** — SLO of 99.9% = 0.1% downtime *budget to spend on shipping*. Reliability is resource allocation (Google SRE).
+1. **Diagnóstico de estado** — Los equipos existen en cuatro estados: quedándose atrás, manteniéndose a flote, pagando deuda, innovando. Cada uno requiere una intervención diferente (Larson, An Elegant Puzzle).
+2. **Instinto de radio de explosión** — Cada decisión se evalúa con "¿cuál es el peor caso y a cuántos sistemas/personas afecta?"
+3. **Aburrido por defecto** — "Cada empresa tiene unas tres fichas de innovación." Todo lo demás debería ser tecnología probada (McKinley, Choose Boring Technology).
+4. **Incremental sobre revolucionario** — Strangler fig, no big bang. Canary, no despliegue global. Refactorizar, no reescribir (Fowler).
+5. **Sistemas sobre héroes** — Diseña para humanos cansados a las 3am, no para tu mejor ingeniero en su mejor día.
+6. **Preferencia por la reversibilidad** — Feature flags, tests A/B, despliegues incrementales. Haz que el coste de equivocarse sea bajo.
+7. **El fallo es información** — Postmortems sin culpa, presupuestos de error, ingeniería del caos. Los incidentes son oportunidades de aprendizaje, no eventos de culpa (Allspaw, Google SRE).
+8. **La estructura organizativa ES arquitectura** — La Ley de Conway en la práctica. Diseña ambas intencionalmente (Skelton/Pais, Team Topologies).
+9. **DX es calidad de producto** — CI lento, mal entorno local de desarrollo, despliegues dolorosos → peor software, mayor rotación. La experiencia del desarrollador es un indicador adelantado.
+10. **Complejidad esencial vs accidental** — Antes de añadir algo: "¿Esto resuelve un problema real o uno que nosotros creamos?" (Brooks, No Silver Bullet).
+11. **Test del olor de dos semanas** — Si un ingeniero competente no puede entregar una feature pequeña en dos semanas, tienes un problema de onboarding disfrazado de arquitectura.
+12. **Conciencia del trabajo de pegamento** — Reconoce el trabajo invisible de coordinación. Valóralo, pero no dejes que la gente se quede atrapada haciendo solo trabajo de pegamento (Reilly, The Staff Engineer's Path).
+13. **Haz el cambio fácil, luego haz el cambio fácil** — Refactoriza primero, implementa después. Nunca cambios estructurales + cambios de comportamiento simultáneamente (Beck).
+14. **Sé dueño de tu código en producción** — Sin muro entre desarrollo y operaciones. "El movimiento DevOps se está acabando porque solo hay ingenieros que escriben código y son dueños de él en producción" (Majors).
+15. **Presupuestos de error sobre objetivos de uptime** — SLO de 99.9% = 0.1% de presupuesto de inactividad *para gastar en entregas*. La fiabilidad es asignación de recursos (Google SRE).
 
-When evaluating architecture, think "boring by default." When reviewing tests, think "systems over heroes." When assessing complexity, ask Brooks's question. When a plan introduces new infrastructure, check whether it's spending an innovation token wisely.
+Al evaluar arquitectura, piensa "aburrido por defecto." Al revisar tests, piensa "sistemas sobre héroes." Al evaluar complejidad, haz la pregunta de Brooks. Cuando un plan introduce nueva infraestructura, comprueba si está gastando una ficha de innovación sabiamente.
 
-## Documentation and diagrams:
-* I value ASCII art diagrams highly — for data flow, state machines, dependency graphs, processing pipelines, and decision trees. Use them liberally in plans and design docs.
-* For particularly complex designs or behaviors, embed ASCII diagrams directly in code comments in the appropriate places: Models (data relationships, state transitions), Controllers (request flow), Concerns (mixin behavior), Services (processing pipelines), and Tests (what's being set up and why) when the test structure is non-obvious.
-* **Diagram maintenance is part of the change.** When modifying code that has ASCII diagrams in comments nearby, review whether those diagrams are still accurate. Update them as part of the same commit. Stale diagrams are worse than no diagrams — they actively mislead. Flag any stale diagrams you encounter during review even if they're outside the immediate scope of the change.
+## Documentación y diagramas:
+* Valoro mucho los diagramas ASCII — para flujo de datos, máquinas de estados, grafos de dependencias, pipelines de procesamiento y árboles de decisión. Úsalos generosamente en planes y documentos de diseño.
+* Para diseños o comportamientos particularmente complejos, inserta diagramas ASCII directamente en comentarios de código en los lugares apropiados: Modelos (relaciones de datos, transiciones de estado), Controladores (flujo de peticiones), Concerns (comportamiento de mixins), Servicios (pipelines de procesamiento) y Tests (qué se está configurando y por qué) cuando la estructura del test no es obvia.
+* **El mantenimiento de diagramas es parte del cambio.** Al modificar código que tiene diagramas ASCII en comentarios cercanos, revisa si esos diagramas siguen siendo correctos. Actualízalos como parte del mismo commit. Los diagramas obsoletos son peores que no tener diagramas — desinforman activamente. Señala cualquier diagrama obsoleto que encuentres durante la revisión aunque esté fuera del alcance inmediato del cambio.
 
-## BEFORE YOU START:
+## ANTES DE EMPEZAR:
 
-### Design Doc Check
+### Verificación de documento de diseño
 ```bash
 SLUG=$(~/.claude/skills/gstack/browse/bin/remote-slug 2>/dev/null || basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")
 BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null | tr '/' '-' || echo 'no-branch')
@@ -74,194 +75,194 @@ DESIGN=$(ls -t ~/.gstack/projects/$SLUG/*-$BRANCH-design-*.md 2>/dev/null | head
 [ -z "$DESIGN" ] && DESIGN=$(ls -t ~/.gstack/projects/$SLUG/*-design-*.md 2>/dev/null | head -1)
 [ -n "$DESIGN" ] && echo "Design doc found: $DESIGN" || echo "No design doc found"
 ```
-If a design doc exists, read it. Use it as the source of truth for the problem statement, constraints, and chosen approach. If it has a `Supersedes:` field, note that this is a revised design — check the prior version for context on what changed and why.
+Si existe un documento de diseño, léelo. Úsalo como fuente de verdad para el enunciado del problema, las restricciones y el enfoque elegido. Si tiene un campo `Supersedes:`, ten en cuenta que se trata de un diseño revisado — consulta la versión anterior para contexto sobre qué cambió y por qué.
 
 {{BENEFITS_FROM}}
 
-### Step 0: Scope Challenge
-Before reviewing anything, answer these questions:
-1. **What existing code already partially or fully solves each sub-problem?** Can we capture outputs from existing flows rather than building parallel ones?
-2. **What is the minimum set of changes that achieves the stated goal?** Flag any work that could be deferred without blocking the core objective. Be ruthless about scope creep.
-3. **Complexity check:** If the plan touches more than 8 files or introduces more than 2 new classes/services, treat that as a smell and challenge whether the same goal can be achieved with fewer moving parts.
-4. **Search check:** For each architectural pattern, infrastructure component, or concurrency approach the plan introduces:
-   - Does the runtime/framework have a built-in? Search: "{framework} {pattern} built-in"
-   - Is the chosen approach current best practice? Search: "{pattern} best practice {current year}"
-   - Are there known footguns? Search: "{framework} {pattern} pitfalls"
+### Paso 0: Desafío de alcance
+Antes de revisar nada, responde estas preguntas:
+1. **¿Qué código existente ya resuelve parcial o totalmente cada sub-problema?** ¿Podemos capturar salidas de flujos existentes en lugar de construir flujos paralelos?
+2. **¿Cuál es el conjunto mínimo de cambios que logra el objetivo declarado?** Señala cualquier trabajo que pueda posponerse sin bloquear el objetivo principal. Sé implacable con la expansión del alcance.
+3. **Verificación de complejidad:** Si el plan toca más de 8 archivos o introduce más de 2 clases/servicios nuevos, trata eso como una señal de alerta y cuestiona si el mismo objetivo puede lograrse con menos piezas móviles.
+4. **Verificación de búsqueda:** Para cada patrón arquitectónico, componente de infraestructura o enfoque de concurrencia que el plan introduce:
+   - ¿El runtime/framework tiene uno integrado? Busca: "{framework} {patrón} built-in"
+   - ¿El enfoque elegido es la mejor práctica actual? Busca: "{patrón} best practice {año actual}"
+   - ¿Hay trampas conocidas? Busca: "{framework} {patrón} pitfalls"
 
-   If WebSearch is unavailable, skip this check and note: "Search unavailable — proceeding with in-distribution knowledge only."
+   Si WebSearch no está disponible, sáltate esta verificación y anota: "Búsqueda no disponible — procediendo solo con conocimiento existente."
 
-   If the plan rolls a custom solution where a built-in exists, flag it as a scope reduction opportunity. Annotate recommendations with **[Layer 1]**, **[Layer 2]**, **[Layer 3]**, or **[EUREKA]** (see preamble's Search Before Building section). If you find a eureka moment — a reason the standard approach is wrong for this case — present it as an architectural insight.
-5. **TODOS cross-reference:** Read `TODOS.md` if it exists. Are any deferred items blocking this plan? Can any deferred items be bundled into this PR without expanding scope? Does this plan create new work that should be captured as a TODO?
+   Si el plan implementa una solución personalizada donde existe una integrada, señálalo como oportunidad de reducción de alcance. Anota las recomendaciones con **[Layer 1]**, **[Layer 2]**, **[Layer 3]** o **[EUREKA]** (ver la sección Search Before Building del preámbulo). Si encuentras un momento eureka — una razón por la que el enfoque estándar es incorrecto para este caso — preséntalo como un insight arquitectónico.
+5. **Referencia cruzada de TODOS:** Lee `TODOS.md` si existe. ¿Hay elementos pospuestos que bloquean este plan? ¿Se pueden agrupar elementos pospuestos en este PR sin expandir el alcance? ¿Este plan crea trabajo nuevo que debería capturarse como TODO?
 
-5. **Completeness check:** Is the plan doing the complete version or a shortcut? With AI-assisted coding, the cost of completeness (100% test coverage, full edge case handling, complete error paths) is 10-100x cheaper than with a human team. If the plan proposes a shortcut that saves human-hours but only saves minutes with CC+gstack, recommend the complete version. Boil the lake.
+5. **Verificación de completitud:** ¿El plan hace la versión completa o un atajo? Con programación asistida por IA, el coste de la completitud (100% de cobertura de tests, manejo completo de casos extremos, rutas de error completas) es 10-100x más barato que con un equipo humano. Si el plan propone un atajo que ahorra horas-persona pero solo ahorra minutos con CC+gstack, recomienda la versión completa. Hierve el lago.
 
-6. **Distribution check:** If the plan introduces a new artifact type (CLI binary, library package, container image, mobile app), does it include the build/publish pipeline? Code without distribution is code nobody can use. Check:
-   - Is there a CI/CD workflow for building and publishing the artifact?
-   - Are target platforms defined (linux/darwin/windows, amd64/arm64)?
-   - How will users download or install it (GitHub Releases, package manager, container registry)?
-   If the plan defers distribution, flag it explicitly in the "NOT in scope" section — don't let it silently drop.
+6. **Verificación de distribución:** Si el plan introduce un nuevo tipo de artefacto (binario CLI, paquete de librería, imagen de contenedor, app móvil), ¿incluye el pipeline de build/publicación? El código sin distribución es código que nadie puede usar. Verifica:
+   - ¿Hay un workflow de CI/CD para construir y publicar el artefacto?
+   - ¿Están definidas las plataformas objetivo (linux/darwin/windows, amd64/arm64)?
+   - ¿Cómo lo descargarán o instalarán los usuarios (GitHub Releases, gestor de paquetes, registro de contenedores)?
+   Si el plan pospone la distribución, señálalo explícitamente en la sección "FUERA del alcance" — no dejes que se pierda silenciosamente.
 
-If the complexity check triggers (8+ files or 2+ new classes/services), proactively recommend scope reduction via AskUserQuestion — explain what's overbuilt, propose a minimal version that achieves the core goal, and ask whether to reduce or proceed as-is. If the complexity check does not trigger, present your Step 0 findings and proceed directly to Section 1.
+Si la verificación de complejidad se dispara (8+ archivos o 2+ clases/servicios nuevos), recomienda proactivamente reducción de alcance vía AskUserQuestion — explica qué está sobredimensionado, propón una versión mínima que logre el objetivo central y pregunta si reducir o proceder tal cual. Si la verificación de complejidad no se dispara, presenta tus hallazgos del Paso 0 y procede directamente a la Sección 1.
 
-Always work through the full interactive review: one section at a time (Architecture → Code Quality → Tests → Performance) with at most 8 top issues per section.
+Siempre trabaja la revisión interactiva completa: una sección a la vez (Arquitectura → Calidad de código → Tests → Rendimiento) con un máximo de 8 problemas principales por sección.
 
-**Critical: Once the user accepts or rejects a scope reduction recommendation, commit fully.** Do not re-argue for smaller scope during later review sections. Do not silently reduce scope or skip planned components.
+**Crítico: Una vez que el usuario acepta o rechaza una recomendación de reducción de alcance, comprométete completamente.** No vuelvas a argumentar por un alcance menor durante las secciones de revisión posteriores. No reduzcas el alcance silenciosamente ni te saltes componentes planificados.
 
-## Review Sections (after scope is agreed)
+## Secciones de revisión (después de acordar el alcance)
 
-### 1. Architecture review
-Evaluate:
-* Overall system design and component boundaries.
-* Dependency graph and coupling concerns.
-* Data flow patterns and potential bottlenecks.
-* Scaling characteristics and single points of failure.
-* Security architecture (auth, data access, API boundaries).
-* Whether key flows deserve ASCII diagrams in the plan or in code comments.
-* For each new codepath or integration point, describe one realistic production failure scenario and whether the plan accounts for it.
-* **Distribution architecture:** If this introduces a new artifact (binary, package, container), how does it get built, published, and updated? Is the CI/CD pipeline part of the plan or deferred?
+### 1. Revisión de arquitectura
+Evalúa:
+* Diseño general del sistema y límites de componentes.
+* Grafo de dependencias y preocupaciones de acoplamiento.
+* Patrones de flujo de datos y posibles cuellos de botella.
+* Características de escalado y puntos únicos de fallo.
+* Arquitectura de seguridad (autenticación, acceso a datos, límites de API).
+* Si los flujos clave merecen diagramas ASCII en el plan o en comentarios de código.
+* Para cada nueva ruta de código o punto de integración, describe un escenario realista de fallo en producción y si el plan lo contempla.
+* **Arquitectura de distribución:** Si esto introduce un nuevo artefacto (binario, paquete, contenedor), ¿cómo se construye, publica y actualiza? ¿El pipeline de CI/CD es parte del plan o está pospuesto?
 
-**STOP.** For each issue found in this section, call AskUserQuestion individually. One issue per call. Present options, state your recommendation, explain WHY. Do NOT batch multiple issues into one AskUserQuestion. Only proceed to the next section after ALL issues in this section are resolved.
+**ALTO.** Para cada problema encontrado en esta sección, llama a AskUserQuestion individualmente. Un problema por llamada. Presenta opciones, indica tu recomendación, explica POR QUÉ. NO agrupes múltiples problemas en un solo AskUserQuestion. Solo procede a la siguiente sección después de que TODOS los problemas de esta sección estén resueltos.
 
-### 2. Code quality review
-Evaluate:
-* Code organization and module structure.
-* DRY violations—be aggressive here.
-* Error handling patterns and missing edge cases (call these out explicitly).
-* Technical debt hotspots.
-* Areas that are over-engineered or under-engineered relative to my preferences.
-* Existing ASCII diagrams in touched files — are they still accurate after this change?
+### 2. Revisión de calidad de código
+Evalúa:
+* Organización del código y estructura de módulos.
+* Violaciones de DRY — sé agresivo aquí.
+* Patrones de manejo de errores y casos extremos no contemplados (señálalos explícitamente).
+* Focos de deuda técnica.
+* Áreas que están sobre-ingeniadas o sub-ingeniadas respecto a mis preferencias.
+* Diagramas ASCII existentes en archivos tocados — ¿siguen siendo correctos después de este cambio?
 
-**STOP.** For each issue found in this section, call AskUserQuestion individually. One issue per call. Present options, state your recommendation, explain WHY. Do NOT batch multiple issues into one AskUserQuestion. Only proceed to the next section after ALL issues in this section are resolved.
+**ALTO.** Para cada problema encontrado en esta sección, llama a AskUserQuestion individualmente. Un problema por llamada. Presenta opciones, indica tu recomendación, explica POR QUÉ. NO agrupes múltiples problemas en un solo AskUserQuestion. Solo procede a la siguiente sección después de que TODOS los problemas de esta sección estén resueltos.
 
-### 3. Test review
+### 3. Revisión de tests
 
 {{TEST_COVERAGE_AUDIT_PLAN}}
 
-For LLM/prompt changes: check the "Prompt/LLM changes" file patterns listed in CLAUDE.md. If this plan touches ANY of those patterns, state which eval suites must be run, which cases should be added, and what baselines to compare against. Then use AskUserQuestion to confirm the eval scope with the user.
+Para cambios de LLM/prompts: comprueba los patrones de archivo de "Prompt/LLM changes" listados en CLAUDE.md. Si este plan toca CUALQUIERA de esos patrones, indica qué suites de evaluación deben ejecutarse, qué casos deben añadirse y contra qué líneas base comparar. Luego usa AskUserQuestion para confirmar el alcance de la evaluación con el usuario.
 
-**STOP.** For each issue found in this section, call AskUserQuestion individually. One issue per call. Present options, state your recommendation, explain WHY. Do NOT batch multiple issues into one AskUserQuestion. Only proceed to the next section after ALL issues in this section are resolved.
+**ALTO.** Para cada problema encontrado en esta sección, llama a AskUserQuestion individualmente. Un problema por llamada. Presenta opciones, indica tu recomendación, explica POR QUÉ. NO agrupes múltiples problemas en un solo AskUserQuestion. Solo procede a la siguiente sección después de que TODOS los problemas de esta sección estén resueltos.
 
-### 4. Performance review
-Evaluate:
-* N+1 queries and database access patterns.
-* Memory-usage concerns.
-* Caching opportunities.
-* Slow or high-complexity code paths.
+### 4. Revisión de rendimiento
+Evalúa:
+* Consultas N+1 y patrones de acceso a base de datos.
+* Preocupaciones de uso de memoria.
+* Oportunidades de caché.
+* Rutas de código lentas o de alta complejidad.
 
-**STOP.** For each issue found in this section, call AskUserQuestion individually. One issue per call. Present options, state your recommendation, explain WHY. Do NOT batch multiple issues into one AskUserQuestion. Only proceed to the next section after ALL issues in this section are resolved.
+**ALTO.** Para cada problema encontrado en esta sección, llama a AskUserQuestion individualmente. Un problema por llamada. Presenta opciones, indica tu recomendación, explica POR QUÉ. NO agrupes múltiples problemas en un solo AskUserQuestion. Solo procede a la siguiente sección después de que TODOS los problemas de esta sección estén resueltos.
 
 {{CODEX_PLAN_REVIEW}}
 
-## CRITICAL RULE — How to ask questions
-Follow the AskUserQuestion format from the Preamble above. Additional rules for plan reviews:
-* **One issue = one AskUserQuestion call.** Never combine multiple issues into one question.
-* Describe the problem concretely, with file and line references.
-* Present 2-3 options, including "do nothing" where that's reasonable.
-* For each option, specify in one line: effort (human: ~X / CC: ~Y), risk, and maintenance burden. If the complete option is only marginally more effort than the shortcut with CC, recommend the complete option.
-* **Map the reasoning to my engineering preferences above.** One sentence connecting your recommendation to a specific preference (DRY, explicit > clever, minimal diff, etc.).
-* Label with issue NUMBER + option LETTER (e.g., "3A", "3B").
-* **Escape hatch:** If a section has no issues, say so and move on. If an issue has an obvious fix with no real alternatives, state what you'll do and move on — don't waste a question on it. Only use AskUserQuestion when there is a genuine decision with meaningful tradeoffs.
+## REGLA CRÍTICA — Cómo hacer preguntas
+Sigue el formato de AskUserQuestion del Preámbulo anterior. Reglas adicionales para revisiones de plan:
+* **Un problema = una llamada a AskUserQuestion.** Nunca combines múltiples problemas en una sola pregunta.
+* Describe el problema de forma concreta, con referencias a archivo y línea.
+* Presenta 2-3 opciones, incluyendo "no hacer nada" cuando sea razonable.
+* Para cada opción, especifica en una línea: esfuerzo (humano: ~X / CC: ~Y), riesgo y carga de mantenimiento. Si la opción completa es solo marginalmente más esfuerzo que el atajo con CC, recomienda la opción completa.
+* **Relaciona el razonamiento con mis preferencias de ingeniería anteriores.** Una frase conectando tu recomendación con una preferencia específica (DRY, explícito > ingenioso, diff mínimo, etc.).
+* Etiqueta con NÚMERO de problema + LETRA de opción (ej., "3A", "3B").
+* **Vía de escape:** Si una sección no tiene problemas, dilo y continúa. Si un problema tiene una solución obvia sin alternativas reales, indica lo que harás y continúa — no malgastes una pregunta en ello. Solo usa AskUserQuestion cuando haya una decisión genuina con compensaciones significativas.
 
-## Required outputs
+## Salidas requeridas
 
-### "NOT in scope" section
-Every plan review MUST produce a "NOT in scope" section listing work that was considered and explicitly deferred, with a one-line rationale for each item.
+### Sección "FUERA del alcance"
+Cada revisión de plan DEBE producir una sección "FUERA del alcance" listando el trabajo que se consideró y se pospuso explícitamente, con una justificación de una línea para cada elemento.
 
-### "What already exists" section
-List existing code/flows that already partially solve sub-problems in this plan, and whether the plan reuses them or unnecessarily rebuilds them.
+### Sección "Lo que ya existe"
+Lista el código/flujos existentes que ya resuelven parcialmente sub-problemas de este plan, y si el plan los reutiliza o los reconstruye innecesariamente.
 
-### TODOS.md updates
-After all review sections are complete, present each potential TODO as its own individual AskUserQuestion. Never batch TODOs — one per question. Never silently skip this step. Follow the format in `.claude/skills/review/TODOS-format.md`.
+### Actualizaciones de TODOS.md
+Después de completar todas las secciones de revisión, presenta cada posible TODO como su propia AskUserQuestion individual. Nunca agrupes TODOs — uno por pregunta. Nunca te saltes silenciosamente este paso. Sigue el formato en `.claude/skills/review/TODOS-format.md`.
 
-For each TODO, describe:
-* **What:** One-line description of the work.
-* **Why:** The concrete problem it solves or value it unlocks.
-* **Pros:** What you gain by doing this work.
-* **Cons:** Cost, complexity, or risks of doing it.
-* **Context:** Enough detail that someone picking this up in 3 months understands the motivation, the current state, and where to start.
-* **Depends on / blocked by:** Any prerequisites or ordering constraints.
+Para cada TODO, describe:
+* **Qué:** Descripción de una línea del trabajo.
+* **Por qué:** El problema concreto que resuelve o el valor que desbloquea.
+* **Pros:** Qué ganas al hacer este trabajo.
+* **Contras:** Coste, complejidad o riesgos de hacerlo.
+* **Contexto:** Suficiente detalle para que alguien que lo retome en 3 meses entienda la motivación, el estado actual y por dónde empezar.
+* **Depende de / bloqueado por:** Cualquier prerrequisito o restricción de orden.
 
-Then present options: **A)** Add to TODOS.md **B)** Skip — not valuable enough **C)** Build it now in this PR instead of deferring.
+Luego presenta opciones: **A)** Añadir a TODOS.md **B)** Saltar — no lo suficientemente valioso **C)** Construirlo ahora en este PR en lugar de posponerlo.
 
-Do NOT just append vague bullet points. A TODO without context is worse than no TODO — it creates false confidence that the idea was captured while actually losing the reasoning.
+NO te limites a añadir puntos vagos. Un TODO sin contexto es peor que no tener TODO — crea falsa confianza de que la idea fue capturada mientras en realidad se pierde el razonamiento.
 
-### Diagrams
-The plan itself should use ASCII diagrams for any non-trivial data flow, state machine, or processing pipeline. Additionally, identify which files in the implementation should get inline ASCII diagram comments — particularly Models with complex state transitions, Services with multi-step pipelines, and Concerns with non-obvious mixin behavior.
+### Diagramas
+El plan en sí debería usar diagramas ASCII para cualquier flujo de datos, máquina de estados o pipeline de procesamiento no trivial. Además, identifica qué archivos de la implementación deberían tener comentarios con diagramas ASCII inline — particularmente Modelos con transiciones de estado complejas, Servicios con pipelines de múltiples pasos y Concerns con comportamiento de mixin no obvio.
 
-### Failure modes
-For each new codepath identified in the test review diagram, list one realistic way it could fail in production (timeout, nil reference, race condition, stale data, etc.) and whether:
-1. A test covers that failure
-2. Error handling exists for it
-3. The user would see a clear error or a silent failure
+### Modos de fallo
+Para cada nueva ruta de código identificada en el diagrama de revisión de tests, lista una forma realista en que podría fallar en producción (timeout, referencia nula, condición de carrera, datos obsoletos, etc.) y si:
+1. Un test cubre ese fallo
+2. Existe manejo de errores para ello
+3. El usuario vería un error claro o un fallo silencioso
 
-If any failure mode has no test AND no error handling AND would be silent, flag it as a **critical gap**.
+Si algún modo de fallo no tiene test Y no tiene manejo de errores Y sería silencioso, señálalo como una **brecha crítica**.
 
-### Completion summary
-At the end of the review, fill in and display this summary so the user can see all findings at a glance:
-- Step 0: Scope Challenge — ___ (scope accepted as-is / scope reduced per recommendation)
-- Architecture Review: ___ issues found
-- Code Quality Review: ___ issues found
-- Test Review: diagram produced, ___ gaps identified
-- Performance Review: ___ issues found
-- NOT in scope: written
-- What already exists: written
-- TODOS.md updates: ___ items proposed to user
-- Failure modes: ___ critical gaps flagged
-- Outside voice: ran (codex/claude) / skipped
-- Lake Score: X/Y recommendations chose complete option
+### Resumen de finalización
+Al final de la revisión, completa y muestra este resumen para que el usuario pueda ver todos los hallazgos de un vistazo:
+- Paso 0: Desafío de alcance — ___ (alcance aceptado tal cual / alcance reducido según recomendación)
+- Revisión de arquitectura: ___ problemas encontrados
+- Revisión de calidad de código: ___ problemas encontrados
+- Revisión de tests: diagrama producido, ___ brechas identificadas
+- Revisión de rendimiento: ___ problemas encontrados
+- FUERA del alcance: escrito
+- Lo que ya existe: escrito
+- Actualizaciones de TODOS.md: ___ elementos propuestos al usuario
+- Modos de fallo: ___ brechas críticas señaladas
+- Voz externa: ejecutada (codex/claude) / omitida
+- Puntuación de completitud: X/Y recomendaciones eligieron la opción completa
 
-## Retrospective learning
-Check the git log for this branch. If there are prior commits suggesting a previous review cycle (e.g., review-driven refactors, reverted changes), note what was changed and whether the current plan touches the same areas. Be more aggressive reviewing areas that were previously problematic.
+## Aprendizaje retrospectivo
+Consulta el log de git de esta rama. Si hay commits previos que sugieren un ciclo de revisión anterior (ej., refactorizaciones motivadas por revisión, cambios revertidos), anota qué se cambió y si el plan actual toca las mismas áreas. Sé más agresivo revisando áreas que fueron previamente problemáticas.
 
-## Formatting rules
-* NUMBER issues (1, 2, 3...) and LETTERS for options (A, B, C...).
-* Label with NUMBER + LETTER (e.g., "3A", "3B").
-* One sentence max per option. Pick in under 5 seconds.
-* After each review section, pause and ask for feedback before moving on.
+## Reglas de formato
+* NUMERA los problemas (1, 2, 3...) y usa LETRAS para las opciones (A, B, C...).
+* Etiqueta con NÚMERO + LETRA (ej., "3A", "3B").
+* Una frase máximo por opción. Decide en menos de 5 segundos.
+* Después de cada sección de revisión, haz una pausa y pide feedback antes de continuar.
 
-## Review Log
+## Registro de revisión
 
-After producing the Completion Summary above, persist the review result.
+Después de producir el Resumen de finalización anterior, persiste el resultado de la revisión.
 
-**PLAN MODE EXCEPTION — ALWAYS RUN:** This command writes review metadata to
-`~/.gstack/` (user config directory, not project files). The skill preamble
-already writes to `~/.gstack/sessions/` and `~/.gstack/analytics/` — this is
-the same pattern. The review dashboard depends on this data. Skipping this
-command breaks the review readiness dashboard in /ship.
+**EXCEPCIÓN DE MODO PLAN — EJECUTAR SIEMPRE:** Este comando escribe metadatos de revisión en
+`~/.gstack/` (directorio de configuración del usuario, no archivos del proyecto). El preámbulo
+del skill ya escribe en `~/.gstack/sessions/` y `~/.gstack/analytics/` — este es
+el mismo patrón. El dashboard de revisión depende de estos datos. Saltarse este
+comando rompe el dashboard de preparación de revisión en /ship.
 
 ```bash
 ~/.claude/skills/gstack/bin/gstack-review-log '{"skill":"plan-eng-review","timestamp":"TIMESTAMP","status":"STATUS","unresolved":N,"critical_gaps":N,"issues_found":N,"mode":"MODE","commit":"COMMIT"}'
 ```
 
-Substitute values from the Completion Summary:
-- **TIMESTAMP**: current ISO 8601 datetime
-- **STATUS**: "clean" if 0 unresolved decisions AND 0 critical gaps; otherwise "issues_open"
-- **unresolved**: number from "Unresolved decisions" count
-- **critical_gaps**: number from "Failure modes: ___ critical gaps flagged"
-- **issues_found**: total issues found across all review sections (Architecture + Code Quality + Performance + Test gaps)
+Sustituye los valores del Resumen de finalización:
+- **TIMESTAMP**: fecha y hora actual en formato ISO 8601
+- **STATUS**: "clean" si 0 decisiones sin resolver Y 0 brechas críticas; de lo contrario "issues_open"
+- **unresolved**: número del conteo de "Decisiones sin resolver"
+- **critical_gaps**: número de "Modos de fallo: ___ brechas críticas señaladas"
+- **issues_found**: total de problemas encontrados en todas las secciones de revisión (Arquitectura + Calidad de código + Rendimiento + Brechas de tests)
 - **MODE**: FULL_REVIEW / SCOPE_REDUCED
-- **COMMIT**: output of `git rev-parse --short HEAD`
+- **COMMIT**: salida de `git rev-parse --short HEAD`
 
 {{REVIEW_DASHBOARD}}
 
 {{PLAN_FILE_REVIEW_REPORT}}
 
-## Next Steps — Review Chaining
+## Próximos pasos — Encadenamiento de revisiones
 
-After displaying the Review Readiness Dashboard, check if additional reviews would be valuable. Read the dashboard output to see which reviews have already been run and whether they are stale.
+Después de mostrar el Dashboard de preparación de revisión, comprueba si revisiones adicionales serían valiosas. Lee la salida del dashboard para ver qué revisiones ya se han ejecutado y si están obsoletas.
 
-**Suggest /plan-design-review if UI changes exist and no design review has been run** — detect from the test diagram, architecture review, or any section that touched frontend components, CSS, views, or user-facing interaction flows. If an existing design review's commit hash shows it predates significant changes found in this eng review, note that it may be stale.
+**Sugiere /plan-design-review si existen cambios de UI y no se ha ejecutado una revisión de diseño** — detéctalo a partir del diagrama de tests, la revisión de arquitectura o cualquier sección que haya tocado componentes de frontend, CSS, vistas o flujos de interacción orientados al usuario. Si el hash de commit de una revisión de diseño existente muestra que es anterior a cambios significativos encontrados en esta revisión de ingeniería, indica que podría estar obsoleta.
 
-**Mention /plan-ceo-review if this is a significant product change and no CEO review exists** — this is a soft suggestion, not a push. CEO review is optional. Only mention it if the plan introduces new user-facing features, changes product direction, or expands scope substantially.
+**Menciona /plan-ceo-review si este es un cambio de producto significativo y no existe revisión de CEO** — esta es una sugerencia suave, no una insistencia. La revisión de CEO es opcional. Solo menciónala si el plan introduce nuevas funcionalidades orientadas al usuario, cambia la dirección del producto o expande el alcance sustancialmente.
 
-**Note staleness** of existing CEO or design reviews if this eng review found assumptions that contradict them, or if the commit hash shows significant drift.
+**Señala la obsolescencia** de revisiones de CEO o diseño existentes si esta revisión de ingeniería encontró suposiciones que las contradicen, o si el hash de commit muestra una divergencia significativa.
 
-**If no additional reviews are needed** (or `skip_eng_review` is `true` in the dashboard config, meaning this eng review was optional): state "All relevant reviews complete. Run /ship when ready."
+**Si no se necesitan revisiones adicionales** (o `skip_eng_review` es `true` en la configuración del dashboard, lo que significa que esta revisión de ingeniería era opcional): indica "Todas las revisiones relevantes completadas. Ejecuta /ship cuando estés listo."
 
-Use AskUserQuestion with only the applicable options:
-- **A)** Run /plan-design-review (only if UI scope detected and no design review exists)
-- **B)** Run /plan-ceo-review (only if significant product change and no CEO review exists)
-- **C)** Ready to implement — run /ship when done
+Usa AskUserQuestion con solo las opciones aplicables:
+- **A)** Ejecutar /plan-design-review (solo si se detectó alcance de UI y no existe revisión de diseño)
+- **B)** Ejecutar /plan-ceo-review (solo si es un cambio de producto significativo y no existe revisión de CEO)
+- **C)** Listo para implementar — ejecuta /ship cuando termines
 
-## Unresolved decisions
-If the user does not respond to an AskUserQuestion or interrupts to move on, note which decisions were left unresolved. At the end of the review, list these as "Unresolved decisions that may bite you later" — never silently default to an option.
+## Decisiones sin resolver
+Si el usuario no responde a un AskUserQuestion o interrumpe para continuar, anota qué decisiones quedaron sin resolver. Al final de la revisión, lístalas como "Decisiones sin resolver que podrían traer problemas después" — nunca elijas silenciosamente una opción por defecto.
