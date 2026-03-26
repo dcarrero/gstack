@@ -3,14 +3,14 @@ name: autoplan
 preamble-tier: 3
 version: 1.0.0
 description: |
-  Auto-review pipeline — reads the full CEO, design, and eng review skills from disk
-  and runs them sequentially with auto-decisions using 6 decision principles. Surfaces
-  taste decisions (close approaches, borderline scope, codex disagreements) at a final
-  approval gate. One command, fully reviewed plan out.
-  Use when asked to "auto review", "autoplan", "run all reviews", "review this plan
-  automatically", or "make the decisions for me".
-  Proactively suggest when the user has a plan file and wants to run the full review
-  gauntlet without answering 15-30 intermediate questions.
+  Pipeline de auto-revisión — lee las habilidades completas de revisión CEO, diseño e ingeniería
+  desde disco y las ejecuta secuencialmente con auto-decisiones basadas en 6 principios de decisión.
+  Presenta las decisiones de criterio (enfoques cercanos, alcance límite, desacuerdos de codex) en
+  una puerta de aprobación final. Un solo comando, plan completamente revisado.
+  Usar cuando se pida "auto review", "autoplan", "ejecutar todas las revisiones", "revisar este plan
+  automáticamente" o "toma las decisiones por mí".
+  Sugerir proactivamente cuando el usuario tenga un archivo de plan y quiera ejecutar el proceso
+  completo de revisión sin responder 15-30 preguntas intermedias.
 benefits-from: [office-hours]
 allowed-tools:
   - Bash
@@ -372,94 +372,94 @@ DESIGN=$(ls -t ~/.gstack/projects/$SLUG/*-$BRANCH-design-*.md 2>/dev/null | head
 If a design doc is now found, read it and continue the review.
 If none was produced (user may have cancelled), proceed with standard review.
 
-# /autoplan — Auto-Review Pipeline
+# /autoplan — Pipeline de Auto-Revisión
 
-One command. Rough plan in, fully reviewed plan out.
+Un solo comando. Plan borrador entra, plan completamente revisado sale.
 
-/autoplan reads the full CEO, design, and eng review skill files from disk and follows
-them at full depth — same rigor, same sections, same methodology as running each skill
-manually. The only difference: intermediate AskUserQuestion calls are auto-decided using
-the 6 principles below. Taste decisions (where reasonable people could disagree) are
-surfaced at a final approval gate.
-
----
-
-## The 6 Decision Principles
-
-These rules auto-answer every intermediate question:
-
-1. **Choose completeness** — Ship the whole thing. Pick the approach that covers more edge cases.
-2. **Boil lakes** — Fix everything in the blast radius (files modified by this plan + direct importers). Auto-approve expansions that are in blast radius AND < 1 day CC effort (< 5 files, no new infra).
-3. **Pragmatic** — If two options fix the same thing, pick the cleaner one. 5 seconds choosing, not 5 minutes.
-4. **DRY** — Duplicates existing functionality? Reject. Reuse what exists.
-5. **Explicit over clever** — 10-line obvious fix > 200-line abstraction. Pick what a new contributor reads in 30 seconds.
-6. **Bias toward action** — Merge > review cycles > stale deliberation. Flag concerns but don't block.
-
-**Conflict resolution (context-dependent tiebreakers):**
-- **CEO phase:** P1 (completeness) + P2 (boil lakes) dominate.
-- **Eng phase:** P5 (explicit) + P3 (pragmatic) dominate.
-- **Design phase:** P5 (explicit) + P1 (completeness) dominate.
+/autoplan lee los archivos completos de habilidades de revisión CEO, diseño e ingeniería desde disco
+y los sigue a profundidad completa — mismo rigor, mismas secciones, misma metodología que ejecutar
+cada habilidad manualmente. La única diferencia: las llamadas intermedias a AskUserQuestion se
+auto-deciden usando los 6 principios siguientes. Las decisiones de criterio (donde personas razonables
+podrían discrepar) se presentan en una puerta de aprobación final.
 
 ---
 
-## Decision Classification
+## Los 6 Principios de Decisión
 
-Every auto-decision is classified:
+Estas reglas auto-responden cada pregunta intermedia:
 
-**Mechanical** — one clearly right answer. Auto-decide silently.
-Examples: run codex (always yes), run evals (always yes), reduce scope on a complete plan (always no).
+1. **Elegir completitud** — Entregar todo completo. Elegir el enfoque que cubra más casos límite.
+2. **Drenar el lago** — Corregir todo en el radio de impacto (archivos modificados por este plan + importadores directos). Auto-aprobar expansiones que estén en el radio de impacto Y requieran < 1 día de esfuerzo CC (< 5 archivos, sin nueva infraestructura).
+3. **Pragmático** — Si dos opciones corrigen lo mismo, elegir la más limpia. 5 segundos decidiendo, no 5 minutos.
+4. **DRY** — ¿Duplica funcionalidad existente? Rechazar. Reutilizar lo que existe.
+5. **Explícito sobre ingenioso** — Corrección obvia de 10 líneas > abstracción de 200 líneas. Elegir lo que un nuevo colaborador lee en 30 segundos.
+6. **Sesgo hacia la acción** — Merge > ciclos de revisión > deliberación estancada. Señalar preocupaciones pero no bloquear.
 
-**Taste** — reasonable people could disagree. Auto-decide with recommendation, but surface at the final gate. Three natural sources:
-1. **Close approaches** — top two are both viable with different tradeoffs.
-2. **Borderline scope** — in blast radius but 3-5 files, or ambiguous radius.
-3. **Codex disagreements** — codex recommends differently and has a valid point.
-
----
-
-## Sequential Execution — MANDATORY
-
-Phases MUST execute in strict order: CEO → Design → Eng.
-Each phase MUST complete fully before the next begins.
-NEVER run phases in parallel — each builds on the previous.
-
-Between each phase, emit a phase-transition summary and verify that all required
-outputs from the prior phase are written before starting the next.
+**Resolución de conflictos (desempates dependientes del contexto):**
+- **Fase CEO:** P1 (completitud) + P2 (drenar el lago) dominan.
+- **Fase Ingeniería:** P5 (explícito) + P3 (pragmático) dominan.
+- **Fase Diseño:** P5 (explícito) + P1 (completitud) dominan.
 
 ---
 
-## What "Auto-Decide" Means
+## Clasificación de Decisiones
 
-Auto-decide replaces the USER'S judgment with the 6 principles. It does NOT replace
-the ANALYSIS. Every section in the loaded skill files must still be executed at the
-same depth as the interactive version. The only thing that changes is who answers the
-AskUserQuestion: you do, using the 6 principles, instead of the user.
+Cada auto-decisión se clasifica:
 
-**You MUST still:**
-- READ the actual code, diffs, and files each section references
-- PRODUCE every output the section requires (diagrams, tables, registries, artifacts)
-- IDENTIFY every issue the section is designed to catch
-- DECIDE each issue using the 6 principles (instead of asking the user)
-- LOG each decision in the audit trail
-- WRITE all required artifacts to disk
+**Mecánica** — una respuesta claramente correcta. Auto-decidir silenciosamente.
+Ejemplos: ejecutar codex (siempre sí), ejecutar evals (siempre sí), reducir alcance en un plan completo (siempre no).
 
-**You MUST NOT:**
-- Compress a review section into a one-liner table row
-- Write "no issues found" without showing what you examined
-- Skip a section because "it doesn't apply" without stating what you checked and why
-- Produce a summary instead of the required output (e.g., "architecture looks good"
-  instead of the ASCII dependency graph the section requires)
-
-"No issues found" is a valid output for a section — but only after doing the analysis.
-State what you examined and why nothing was flagged (1-2 sentences minimum).
-"Skipped" is never valid for a non-skip-listed section.
+**Criterio** — personas razonables podrían discrepar. Auto-decidir con recomendación, pero presentar en la puerta final. Tres fuentes naturales:
+1. **Enfoques cercanos** — los dos mejores son viables con diferentes compromisos.
+2. **Alcance límite** — en el radio de impacto pero 3-5 archivos, o radio ambiguo.
+3. **Desacuerdos de Codex** — codex recomienda diferente y tiene un argumento válido.
 
 ---
 
-## Phase 0: Intake + Restore Point
+## Ejecución Secuencial — OBLIGATORIA
 
-### Step 1: Capture restore point
+Las fases DEBEN ejecutarse en orden estricto: CEO → Diseño → Ingeniería.
+Cada fase DEBE completarse totalmente antes de comenzar la siguiente.
+NUNCA ejecutar fases en paralelo — cada una se construye sobre la anterior.
 
-Before doing anything, save the plan file's current state to an external file:
+Entre cada fase, emitir un resumen de transición de fase y verificar que todas las
+salidas requeridas de la fase anterior estén escritas antes de iniciar la siguiente.
+
+---
+
+## Qué Significa "Auto-Decidir"
+
+Auto-decidir reemplaza el JUICIO DEL USUARIO con los 6 principios. NO reemplaza
+el ANÁLISIS. Cada sección en los archivos de habilidades cargados debe ejecutarse
+con la misma profundidad que la versión interactiva. Lo único que cambia es quién
+responde la AskUserQuestion: tú lo haces, usando los 6 principios, en lugar del usuario.
+
+**DEBES seguir haciendo:**
+- LEER el código real, diffs y archivos que cada sección referencia
+- PRODUCIR cada salida que la sección requiere (diagramas, tablas, registros, artefactos)
+- IDENTIFICAR cada problema que la sección está diseñada para detectar
+- DECIDIR cada problema usando los 6 principios (en lugar de preguntarle al usuario)
+- REGISTRAR cada decisión en el rastro de auditoría
+- ESCRIBIR todos los artefactos requeridos en disco
+
+**NO DEBES:**
+- Comprimir una sección de revisión en una fila de tabla de una sola línea
+- Escribir "no se encontraron problemas" sin mostrar qué examinaste
+- Omitir una sección porque "no aplica" sin indicar qué revisaste y por qué
+- Producir un resumen en lugar de la salida requerida (ej., "la arquitectura se ve bien"
+  en lugar del grafo de dependencias ASCII que la sección requiere)
+
+"No se encontraron problemas" es una salida válida para una sección — pero solo después de hacer el análisis.
+Indicar qué se examinó y por qué no se marcó nada (mínimo 1-2 oraciones).
+"Omitido" nunca es válido para una sección que no esté en la lista de omisiones.
+
+---
+
+## Fase 0: Recepción + Punto de Restauración
+
+### Paso 1: Capturar punto de restauración
+
+Antes de hacer cualquier cosa, guardar el estado actual del archivo de plan en un archivo externo:
 
 ```bash
 eval "$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)" && mkdir -p ~/.gstack/projects/$SLUG
@@ -468,46 +468,46 @@ DATETIME=$(date +%Y%m%d-%H%M%S)
 echo "RESTORE_PATH=$HOME/.gstack/projects/$SLUG/${BRANCH}-autoplan-restore-${DATETIME}.md"
 ```
 
-Write the plan file's full contents to the restore path with this header:
+Escribir el contenido completo del archivo de plan en la ruta de restauración con este encabezado:
 ```
-# /autoplan Restore Point
-Captured: [timestamp] | Branch: [branch] | Commit: [short hash]
+# Punto de Restauración de /autoplan
+Capturado: [timestamp] | Branch: [branch] | Commit: [short hash]
 
-## Re-run Instructions
-1. Copy "Original Plan State" below back to your plan file
-2. Invoke /autoplan
+## Instrucciones para Re-ejecución
+1. Copiar el "Estado Original del Plan" de abajo a tu archivo de plan
+2. Invocar /autoplan
 
-## Original Plan State
-[verbatim plan file contents]
+## Estado Original del Plan
+[contenido verbatim del archivo de plan]
 ```
 
-Then prepend a one-line HTML comment to the plan file:
+Luego anteponer un comentario HTML de una línea al archivo de plan:
 `<!-- /autoplan restore point: [RESTORE_PATH] -->`
 
-### Step 2: Read context
+### Paso 2: Leer contexto
 
-- Read CLAUDE.md, TODOS.md, git log -30, git diff against the base branch --stat
-- Discover design docs: `ls -t ~/.gstack/projects/$SLUG/*-design-*.md 2>/dev/null | head -1`
-- Detect UI scope: grep the plan for view/rendering terms (component, screen, form,
-  button, modal, layout, dashboard, sidebar, nav, dialog). Require 2+ matches. Exclude
-  false positives ("page" alone, "UI" in acronyms).
+- Leer CLAUDE.md, TODOS.md, git log -30, git diff contra la rama base --stat
+- Descubrir documentos de diseño: `ls -t ~/.gstack/projects/$SLUG/*-design-*.md 2>/dev/null | head -1`
+- Detectar alcance de UI: buscar en el plan términos de vista/renderizado (component, screen, form,
+  button, modal, layout, dashboard, sidebar, nav, dialog). Requiere 2+ coincidencias. Excluir
+  falsos positivos ("page" solo, "UI" en acrónimos).
 
-### Step 3: Load skill files from disk
+### Paso 3: Cargar archivos de habilidades desde disco
 
-Read each file using the Read tool:
+Leer cada archivo usando la herramienta Read:
 - `~/.claude/skills/gstack/plan-ceo-review/SKILL.md`
-- `~/.claude/skills/gstack/plan-design-review/SKILL.md` (only if UI scope detected)
+- `~/.claude/skills/gstack/plan-design-review/SKILL.md` (solo si se detectó alcance de UI)
 - `~/.claude/skills/gstack/plan-eng-review/SKILL.md`
 
-**Section skip list — when following a loaded skill file, SKIP these sections
-(they are already handled by /autoplan):**
-- Preamble (run first)
+**Lista de secciones a omitir — al seguir un archivo de habilidad cargado, OMITIR estas secciones
+(ya están gestionadas por /autoplan):**
+- Preamble (ejecutar primero)
 - AskUserQuestion Format
 - Completeness Principle — Boil the Lake
 - Search Before Building
 - Contributor Mode
 - Completion Status Protocol
-- Telemetry (run last)
+- Telemetry (ejecutar al final)
 - Step 0: Detect base branch
 - Review Readiness Dashboard
 - Plan File Review Report
@@ -515,32 +515,32 @@ Read each file using the Read tool:
 - Outside Voice — Independent Plan Challenge
 - Design Outside Voices (parallel)
 
-Follow ONLY the review-specific methodology, sections, and required outputs.
+Seguir SOLO la metodología, secciones y salidas requeridas específicas de la revisión.
 
-Output: "Here's what I'm working with: [plan summary]. UI scope: [yes/no].
-Loaded review skills from disk. Starting full review pipeline with auto-decisions."
+Salida: "Esto es con lo que estoy trabajando: [resumen del plan]. Alcance UI: [sí/no].
+Habilidades de revisión cargadas desde disco. Iniciando pipeline de revisión completo con auto-decisiones."
 
 ---
 
-## Phase 1: CEO Review (Strategy & Scope)
+## Fase 1: Revisión CEO (Estrategia y Alcance)
 
-Follow plan-ceo-review/SKILL.md — all sections, full depth.
-Override: every AskUserQuestion → auto-decide using the 6 principles.
+Seguir plan-ceo-review/SKILL.md — todas las secciones, profundidad completa.
+Anulación: cada AskUserQuestion → auto-decidir usando los 6 principios.
 
-**Override rules:**
-- Mode selection: SELECTIVE EXPANSION
-- Premises: accept reasonable ones (P6), challenge only clearly wrong ones
-- **GATE: Present premises to user for confirmation** — this is the ONE AskUserQuestion
-  that is NOT auto-decided. Premises require human judgment.
-- Alternatives: pick highest completeness (P1). If tied, pick simplest (P5).
-  If top 2 are close → mark TASTE DECISION.
-- Scope expansion: in blast radius + <1d CC → approve (P2). Outside → defer to TODOS.md (P3).
-  Duplicates → reject (P4). Borderline (3-5 files) → mark TASTE DECISION.
-- All 10 review sections: run fully, auto-decide each issue, log every decision.
-- Dual voices: always run BOTH Claude subagent AND Codex if available (P6).
-  Run them simultaneously (Agent tool for subagent, Bash for Codex).
+**Reglas de anulación:**
+- Selección de modo: EXPANSIÓN SELECTIVA
+- Premisas: aceptar las razonables (P6), cuestionar solo las claramente incorrectas
+- **PUERTA: Presentar premisas al usuario para confirmación** — esta es la ÚNICA AskUserQuestion
+  que NO se auto-decide. Las premisas requieren juicio humano.
+- Alternativas: elegir la de mayor completitud (P1). Si hay empate, elegir la más simple (P5).
+  Si las 2 mejores están cercanas → marcar DECISIÓN DE CRITERIO.
+- Expansión de alcance: en radio de impacto + <1d CC → aprobar (P2). Fuera → diferir a TODOS.md (P3).
+  Duplicados → rechazar (P4). Límite (3-5 archivos) → marcar DECISIÓN DE CRITERIO.
+- Las 10 secciones de revisión: ejecutar completamente, auto-decidir cada problema, registrar cada decisión.
+- Voces duales: siempre ejecutar AMBOS subagente Claude Y Codex si están disponibles (P6).
+  Ejecutarlos simultáneamente (herramienta Agent para subagente, Bash para Codex).
 
-  **Codex CEO voice** (via Bash):
+  **Voz CEO de Codex** (vía Bash):
   Command: `codex exec "You are a CEO/founder advisor reviewing a development plan.
   Challenge the strategic foundations: Are the premises valid or assumed? Is this the
   right problem to solve, or is there a reframing that would be 10x more impactful?
@@ -548,9 +548,9 @@ Override: every AskUserQuestion → auto-decide using the 6 principles.
   unaddressed? What scope decisions will look foolish in 6 months? Be adversarial.
   No compliments. Just the strategic blind spots.
   File: <plan_path>" -C "$(git rev-parse --show-toplevel)" -s read-only --enable web_search_cached`
-  Timeout: 10 minutes
+  Timeout: 10 minutos
 
-  **Claude CEO subagent** (via Agent tool):
+  **Subagente CEO de Claude** (vía herramienta Agent):
   "Read the plan file at <plan_path>. You are an independent CEO/strategist
   reviewing this plan. You have NOT seen any prior review. Evaluate:
   1. Is this the right problem to solve? Could a reframing yield 10x impact?
@@ -560,31 +560,31 @@ Override: every AskUserQuestion → auto-decide using the 6 principles.
   5. What's the competitive risk — could someone else solve this first/better?
   For each finding: what's wrong, severity (critical/high/medium), and the fix."
 
-  **Error handling:** All non-blocking. Codex auth/timeout/empty → proceed with
-  Claude subagent only, tagged `[single-model]`. If Claude subagent also fails →
-  "Outside voices unavailable — continuing with primary review."
+  **Manejo de errores:** Todos no-bloqueantes. Codex auth/timeout/vacío → proceder solo con
+  subagente Claude, etiquetado `[single-model]`. Si el subagente Claude también falla →
+  "Voces externas no disponibles — continuando con revisión primaria."
 
-  **Degradation matrix:** Both fail → "single-reviewer mode". Codex only →
-  tag `[codex-only]`. Subagent only → tag `[subagent-only]`.
+  **Matriz de degradación:** Ambos fallan → "modo de revisor único". Solo Codex →
+  etiquetar `[codex-only]`. Solo subagente → etiquetar `[subagent-only]`.
 
-- Strategy choices: if codex disagrees with a premise or scope decision with valid
-  strategic reason → TASTE DECISION.
+- Decisiones estratégicas: si codex discrepa con una premisa o decisión de alcance con razón
+  estratégica válida → DECISIÓN DE CRITERIO.
 
-**Required execution checklist (CEO):**
+**Lista de verificación de ejecución requerida (CEO):**
 
-Step 0 (0A-0F) — run each sub-step and produce:
-- 0A: Premise challenge with specific premises named and evaluated
-- 0B: Existing code leverage map (sub-problems → existing code)
-- 0C: Dream state diagram (CURRENT → THIS PLAN → 12-MONTH IDEAL)
-- 0C-bis: Implementation alternatives table (2-3 approaches with effort/risk/pros/cons)
-- 0D: Mode-specific analysis with scope decisions logged
-- 0E: Temporal interrogation (HOUR 1 → HOUR 6+)
-- 0F: Mode selection confirmation
+Paso 0 (0A-0F) — ejecutar cada sub-paso y producir:
+- 0A: Desafío de premisas con premisas específicas nombradas y evaluadas
+- 0B: Mapa de aprovechamiento de código existente (sub-problemas → código existente)
+- 0C: Diagrama de estado ideal (ACTUAL → ESTE PLAN → IDEAL A 12 MESES)
+- 0C-bis: Tabla de alternativas de implementación (2-3 enfoques con esfuerzo/riesgo/pros/contras)
+- 0D: Análisis específico del modo con decisiones de alcance registradas
+- 0E: Interrogación temporal (HORA 1 → HORA 6+)
+- 0F: Confirmación de selección de modo
 
-Step 0.5 (Dual Voices): Run Claude subagent AND Codex simultaneously. Present
-Codex output under CODEX SAYS (CEO — strategy challenge) header. Present subagent
-output under CLAUDE SUBAGENT (CEO — strategic independence) header. Produce CEO
-consensus table:
+Paso 0.5 (Voces Duales): Ejecutar subagente Claude Y Codex simultáneamente. Presentar
+salida de Codex bajo encabezado CODEX SAYS (CEO — desafío estratégico). Presentar salida
+del subagente bajo encabezado CLAUDE SUBAGENT (CEO — independencia estratégica). Producir tabla
+de consenso CEO:
 
 ```
 CEO DUAL VOICES — CONSENSUS TABLE:
@@ -602,50 +602,50 @@ CONFIRMED = both agree. DISAGREE = models differ (→ taste decision).
 Missing voice = N/A (not CONFIRMED). Single critical finding from one voice = flagged regardless.
 ```
 
-Sections 1-10 — for EACH section, run the evaluation criteria from the loaded skill file:
-- Sections WITH findings: full analysis, auto-decide each issue, log to audit trail
-- Sections with NO findings: 1-2 sentences stating what was examined and why nothing
-  was flagged. NEVER compress a section to just its name in a table row.
-- Section 11 (Design): run only if UI scope was detected in Phase 0
+Secciones 1-10 — para CADA sección, ejecutar los criterios de evaluación del archivo de habilidad cargado:
+- Secciones CON hallazgos: análisis completo, auto-decidir cada problema, registrar en rastro de auditoría
+- Secciones SIN hallazgos: 1-2 oraciones indicando qué se examinó y por qué no se marcó
+  nada. NUNCA comprimir una sección a solo su nombre en una fila de tabla.
+- Sección 11 (Diseño): ejecutar solo si se detectó alcance de UI en la Fase 0
 
-**Mandatory outputs from Phase 1:**
-- "NOT in scope" section with deferred items and rationale
-- "What already exists" section mapping sub-problems to existing code
-- Error & Rescue Registry table (from Section 2)
-- Failure Modes Registry table (from review sections)
-- Dream state delta (where this plan leaves us vs 12-month ideal)
-- Completion Summary (the full summary table from the CEO skill)
+**Salidas obligatorias de la Fase 1:**
+- Sección "NO está en alcance" con elementos diferidos y justificación
+- Sección "Lo que ya existe" mapeando sub-problemas a código existente
+- Tabla de Registro de Errores y Rescate (de la Sección 2)
+- Tabla de Registro de Modos de Fallo (de las secciones de revisión)
+- Delta del estado ideal (dónde nos deja este plan vs el ideal a 12 meses)
+- Resumen de Completitud (la tabla completa de resumen de la habilidad CEO)
 
-**PHASE 1 COMPLETE.** Emit phase-transition summary:
-> **Phase 1 complete.** Codex: [N concerns]. Claude subagent: [N issues].
-> Consensus: [X/6 confirmed, Y disagreements → surfaced at gate].
-> Passing to Phase 2.
+**FASE 1 COMPLETA.** Emitir resumen de transición de fase:
+> **Fase 1 completa.** Codex: [N preocupaciones]. Subagente Claude: [N problemas].
+> Consenso: [X/6 confirmados, Y desacuerdos → presentados en la puerta].
+> Pasando a la Fase 2.
 
-Do NOT begin Phase 2 until all Phase 1 outputs are written to the plan file
-and the premise gate has been passed.
+NO comenzar la Fase 2 hasta que todas las salidas de la Fase 1 estén escritas en el archivo
+de plan y la puerta de premisas haya sido superada.
 
 ---
 
-**Pre-Phase 2 checklist (verify before starting):**
-- [ ] CEO completion summary written to plan file
-- [ ] CEO dual voices ran (Codex + Claude subagent, or noted unavailable)
-- [ ] CEO consensus table produced
-- [ ] Premise gate passed (user confirmed)
-- [ ] Phase-transition summary emitted
+**Lista de verificación pre-Fase 2 (verificar antes de comenzar):**
+- [ ] Resumen de completitud CEO escrito en el archivo de plan
+- [ ] Voces duales CEO ejecutadas (Codex + subagente Claude, o indicado como no disponible)
+- [ ] Tabla de consenso CEO producida
+- [ ] Puerta de premisas superada (usuario confirmó)
+- [ ] Resumen de transición de fase emitido
 
-## Phase 2: Design Review (conditional — skip if no UI scope)
+## Fase 2: Revisión de Diseño (condicional — omitir si no hay alcance de UI)
 
-Follow plan-design-review/SKILL.md — all 7 dimensions, full depth.
-Override: every AskUserQuestion → auto-decide using the 6 principles.
+Seguir plan-design-review/SKILL.md — las 7 dimensiones, profundidad completa.
+Anulación: cada AskUserQuestion → auto-decidir usando los 6 principios.
 
-**Override rules:**
-- Focus areas: all relevant dimensions (P1)
-- Structural issues (missing states, broken hierarchy): auto-fix (P5)
-- Aesthetic/taste issues: mark TASTE DECISION
-- Design system alignment: auto-fix if DESIGN.md exists and fix is obvious
-- Dual voices: always run BOTH Claude subagent AND Codex if available (P6).
+**Reglas de anulación:**
+- Áreas de enfoque: todas las dimensiones relevantes (P1)
+- Problemas estructurales (estados faltantes, jerarquía rota): auto-corregir (P5)
+- Problemas estéticos/de criterio: marcar DECISIÓN DE CRITERIO
+- Alineación con sistema de diseño: auto-corregir si DESIGN.md existe y la corrección es obvia
+- Voces duales: siempre ejecutar AMBOS subagente Claude Y Codex si están disponibles (P6).
 
-  **Codex design voice** (via Bash):
+  **Voz de diseño de Codex** (vía Bash):
   Command: `codex exec "Read the plan file at <plan_path>. Evaluate this plan's
   UI/UX design decisions.
 
@@ -659,9 +659,9 @@ Override: every AskUserQuestion → auto-decide using the 6 principles.
   aspirational? Does the plan describe specific UI decisions or generic patterns?
   What design decisions will haunt the implementer if left ambiguous?
   Be opinionated. No hedging." -C "$(git rev-parse --show-toplevel)" -s read-only --enable web_search_cached`
-  Timeout: 10 minutes
+  Timeout: 10 minutos
 
-  **Claude design subagent** (via Agent tool):
+  **Subagente de diseño de Claude** (vía herramienta Agent):
   "Read the plan file at <plan_path>. You are an independent senior product designer
   reviewing this plan. You have NOT seen any prior review. Evaluate:
   1. Information hierarchy: what does the user see first, second, third? Is it right?
@@ -670,52 +670,52 @@ Override: every AskUserQuestion → auto-decide using the 6 principles.
   4. Specificity: does the plan describe SPECIFIC UI or generic patterns?
   5. What design decisions will haunt the implementer if left ambiguous?
   For each finding: what's wrong, severity (critical/high/medium), and the fix."
-  NO prior-phase context — subagent must be truly independent.
+  SIN contexto de fases previas — el subagente debe ser verdaderamente independiente.
 
-  Error handling: same as Phase 1 (non-blocking, degradation matrix applies).
+  Manejo de errores: igual que en la Fase 1 (no-bloqueante, aplica la matriz de degradación).
 
-- Design choices: if codex disagrees with a design decision with valid UX reasoning
-  → TASTE DECISION.
+- Decisiones de diseño: si codex discrepa con una decisión de diseño con razonamiento UX válido
+  → DECISIÓN DE CRITERIO.
 
-**Required execution checklist (Design):**
+**Lista de verificación de ejecución requerida (Diseño):**
 
-1. Step 0 (Design Scope): Rate completeness 0-10. Check DESIGN.md. Map existing patterns.
+1. Paso 0 (Alcance de Diseño): Calificar completitud 0-10. Verificar DESIGN.md. Mapear patrones existentes.
 
-2. Step 0.5 (Dual Voices): Run Claude subagent AND Codex simultaneously. Present under
-   CODEX SAYS (design — UX challenge) and CLAUDE SUBAGENT (design — independent review)
-   headers. Produce design litmus scorecard (consensus table). Use the litmus scorecard
-   format from plan-design-review. Include CEO phase findings in Codex prompt ONLY
-   (not Claude subagent — stays independent).
+2. Paso 0.5 (Voces Duales): Ejecutar subagente Claude Y Codex simultáneamente. Presentar bajo
+   encabezados CODEX SAYS (diseño — desafío UX) y CLAUDE SUBAGENT (diseño — revisión independiente).
+   Producir scorecard de prueba ácida de diseño (tabla de consenso). Usar el formato de scorecard
+   de prueba ácida de plan-design-review. Incluir hallazgos de la fase CEO en el prompt de Codex
+   SOLAMENTE (no en el subagente Claude — permanece independiente).
 
-3. Passes 1-7: Run each from loaded skill. Rate 0-10. Auto-decide each issue.
-   DISAGREE items from scorecard → raised in the relevant pass with both perspectives.
+3. Pasadas 1-7: Ejecutar cada una desde la habilidad cargada. Calificar 0-10. Auto-decidir cada problema.
+   Elementos DISAGREE del scorecard → planteados en la pasada relevante con ambas perspectivas.
 
-**PHASE 2 COMPLETE.** Emit phase-transition summary:
-> **Phase 2 complete.** Codex: [N concerns]. Claude subagent: [N issues].
-> Consensus: [X/Y confirmed, Z disagreements → surfaced at gate].
-> Passing to Phase 3.
+**FASE 2 COMPLETA.** Emitir resumen de transición de fase:
+> **Fase 2 completa.** Codex: [N preocupaciones]. Subagente Claude: [N problemas].
+> Consenso: [X/Y confirmados, Z desacuerdos → presentados en la puerta].
+> Pasando a la Fase 3.
 
-Do NOT begin Phase 3 until all Phase 2 outputs (if run) are written to the plan file.
+NO comenzar la Fase 3 hasta que todas las salidas de la Fase 2 (si se ejecutó) estén escritas en el archivo de plan.
 
 ---
 
-**Pre-Phase 3 checklist (verify before starting):**
-- [ ] All Phase 1 items above confirmed
-- [ ] Design completion summary written (or "skipped, no UI scope")
-- [ ] Design dual voices ran (if Phase 2 ran)
-- [ ] Design consensus table produced (if Phase 2 ran)
-- [ ] Phase-transition summary emitted
+**Lista de verificación pre-Fase 3 (verificar antes de comenzar):**
+- [ ] Todos los elementos de la Fase 1 arriba confirmados
+- [ ] Resumen de completitud de Diseño escrito (o "omitido, sin alcance de UI")
+- [ ] Voces duales de Diseño ejecutadas (si la Fase 2 se ejecutó)
+- [ ] Tabla de consenso de Diseño producida (si la Fase 2 se ejecutó)
+- [ ] Resumen de transición de fase emitido
 
-## Phase 3: Eng Review + Dual Voices
+## Fase 3: Revisión de Ingeniería + Voces Duales
 
-Follow plan-eng-review/SKILL.md — all sections, full depth.
-Override: every AskUserQuestion → auto-decide using the 6 principles.
+Seguir plan-eng-review/SKILL.md — todas las secciones, profundidad completa.
+Anulación: cada AskUserQuestion → auto-decidir usando los 6 principios.
 
-**Override rules:**
-- Scope challenge: never reduce (P2)
-- Dual voices: always run BOTH Claude subagent AND Codex if available (P6).
+**Reglas de anulación:**
+- Desafío de alcance: nunca reducir (P2)
+- Voces duales: siempre ejecutar AMBOS subagente Claude Y Codex si están disponibles (P6).
 
-  **Codex eng voice** (via Bash):
+  **Voz de ingeniería de Codex** (vía Bash):
   Command: `codex exec "Review this plan for architectural issues, missing edge cases,
   and hidden complexity. Be adversarial.
 
@@ -724,9 +724,9 @@ Override: every AskUserQuestion → auto-decide using the 6 principles.
   Design: <insert Design consensus table summary, or 'skipped, no UI scope'>
 
   File: <plan_path>" -C "$(git rev-parse --show-toplevel)" -s read-only --enable web_search_cached`
-  Timeout: 10 minutes
+  Timeout: 10 minutos
 
-  **Claude eng subagent** (via Agent tool):
+  **Subagente de ingeniería de Claude** (vía herramienta Agent):
   "Read the plan file at <plan_path>. You are an independent senior engineer
   reviewing this plan. You have NOT seen any prior review. Evaluate:
   1. Architecture: Is the component structure sound? Coupling concerns?
@@ -735,24 +735,24 @@ Override: every AskUserQuestion → auto-decide using the 6 principles.
   4. Security: New attack surface? Auth boundaries? Input validation?
   5. Hidden complexity: What looks simple but isn't?
   For each finding: what's wrong, severity, and the fix."
-  NO prior-phase context — subagent must be truly independent.
+  SIN contexto de fases previas — el subagente debe ser verdaderamente independiente.
 
-  Error handling: same as Phase 1 (non-blocking, degradation matrix applies).
+  Manejo de errores: igual que en la Fase 1 (no-bloqueante, aplica la matriz de degradación).
 
-- Architecture choices: explicit over clever (P5). If codex disagrees with valid reason → TASTE DECISION.
-- Evals: always include all relevant suites (P1)
-- Test plan: generate artifact at `~/.gstack/projects/$SLUG/{user}-{branch}-test-plan-{datetime}.md`
-- TODOS.md: collect all deferred scope expansions from Phase 1, auto-write
+- Decisiones de arquitectura: explícito sobre ingenioso (P5). Si codex discrepa con razón válida → DECISIÓN DE CRITERIO.
+- Evals: siempre incluir todas las suites relevantes (P1)
+- Plan de pruebas: generar artefacto en `~/.gstack/projects/$SLUG/{user}-{branch}-test-plan-{datetime}.md`
+- TODOS.md: recopilar todas las expansiones de alcance diferidas de la Fase 1, auto-escribir
 
-**Required execution checklist (Eng):**
+**Lista de verificación de ejecución requerida (Ingeniería):**
 
-1. Step 0 (Scope Challenge): Read actual code referenced by the plan. Map each
-   sub-problem to existing code. Run the complexity check. Produce concrete findings.
+1. Paso 0 (Desafío de Alcance): Leer el código real referenciado por el plan. Mapear cada
+   sub-problema a código existente. Ejecutar la verificación de complejidad. Producir hallazgos concretos.
 
-2. Step 0.5 (Dual Voices): Run Claude subagent AND Codex simultaneously. Present
-   Codex output under CODEX SAYS (eng — architecture challenge) header. Present subagent
-   output under CLAUDE SUBAGENT (eng — independent review) header. Produce eng consensus
-   table:
+2. Paso 0.5 (Voces Duales): Ejecutar subagente Claude Y Codex simultáneamente. Presentar
+   salida de Codex bajo encabezado CODEX SAYS (ingeniería — desafío de arquitectura). Presentar salida
+   del subagente bajo encabezado CLAUDE SUBAGENT (ingeniería — revisión independiente). Producir tabla
+   de consenso de ingeniería:
 
 ```
 ENG DUAL VOICES — CONSENSUS TABLE:
@@ -770,164 +770,164 @@ CONFIRMED = both agree. DISAGREE = models differ (→ taste decision).
 Missing voice = N/A (not CONFIRMED). Single critical finding from one voice = flagged regardless.
 ```
 
-3. Section 1 (Architecture): Produce ASCII dependency graph showing new components
-   and their relationships to existing ones. Evaluate coupling, scaling, security.
+3. Sección 1 (Arquitectura): Producir grafo de dependencias ASCII mostrando componentes nuevos
+   y sus relaciones con los existentes. Evaluar acoplamiento, escalabilidad, seguridad.
 
-4. Section 2 (Code Quality): Identify DRY violations, naming issues, complexity.
-   Reference specific files and patterns. Auto-decide each finding.
+4. Sección 2 (Calidad de Código): Identificar violaciones DRY, problemas de nomenclatura, complejidad.
+   Referenciar archivos y patrones específicos. Auto-decidir cada hallazgo.
 
-5. **Section 3 (Test Review) — NEVER SKIP OR COMPRESS.**
-   This section requires reading actual code, not summarizing from memory.
-   - Read the diff or the plan's affected files
-   - Build the test diagram: list every NEW UX flow, data flow, codepath, and branch
-   - For EACH item in the diagram: what type of test covers it? Does one exist? Gaps?
-   - For LLM/prompt changes: which eval suites must run?
-   - Auto-deciding test gaps means: identify the gap → decide whether to add a test
-     or defer (with rationale and principle) → log the decision. It does NOT mean
-     skipping the analysis.
-   - Write the test plan artifact to disk
+5. **Sección 3 (Revisión de Pruebas) — NUNCA OMITIR NI COMPRIMIR.**
+   Esta sección requiere leer código real, no resumir de memoria.
+   - Leer el diff o los archivos afectados del plan
+   - Construir el diagrama de pruebas: listar cada NUEVO flujo de UX, flujo de datos, ruta de código y bifurcación
+   - Para CADA elemento del diagrama: ¿qué tipo de prueba lo cubre? ¿Existe una? ¿Brechas?
+   - Para cambios de LLM/prompts: ¿qué suites de evaluación deben ejecutarse?
+   - Auto-decidir brechas de pruebas significa: identificar la brecha → decidir si agregar una prueba
+     o diferir (con justificación y principio) → registrar la decisión. NO significa
+     omitir el análisis.
+   - Escribir el artefacto del plan de pruebas en disco
 
-6. Section 4 (Performance): Evaluate N+1 queries, memory, caching, slow paths.
+6. Sección 4 (Rendimiento): Evaluar consultas N+1, memoria, caché, rutas lentas.
 
-**Mandatory outputs from Phase 3:**
-- "NOT in scope" section
-- "What already exists" section
-- Architecture ASCII diagram (Section 1)
-- Test diagram mapping codepaths to coverage (Section 3)
-- Test plan artifact written to disk (Section 3)
-- Failure modes registry with critical gap flags
-- Completion Summary (the full summary from the Eng skill)
-- TODOS.md updates (collected from all phases)
+**Salidas obligatorias de la Fase 3:**
+- Sección "NO está en alcance"
+- Sección "Lo que ya existe"
+- Diagrama ASCII de arquitectura (Sección 1)
+- Diagrama de pruebas mapeando rutas de código a cobertura (Sección 3)
+- Artefacto de plan de pruebas escrito en disco (Sección 3)
+- Registro de modos de fallo con marcas de brechas críticas
+- Resumen de Completitud (el resumen completo de la habilidad de Ingeniería)
+- Actualizaciones de TODOS.md (recopiladas de todas las fases)
 
 ---
 
-## Decision Audit Trail
+## Rastro de Auditoría de Decisiones
 
-After each auto-decision, append a row to the plan file using Edit:
+Después de cada auto-decisión, agregar una fila al archivo de plan usando Edit:
 
 ```markdown
 <!-- AUTONOMOUS DECISION LOG -->
-## Decision Audit Trail
+## Rastro de Auditoría de Decisiones
 
-| # | Phase | Decision | Principle | Rationale | Rejected |
-|---|-------|----------|-----------|-----------|----------|
+| # | Fase | Decisión | Principio | Justificación | Rechazado |
+|---|------|----------|-----------|---------------|-----------|
 ```
 
-Write one row per decision incrementally (via Edit). This keeps the audit on disk,
-not accumulated in conversation context.
+Escribir una fila por decisión de forma incremental (vía Edit). Esto mantiene la auditoría en disco,
+no acumulada en el contexto de la conversación.
 
 ---
 
-## Pre-Gate Verification
+## Verificación Pre-Puerta
 
-Before presenting the Final Approval Gate, verify that required outputs were actually
-produced. Check the plan file and conversation for each item.
+Antes de presentar la Puerta de Aprobación Final, verificar que las salidas requeridas fueron
+realmente producidas. Verificar el archivo de plan y la conversación para cada elemento.
 
-**Phase 1 (CEO) outputs:**
-- [ ] Premise challenge with specific premises named (not just "premises accepted")
-- [ ] All applicable review sections have findings OR explicit "examined X, nothing flagged"
-- [ ] Error & Rescue Registry table produced (or noted N/A with reason)
-- [ ] Failure Modes Registry table produced (or noted N/A with reason)
-- [ ] "NOT in scope" section written
-- [ ] "What already exists" section written
-- [ ] Dream state delta written
-- [ ] Completion Summary produced
-- [ ] Dual voices ran (Codex + Claude subagent, or noted unavailable)
-- [ ] CEO consensus table produced
+**Salidas de la Fase 1 (CEO):**
+- [ ] Desafío de premisas con premisas específicas nombradas (no solo "premisas aceptadas")
+- [ ] Todas las secciones de revisión aplicables tienen hallazgos O explícitamente "se examinó X, nada marcado"
+- [ ] Tabla de Registro de Errores y Rescate producida (o indicada N/A con razón)
+- [ ] Tabla de Registro de Modos de Fallo producida (o indicada N/A con razón)
+- [ ] Sección "NO está en alcance" escrita
+- [ ] Sección "Lo que ya existe" escrita
+- [ ] Delta del estado ideal escrito
+- [ ] Resumen de Completitud producido
+- [ ] Voces duales ejecutadas (Codex + subagente Claude, o indicado como no disponible)
+- [ ] Tabla de consenso CEO producida
 
-**Phase 2 (Design) outputs — only if UI scope detected:**
-- [ ] All 7 dimensions evaluated with scores
-- [ ] Issues identified and auto-decided
-- [ ] Dual voices ran (or noted unavailable/skipped with phase)
-- [ ] Design litmus scorecard produced
+**Salidas de la Fase 2 (Diseño) — solo si se detectó alcance de UI:**
+- [ ] Las 7 dimensiones evaluadas con puntuaciones
+- [ ] Problemas identificados y auto-decididos
+- [ ] Voces duales ejecutadas (o indicado como no disponible/omitido con la fase)
+- [ ] Scorecard de prueba ácida de diseño producido
 
-**Phase 3 (Eng) outputs:**
-- [ ] Scope challenge with actual code analysis (not just "scope is fine")
-- [ ] Architecture ASCII diagram produced
-- [ ] Test diagram mapping codepaths to test coverage
-- [ ] Test plan artifact written to disk at ~/.gstack/projects/$SLUG/
-- [ ] "NOT in scope" section written
-- [ ] "What already exists" section written
-- [ ] Failure modes registry with critical gap assessment
-- [ ] Completion Summary produced
-- [ ] Dual voices ran (Codex + Claude subagent, or noted unavailable)
-- [ ] Eng consensus table produced
+**Salidas de la Fase 3 (Ingeniería):**
+- [ ] Desafío de alcance con análisis de código real (no solo "el alcance está bien")
+- [ ] Diagrama ASCII de arquitectura producido
+- [ ] Diagrama de pruebas mapeando rutas de código a cobertura de pruebas
+- [ ] Artefacto de plan de pruebas escrito en disco en ~/.gstack/projects/$SLUG/
+- [ ] Sección "NO está en alcance" escrita
+- [ ] Sección "Lo que ya existe" escrita
+- [ ] Registro de modos de fallo con evaluación de brechas críticas
+- [ ] Resumen de Completitud producido
+- [ ] Voces duales ejecutadas (Codex + subagente Claude, o indicado como no disponible)
+- [ ] Tabla de consenso de Ingeniería producida
 
-**Cross-phase:**
-- [ ] Cross-phase themes section written
+**Entre fases:**
+- [ ] Sección de temas entre fases escrita
 
-**Audit trail:**
-- [ ] Decision Audit Trail has at least one row per auto-decision (not empty)
+**Rastro de auditoría:**
+- [ ] El Rastro de Auditoría de Decisiones tiene al menos una fila por auto-decisión (no vacío)
 
-If ANY checkbox above is missing, go back and produce the missing output. Max 2
-attempts — if still missing after retrying twice, proceed to the gate with a warning
-noting which items are incomplete. Do not loop indefinitely.
-
----
-
-## Phase 4: Final Approval Gate
-
-**STOP here and present the final state to the user.**
-
-Present as a message, then use AskUserQuestion:
-
-```
-## /autoplan Review Complete
-
-### Plan Summary
-[1-3 sentence summary]
-
-### Decisions Made: [N] total ([M] auto-decided, [K] choices for you)
-
-### Your Choices (taste decisions)
-[For each taste decision:]
-**Choice [N]: [title]** (from [phase])
-I recommend [X] — [principle]. But [Y] is also viable:
-  [1-sentence downstream impact if you pick Y]
-
-### Auto-Decided: [M] decisions [see Decision Audit Trail in plan file]
-
-### Review Scores
-- CEO: [summary]
-- CEO Voices: Codex [summary], Claude subagent [summary], Consensus [X/6 confirmed]
-- Design: [summary or "skipped, no UI scope"]
-- Design Voices: Codex [summary], Claude subagent [summary], Consensus [X/7 confirmed] (or "skipped")
-- Eng: [summary]
-- Eng Voices: Codex [summary], Claude subagent [summary], Consensus [X/6 confirmed]
-
-### Cross-Phase Themes
-[For any concern that appeared in 2+ phases' dual voices independently:]
-**Theme: [topic]** — flagged in [Phase 1, Phase 3]. High-confidence signal.
-[If no themes span phases:] "No cross-phase themes — each phase's concerns were distinct."
-
-### Deferred to TODOS.md
-[Items auto-deferred with reasons]
-```
-
-**Cognitive load management:**
-- 0 taste decisions: skip "Your Choices" section
-- 1-7 taste decisions: flat list
-- 8+: group by phase. Add warning: "This plan had unusually high ambiguity ([N] taste decisions). Review carefully."
-
-AskUserQuestion options:
-- A) Approve as-is (accept all recommendations)
-- B) Approve with overrides (specify which taste decisions to change)
-- C) Interrogate (ask about any specific decision)
-- D) Revise (the plan itself needs changes)
-- E) Reject (start over)
-
-**Option handling:**
-- A: mark APPROVED, write review logs, suggest /ship
-- B: ask which overrides, apply, re-present gate
-- C: answer freeform, re-present gate
-- D: make changes, re-run affected phases (scope→1B, design→2, test plan→3, arch→3). Max 3 cycles.
-- E: start over
+Si FALTA ALGUNA casilla de verificación arriba, volver atrás y producir la salida faltante. Máximo 2
+intentos — si aún falta después de reintentar dos veces, proceder a la puerta con una advertencia
+indicando qué elementos están incompletos. No iterar indefinidamente.
 
 ---
 
-## Completion: Write Review Logs
+## Fase 4: Puerta de Aprobación Final
 
-On approval, write 3 separate review log entries so /ship's dashboard recognizes them:
+**DETENERSE aquí y presentar el estado final al usuario.**
+
+Presentar como mensaje, luego usar AskUserQuestion:
+
+```
+## Revisión de /autoplan Completa
+
+### Resumen del Plan
+[resumen de 1-3 oraciones]
+
+### Decisiones Tomadas: [N] total ([M] auto-decididas, [K] opciones para ti)
+
+### Tus Opciones (decisiones de criterio)
+[Para cada decisión de criterio:]
+**Opción [N]: [título]** (de [fase])
+Recomiendo [X] — [principio]. Pero [Y] también es viable:
+  [impacto en 1 oración si eliges Y]
+
+### Auto-Decididas: [M] decisiones [ver Rastro de Auditoría de Decisiones en el archivo de plan]
+
+### Puntuaciones de Revisión
+- CEO: [resumen]
+- Voces CEO: Codex [resumen], subagente Claude [resumen], Consenso [X/6 confirmados]
+- Diseño: [resumen o "omitido, sin alcance de UI"]
+- Voces Diseño: Codex [resumen], subagente Claude [resumen], Consenso [X/7 confirmados] (u "omitido")
+- Ingeniería: [resumen]
+- Voces Ingeniería: Codex [resumen], subagente Claude [resumen], Consenso [X/6 confirmados]
+
+### Temas Entre Fases
+[Para cualquier preocupación que apareció en 2+ voces duales de fases independientemente:]
+**Tema: [tópico]** — marcado en [Fase 1, Fase 3]. Señal de alta confianza.
+[Si no hay temas entre fases:] "Sin temas entre fases — las preocupaciones de cada fase fueron distintas."
+
+### Diferido a TODOS.md
+[Elementos auto-diferidos con razones]
+```
+
+**Gestión de carga cognitiva:**
+- 0 decisiones de criterio: omitir sección "Tus Opciones"
+- 1-7 decisiones de criterio: lista plana
+- 8+: agrupar por fase. Agregar advertencia: "Este plan tuvo una ambigüedad inusualmente alta ([N] decisiones de criterio). Revisar cuidadosamente."
+
+Opciones de AskUserQuestion:
+- A) Aprobar tal cual (aceptar todas las recomendaciones)
+- B) Aprobar con anulaciones (especificar qué decisiones de criterio cambiar)
+- C) Interrogar (preguntar sobre cualquier decisión específica)
+- D) Revisar (el plan en sí necesita cambios)
+- E) Rechazar (empezar de nuevo)
+
+**Manejo de opciones:**
+- A: marcar APROBADO, escribir logs de revisión, sugerir /ship
+- B: preguntar qué anulaciones, aplicar, re-presentar puerta
+- C: responder libremente, re-presentar puerta
+- D: hacer cambios, re-ejecutar fases afectadas (alcance→1B, diseño→2, plan de pruebas→3, arq→3). Máximo 3 ciclos.
+- E: empezar de nuevo
+
+---
+
+## Completitud: Escribir Logs de Revisión
+
+Al aprobar, escribir 3 entradas separadas de log de revisión para que el dashboard de /ship las reconozca:
 
 ```bash
 COMMIT=$(git rev-parse --short HEAD 2>/dev/null)
@@ -938,37 +938,37 @@ TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 ~/.claude/skills/gstack/bin/gstack-review-log '{"skill":"plan-eng-review","timestamp":"'"$TIMESTAMP"'","status":"clean","unresolved":0,"critical_gaps":0,"issues_found":0,"mode":"FULL_REVIEW","via":"autoplan","commit":"'"$COMMIT"'"}'
 ```
 
-If Phase 2 ran (UI scope):
+Si la Fase 2 se ejecutó (alcance de UI):
 ```bash
 ~/.claude/skills/gstack/bin/gstack-review-log '{"skill":"plan-design-review","timestamp":"'"$TIMESTAMP"'","status":"clean","unresolved":0,"via":"autoplan","commit":"'"$COMMIT"'"}'
 ```
 
-Replace field values with actual counts from the review.
+Reemplazar valores de campos con conteos reales de la revisión.
 
-Dual voice logs (one per phase that ran):
+Logs de voces duales (uno por fase que se ejecutó):
 ```bash
 ~/.claude/skills/gstack/bin/gstack-review-log '{"skill":"autoplan-voices","timestamp":"'"$TIMESTAMP"'","status":"STATUS","source":"SOURCE","phase":"ceo","via":"autoplan","consensus_confirmed":N,"consensus_disagree":N,"commit":"'"$COMMIT"'"}'
 
 ~/.claude/skills/gstack/bin/gstack-review-log '{"skill":"autoplan-voices","timestamp":"'"$TIMESTAMP"'","status":"STATUS","source":"SOURCE","phase":"eng","via":"autoplan","consensus_confirmed":N,"consensus_disagree":N,"commit":"'"$COMMIT"'"}'
 ```
 
-If Phase 2 ran (UI scope), also log:
+Si la Fase 2 se ejecutó (alcance de UI), también registrar:
 ```bash
 ~/.claude/skills/gstack/bin/gstack-review-log '{"skill":"autoplan-voices","timestamp":"'"$TIMESTAMP"'","status":"STATUS","source":"SOURCE","phase":"design","via":"autoplan","consensus_confirmed":N,"consensus_disagree":N,"commit":"'"$COMMIT"'"}'
 ```
 
-SOURCE = "codex+subagent", "codex-only", "subagent-only", or "unavailable".
-Replace N values with actual consensus counts from the tables.
+SOURCE = "codex+subagent", "codex-only", "subagent-only", o "unavailable".
+Reemplazar valores N con conteos reales de consenso de las tablas.
 
-Suggest next step: `/ship` when ready to create the PR.
+Sugerir siguiente paso: `/ship` cuando esté listo para crear el PR.
 
 ---
 
-## Important Rules
+## Reglas Importantes
 
-- **Never abort.** The user chose /autoplan. Respect that choice. Surface all taste decisions, never redirect to interactive review.
-- **Premises are the one gate.** The only non-auto-decided AskUserQuestion is the premise confirmation in Phase 1.
-- **Log every decision.** No silent auto-decisions. Every choice gets a row in the audit trail.
-- **Full depth means full depth.** Do not compress or skip sections from the loaded skill files (except the skip list in Phase 0). "Full depth" means: read the code the section asks you to read, produce the outputs the section requires, identify every issue, and decide each one. A one-sentence summary of a section is not "full depth" — it is a skip. If you catch yourself writing fewer than 3 sentences for any review section, you are likely compressing.
-- **Artifacts are deliverables.** Test plan artifact, failure modes registry, error/rescue table, ASCII diagrams — these must exist on disk or in the plan file when the review completes. If they don't exist, the review is incomplete.
-- **Sequential order.** CEO → Design → Eng. Each phase builds on the last.
+- **Nunca abortar.** El usuario eligió /autoplan. Respetar esa elección. Presentar todas las decisiones de criterio, nunca redirigir a revisión interactiva.
+- **Las premisas son la única puerta.** La única AskUserQuestion no auto-decidida es la confirmación de premisas en la Fase 1.
+- **Registrar cada decisión.** Sin auto-decisiones silenciosas. Cada elección obtiene una fila en el rastro de auditoría.
+- **Profundidad completa significa profundidad completa.** No comprimir ni omitir secciones de los archivos de habilidades cargados (excepto la lista de omisiones en la Fase 0). "Profundidad completa" significa: leer el código que la sección pide leer, producir las salidas que la sección requiere, identificar cada problema y decidir cada uno. Un resumen de una oración de una sección no es "profundidad completa" — es una omisión. Si te encuentras escribiendo menos de 3 oraciones para cualquier sección de revisión, probablemente estés comprimiendo.
+- **Los artefactos son entregables.** Artefacto de plan de pruebas, registro de modos de fallo, tabla de errores/rescate, diagramas ASCII — estos deben existir en disco o en el archivo de plan cuando la revisión se complete. Si no existen, la revisión está incompleta.
+- **Orden secuencial.** CEO → Diseño → Ingeniería. Cada fase se construye sobre la anterior.

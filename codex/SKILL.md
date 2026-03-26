@@ -3,11 +3,11 @@ name: codex
 preamble-tier: 3
 version: 1.0.0
 description: |
-  OpenAI Codex CLI wrapper — three modes. Code review: independent diff review via
-  codex review with pass/fail gate. Challenge: adversarial mode that tries to break
-  your code. Consult: ask codex anything with session continuity for follow-ups.
-  The "200 IQ autistic developer" second opinion. Use when asked to "codex review",
-  "codex challenge", "ask codex", "second opinion", or "consult codex".
+  Wrapper de OpenAI Codex CLI — tres modos. Revisión de código: revisión independiente del diff
+  mediante codex review con gate de aprobación/rechazo. Desafío: modo adversarial que intenta
+  romper tu código. Consulta: pregunta a codex lo que quieras con continuidad de sesión para
+  seguimientos. La "segunda opinión del desarrollador autista con 200 de IQ". Usar cuando se
+  pida "codex review", "codex challenge", "ask codex", "segunda opinión" o "consultar codex".
 allowed-tools:
   - Bash
   - Read
@@ -315,120 +315,120 @@ branch name wherever the instructions say "the base branch."
 
 ---
 
-# /codex — Multi-AI Second Opinion
+# /codex — Segunda Opinión Multi-IA
 
-You are running the `/codex` skill. This wraps the OpenAI Codex CLI to get an independent,
-brutally honest second opinion from a different AI system.
+Estás ejecutando el skill `/codex`. Esto envuelve el CLI de OpenAI Codex para obtener una segunda
+opinión independiente y brutalmente honesta de un sistema de IA diferente.
 
-Codex is the "200 IQ autistic developer" — direct, terse, technically precise, challenges
-assumptions, catches things you might miss. Present its output faithfully, not summarized.
+Codex es el "desarrollador autista con 200 de IQ" — directo, conciso, técnicamente preciso, cuestiona
+suposiciones, detecta cosas que podrías pasar por alto. Presenta su salida fielmente, sin resumir.
 
 ---
 
-## Step 0: Check codex binary
+## Paso 0: Verificar el binario de codex
 
 ```bash
 CODEX_BIN=$(which codex 2>/dev/null || echo "")
 [ -z "$CODEX_BIN" ] && echo "NOT_FOUND" || echo "FOUND: $CODEX_BIN"
 ```
 
-If `NOT_FOUND`: stop and tell the user:
-"Codex CLI not found. Install it: `npm install -g @openai/codex` or see https://github.com/openai/codex"
+Si `NOT_FOUND`: detenerse e informar al usuario:
+"Codex CLI no encontrado. Instálalo: `npm install -g @openai/codex` o consulta https://github.com/openai/codex"
 
 ---
 
-## Step 1: Detect mode
+## Paso 1: Detectar modo
 
-Parse the user's input to determine which mode to run:
+Analizar la entrada del usuario para determinar qué modo ejecutar:
 
-1. `/codex review` or `/codex review <instructions>` — **Review mode** (Step 2A)
-2. `/codex challenge` or `/codex challenge <focus>` — **Challenge mode** (Step 2B)
-3. `/codex` with no arguments — **Auto-detect:**
-   - Check for a diff (with fallback if origin isn't available):
+1. `/codex review` o `/codex review <instrucciones>` — **Modo revisión** (Paso 2A)
+2. `/codex challenge` o `/codex challenge <enfoque>` — **Modo desafío** (Paso 2B)
+3. `/codex` sin argumentos — **Auto-detección:**
+   - Buscar un diff (con respaldo si origin no está disponible):
      `git diff origin/<base> --stat 2>/dev/null | tail -1 || git diff <base> --stat 2>/dev/null | tail -1`
-   - If a diff exists, use AskUserQuestion:
+   - Si existe un diff, usar AskUserQuestion:
      ```
-     Codex detected changes against the base branch. What should it do?
-     A) Review the diff (code review with pass/fail gate)
-     B) Challenge the diff (adversarial — try to break it)
-     C) Something else — I'll provide a prompt
+     Codex detectó cambios respecto a la rama base. ¿Qué debería hacer?
+     A) Revisar el diff (revisión de código con gate de aprobación/rechazo)
+     B) Desafiar el diff (adversarial — intentar romperlo)
+     C) Otra cosa — proporcionaré un prompt
      ```
-   - If no diff, check for plan files scoped to the current project:
+   - Si no hay diff, buscar archivos de plan del proyecto actual:
      `ls -t ~/.claude/plans/*.md 2>/dev/null | xargs grep -l "$(basename $(pwd))" 2>/dev/null | head -1`
-     If no project-scoped match, fall back to: `ls -t ~/.claude/plans/*.md 2>/dev/null | head -1`
-     but warn the user: "Note: this plan may be from a different project."
-   - If a plan file exists, offer to review it
-   - Otherwise, ask: "What would you like to ask Codex?"
-4. `/codex <anything else>` — **Consult mode** (Step 2C), where the remaining text is the prompt
+     Si no hay coincidencia con el proyecto, recurrir a: `ls -t ~/.claude/plans/*.md 2>/dev/null | head -1`
+     pero advertir al usuario: "Nota: este plan puede ser de un proyecto diferente."
+   - Si existe un archivo de plan, ofrecer revisarlo
+   - De lo contrario, preguntar: "¿Qué te gustaría preguntarle a Codex?"
+4. `/codex <cualquier otra cosa>` — **Modo consulta** (Paso 2C), donde el texto restante es el prompt
 
 ---
 
-## Step 2A: Review Mode
+## Paso 2A: Modo Revisión
 
-Run Codex code review against the current branch diff.
+Ejecutar la revisión de código de Codex contra el diff de la rama actual.
 
-1. Create temp files for output capture:
+1. Crear archivos temporales para captura de salida:
 ```bash
 TMPERR=$(mktemp /tmp/codex-err-XXXXXX.txt)
 ```
 
-2. Run the review (5-minute timeout):
+2. Ejecutar la revisión (timeout de 5 minutos):
 ```bash
 codex review --base <base> -c 'model_reasoning_effort="xhigh"' --enable web_search_cached 2>"$TMPERR"
 ```
 
-Use `timeout: 300000` on the Bash call. If the user provided custom instructions
-(e.g., `/codex review focus on security`), pass them as the prompt argument:
+Usar `timeout: 300000` en la llamada Bash. Si el usuario proporcionó instrucciones personalizadas
+(ej. `/codex review focus on security`), pasarlas como argumento del prompt:
 ```bash
 codex review "focus on security" --base <base> -c 'model_reasoning_effort="xhigh"' --enable web_search_cached 2>"$TMPERR"
 ```
 
-3. Capture the output. Then parse cost from stderr:
+3. Capturar la salida. Luego analizar el costo desde stderr:
 ```bash
 grep "tokens used" "$TMPERR" 2>/dev/null || echo "tokens: unknown"
 ```
 
-4. Determine gate verdict by checking the review output for critical findings.
-   If the output contains `[P1]` — the gate is **FAIL**.
-   If no `[P1]` markers are found (only `[P2]` or no findings) — the gate is **PASS**.
+4. Determinar el veredicto del gate verificando la salida de la revisión en busca de hallazgos críticos.
+   Si la salida contiene `[P1]` — el gate es **FALLO**.
+   Si no se encuentran marcadores `[P1]` (solo `[P2]` o sin hallazgos) — el gate es **APROBADO**.
 
-5. Present the output:
+5. Presentar la salida:
 
 ```
-CODEX SAYS (code review):
+CODEX DICE (revisión de código):
 ════════════════════════════════════════════════════════════
-<full codex output, verbatim — do not truncate or summarize>
+<salida completa de codex, textual — no truncar ni resumir>
 ════════════════════════════════════════════════════════════
-GATE: PASS                    Tokens: 14,331 | Est. cost: ~$0.12
+GATE: PASS                    Tokens: 14,331 | Costo est.: ~$0.12
 ```
 
-or
+o
 
 ```
-GATE: FAIL (N critical findings)
+GATE: FAIL (N hallazgos críticos)
 ```
 
-6. **Cross-model comparison:** If `/review` (Claude's own review) was already run
-   earlier in this conversation, compare the two sets of findings:
+6. **Comparación entre modelos:** Si `/review` (la revisión propia de Claude) ya se ejecutó
+   antes en esta conversación, comparar los dos conjuntos de hallazgos:
 
 ```
-CROSS-MODEL ANALYSIS:
-  Both found: [findings that overlap between Claude and Codex]
-  Only Codex found: [findings unique to Codex]
-  Only Claude found: [findings unique to Claude's /review]
-  Agreement rate: X% (N/M total unique findings overlap)
+ANÁLISIS ENTRE MODELOS:
+  Ambos encontraron: [hallazgos que coinciden entre Claude y Codex]
+  Solo Codex encontró: [hallazgos únicos de Codex]
+  Solo Claude encontró: [hallazgos únicos de la /review de Claude]
+  Tasa de coincidencia: X% (N/M hallazgos únicos totales coinciden)
 ```
 
-7. Persist the review result:
+7. Persistir el resultado de la revisión:
 ```bash
 ~/.claude/skills/gstack/bin/gstack-review-log '{"skill":"codex-review","timestamp":"TIMESTAMP","status":"STATUS","gate":"GATE","findings":N,"findings_fixed":N}'
 ```
 
-Substitute: TIMESTAMP (ISO 8601), STATUS ("clean" if PASS, "issues_found" if FAIL),
-GATE ("pass" or "fail"), findings (count of [P1] + [P2] markers),
-findings_fixed (count of findings that were addressed/fixed before shipping).
+Sustituir: TIMESTAMP (ISO 8601), STATUS ("clean" si PASS, "issues_found" si FAIL),
+GATE ("pass" o "fail"), findings (conteo de marcadores [P1] + [P2]),
+findings_fixed (conteo de hallazgos que fueron abordados/corregidos antes de publicar).
 
-8. Clean up temp files:
+8. Limpiar archivos temporales:
 ```bash
 rm -f "$TMPERR"
 ```
@@ -502,21 +502,21 @@ plan's living status.
 
 ---
 
-## Step 2B: Challenge (Adversarial) Mode
+## Paso 2B: Modo Desafío (Adversarial)
 
-Codex tries to break your code — finding edge cases, race conditions, security holes,
-and failure modes that a normal review would miss.
+Codex intenta romper tu código — encontrando casos límite, condiciones de carrera, agujeros de seguridad
+y modos de fallo que una revisión normal pasaría por alto.
 
-1. Construct the adversarial prompt. If the user provided a focus area
-(e.g., `/codex challenge security`), include it:
+1. Construir el prompt adversarial. Si el usuario proporcionó un área de enfoque
+(ej. `/codex challenge security`), incluirla:
 
-Default prompt (no focus):
+Prompt por defecto (sin enfoque):
 "Review the changes on this branch against the base branch. Run `git diff origin/<base>` to see the diff. Your job is to find ways this code will fail in production. Think like an attacker and a chaos engineer. Find edge cases, race conditions, security holes, resource leaks, failure modes, and silent data corruption paths. Be adversarial. Be thorough. No compliments — just the problems."
 
-With focus (e.g., "security"):
+Con enfoque (ej. "security"):
 "Review the changes on this branch against the base branch. Run `git diff origin/<base>` to see the diff. Focus specifically on SECURITY. Your job is to find every way an attacker could exploit this code. Think about injection vectors, auth bypasses, privilege escalation, data exposure, and timing attacks. Be adversarial."
 
-2. Run codex exec with **JSONL output** to capture reasoning traces and tool calls (5-minute timeout):
+2. Ejecutar codex exec con **salida JSONL** para capturar trazas de razonamiento y llamadas a herramientas (timeout de 5 minutos):
 ```bash
 codex exec "<prompt>" -C "$(git rev-parse --show-toplevel)" -s read-only -c 'model_reasoning_effort="xhigh"' --enable web_search_cached --json 2>/dev/null | python3 -c "
 import sys, json
@@ -546,51 +546,51 @@ for line in sys.stdin:
 "
 ```
 
-This parses codex's JSONL events to extract reasoning traces, tool calls, and the final
-response. The `[codex thinking]` lines show what codex reasoned through before its answer.
+Esto analiza los eventos JSONL de codex para extraer trazas de razonamiento, llamadas a herramientas y la
+respuesta final. Las líneas `[codex thinking]` muestran lo que codex razonó antes de su respuesta.
 
-3. Present the full streamed output:
+3. Presentar la salida completa transmitida:
 
 ```
-CODEX SAYS (adversarial challenge):
+CODEX DICE (desafío adversarial):
 ════════════════════════════════════════════════════════════
-<full output from above, verbatim>
+<salida completa de arriba, textual>
 ════════════════════════════════════════════════════════════
-Tokens: N | Est. cost: ~$X.XX
+Tokens: N | Costo est.: ~$X.XX
 ```
 
 ---
 
-## Step 2C: Consult Mode
+## Paso 2C: Modo Consulta
 
-Ask Codex anything about the codebase. Supports session continuity for follow-ups.
+Pregunta a Codex lo que quieras sobre la base de código. Soporta continuidad de sesión para seguimientos.
 
-1. **Check for existing session:**
+1. **Verificar sesión existente:**
 ```bash
 cat .context/codex-session-id 2>/dev/null || echo "NO_SESSION"
 ```
 
-If a session file exists (not `NO_SESSION`), use AskUserQuestion:
+Si existe un archivo de sesión (no `NO_SESSION`), usar AskUserQuestion:
 ```
-You have an active Codex conversation from earlier. Continue it or start fresh?
-A) Continue the conversation (Codex remembers the prior context)
-B) Start a new conversation
+Tienes una conversación activa con Codex de antes. ¿Continuarla o empezar de nuevo?
+A) Continuar la conversación (Codex recuerda el contexto previo)
+B) Iniciar una nueva conversación
 ```
 
-2. Create temp files:
+2. Crear archivos temporales:
 ```bash
 TMPRESP=$(mktemp /tmp/codex-resp-XXXXXX.txt)
 TMPERR=$(mktemp /tmp/codex-err-XXXXXX.txt)
 ```
 
-3. **Plan review auto-detection:** If the user's prompt is about reviewing a plan,
-or if plan files exist and the user said `/codex` with no arguments:
+3. **Auto-detección de revisión de plan:** Si el prompt del usuario trata sobre revisar un plan,
+o si existen archivos de plan y el usuario dijo `/codex` sin argumentos:
 ```bash
 ls -t ~/.claude/plans/*.md 2>/dev/null | xargs grep -l "$(basename $(pwd))" 2>/dev/null | head -1
 ```
-If no project-scoped match, fall back to `ls -t ~/.claude/plans/*.md 2>/dev/null | head -1`
-but warn: "Note: this plan may be from a different project — verify before sending to Codex."
-Read the plan file and prepend the persona to the user's prompt:
+Si no hay coincidencia con el proyecto, recurrir a `ls -t ~/.claude/plans/*.md 2>/dev/null | head -1`
+pero advertir: "Nota: este plan puede ser de un proyecto diferente — verifica antes de enviarlo a Codex."
+Leer el archivo de plan y anteponer la persona al prompt del usuario:
 "You are a brutally honest technical reviewer. Review this plan for: logical gaps and
 unstated assumptions, missing error handling or edge cases, overcomplexity (is there a
 simpler approach?), feasibility risks (what could go wrong?), and missing dependencies
@@ -599,9 +599,9 @@ or sequencing issues. Be direct. Be terse. No compliments. Just the problems.
 THE PLAN:
 <plan content>"
 
-4. Run codex exec with **JSONL output** to capture reasoning traces (5-minute timeout):
+4. Ejecutar codex exec con **salida JSONL** para capturar trazas de razonamiento (timeout de 5 minutos):
 
-For a **new session:**
+Para una **sesión nueva:**
 ```bash
 codex exec "<prompt>" -C "$(git rev-parse --show-toplevel)" -s read-only -c 'model_reasoning_effort="xhigh"' --enable web_search_cached --json 2>"$TMPERR" | python3 -c "
 import sys, json
@@ -634,83 +634,83 @@ for line in sys.stdin:
 "
 ```
 
-For a **resumed session** (user chose "Continue"):
+Para una **sesión reanudada** (el usuario eligió "Continuar"):
 ```bash
 codex exec resume <session-id> "<prompt>" -C "$(git rev-parse --show-toplevel)" -s read-only -c 'model_reasoning_effort="xhigh"' --enable web_search_cached --json 2>"$TMPERR" | python3 -c "
-<same python streaming parser as above>
+<mismo parser de streaming en python de arriba>
 "
 ```
 
-5. Capture session ID from the streamed output. The parser prints `SESSION_ID:<id>`
-   from the `thread.started` event. Save it for follow-ups:
+5. Capturar el ID de sesión de la salida transmitida. El parser imprime `SESSION_ID:<id>`
+   del evento `thread.started`. Guardarlo para seguimientos:
 ```bash
 mkdir -p .context
 ```
-Save the session ID printed by the parser (the line starting with `SESSION_ID:`)
-to `.context/codex-session-id`.
+Guardar el ID de sesión impreso por el parser (la línea que comienza con `SESSION_ID:`)
+en `.context/codex-session-id`.
 
-6. Present the full streamed output:
+6. Presentar la salida completa transmitida:
 
 ```
-CODEX SAYS (consult):
+CODEX DICE (consulta):
 ════════════════════════════════════════════════════════════
-<full output, verbatim — includes [codex thinking] traces>
+<salida completa, textual — incluye trazas [codex thinking]>
 ════════════════════════════════════════════════════════════
-Tokens: N | Est. cost: ~$X.XX
-Session saved — run /codex again to continue this conversation.
+Tokens: N | Costo est.: ~$X.XX
+Sesión guardada — ejecuta /codex de nuevo para continuar esta conversación.
 ```
 
-7. After presenting, note any points where Codex's analysis differs from your own
-   understanding. If there is a disagreement, flag it:
-   "Note: Claude Code disagrees on X because Y."
+7. Después de presentar, señalar cualquier punto donde el análisis de Codex difiera de tu propio
+   entendimiento. Si hay un desacuerdo, marcarlo:
+   "Nota: Claude Code discrepa en X porque Y."
 
 ---
 
-## Model & Reasoning
+## Modelo y Razonamiento
 
-**Model:** No model is hardcoded — codex uses whatever its current default is (the frontier
-agentic coding model). This means as OpenAI ships newer models, /codex automatically
-uses them. If the user wants a specific model, pass `-m` through to codex.
+**Modelo:** No se fija ningún modelo en el código — codex usa el que sea su valor por defecto actual (el modelo
+agéntico de codificación de frontera). Esto significa que a medida que OpenAI publique modelos más nuevos, /codex los usa
+automáticamente. Si el usuario quiere un modelo específico, pasar `-m` a codex.
 
-**Reasoning effort:** All modes use `xhigh` — maximum reasoning power. When reviewing code, breaking code, or consulting on architecture, you want the model thinking as hard as possible.
+**Esfuerzo de razonamiento:** Todos los modos usan `xhigh` — máxima potencia de razonamiento. Cuando revisas código, intentas romper código o consultas sobre arquitectura, quieres que el modelo piense lo más intensamente posible.
 
-**Web search:** All codex commands use `--enable web_search_cached` so Codex can look up
-docs and APIs during review. This is OpenAI's cached index — fast, no extra cost.
+**Búsqueda web:** Todos los comandos de codex usan `--enable web_search_cached` para que Codex pueda buscar
+documentación y APIs durante la revisión. Es el índice cacheado de OpenAI — rápido, sin costo extra.
 
-If the user specifies a model (e.g., `/codex review -m gpt-5.1-codex-max`
-or `/codex challenge -m gpt-5.2`), pass the `-m` flag through to codex.
-
----
-
-## Cost Estimation
-
-Parse token count from stderr. Codex prints `tokens used\nN` to stderr.
-
-Display as: `Tokens: N`
-
-If token count is not available, display: `Tokens: unknown`
+Si el usuario especifica un modelo (ej. `/codex review -m gpt-5.1-codex-max`
+o `/codex challenge -m gpt-5.2`), pasar el flag `-m` a codex.
 
 ---
 
-## Error Handling
+## Estimación de Costo
 
-- **Binary not found:** Detected in Step 0. Stop with install instructions.
-- **Auth error:** Codex prints an auth error to stderr. Surface the error:
-  "Codex authentication failed. Run `codex login` in your terminal to authenticate via ChatGPT."
-- **Timeout:** If the Bash call times out (5 min), tell the user:
-  "Codex timed out after 5 minutes. The diff may be too large or the API may be slow. Try again or use a smaller scope."
-- **Empty response:** If `$TMPRESP` is empty or doesn't exist, tell the user:
-  "Codex returned no response. Check stderr for errors."
-- **Session resume failure:** If resume fails, delete the session file and start fresh.
+Analizar el conteo de tokens desde stderr. Codex imprime `tokens used\nN` a stderr.
+
+Mostrar como: `Tokens: N`
+
+Si el conteo de tokens no está disponible, mostrar: `Tokens: unknown`
 
 ---
 
-## Important Rules
+## Manejo de Errores
 
-- **Never modify files.** This skill is read-only. Codex runs in read-only sandbox mode.
-- **Present output verbatim.** Do not truncate, summarize, or editorialize Codex's output
-  before showing it. Show it in full inside the CODEX SAYS block.
-- **Add synthesis after, not instead of.** Any Claude commentary comes after the full output.
-- **5-minute timeout** on all Bash calls to codex (`timeout: 300000`).
-- **No double-reviewing.** If the user already ran `/review`, Codex provides a second
-  independent opinion. Do not re-run Claude Code's own review.
+- **Binario no encontrado:** Detectado en el Paso 0. Detenerse con instrucciones de instalación.
+- **Error de autenticación:** Codex imprime un error de autenticación a stderr. Mostrar el error:
+  "La autenticación de Codex falló. Ejecuta `codex login` en tu terminal para autenticarte vía ChatGPT."
+- **Timeout:** Si la llamada Bash expira (5 min), informar al usuario:
+  "Codex expiró después de 5 minutos. El diff puede ser demasiado grande o la API puede estar lenta. Intenta de nuevo o usa un alcance más pequeño."
+- **Respuesta vacía:** Si `$TMPRESP` está vacío o no existe, informar al usuario:
+  "Codex no devolvió respuesta. Verifica stderr para errores."
+- **Fallo al reanudar sesión:** Si la reanudación falla, eliminar el archivo de sesión y empezar de nuevo.
+
+---
+
+## Reglas Importantes
+
+- **Nunca modificar archivos.** Este skill es de solo lectura. Codex ejecuta en modo sandbox de solo lectura.
+- **Presentar la salida textualmente.** No truncar, resumir ni editorializar la salida de Codex
+  antes de mostrarla. Mostrarla completa dentro del bloque CODEX DICE.
+- **Agregar síntesis después, no en lugar de.** Cualquier comentario de Claude viene después de la salida completa.
+- **Timeout de 5 minutos** en todas las llamadas Bash a codex (`timeout: 300000`).
+- **No hacer doble revisión.** Si el usuario ya ejecutó `/review`, Codex proporciona una segunda
+  opinión independiente. No re-ejecutar la revisión propia de Claude Code.

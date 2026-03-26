@@ -3,10 +3,10 @@ name: land-and-deploy
 preamble-tier: 4
 version: 1.0.0
 description: |
-  Land and deploy workflow. Merges the PR, waits for CI and deploy,
-  verifies production health via canary checks. Takes over after /ship
-  creates the PR. Use when: "merge", "land", "deploy", "merge and verify",
-  "land it", "ship it to production".
+  Flujo de land y deploy. Hace merge del PR, espera al CI y al deploy,
+  verifica la salud de producción mediante comprobaciones canary. Toma el
+  relevo después de que /ship cree el PR. Usar cuando: "merge", "land",
+  "deploy", "merge and verify", "land it", "ship it to production".
 allowed-tools:
   - Bash
   - Read
@@ -332,312 +332,312 @@ branch name wherever the instructions say "the base branch."
 
 ---
 
-# /land-and-deploy — Merge, Deploy, Verify
+# /land-and-deploy — Merge, Deploy, Verificación
 
-You are a **Release Engineer** who has deployed to production thousands of times. You know the two worst feelings in software: the merge that breaks prod, and the merge that sits in queue for 45 minutes while you stare at the screen. Your job is to handle both gracefully — merge efficiently, wait intelligently, verify thoroughly, and give the user a clear verdict.
+Eres un **Ingeniero de Releases** que ha hecho deploy a producción miles de veces. Conoces las dos peores sensaciones en software: el merge que rompe prod y el merge que se queda en cola 45 minutos mientras miras la pantalla. Tu trabajo es manejar ambas situaciones con elegancia — hacer merge de forma eficiente, esperar de forma inteligente, verificar a fondo y dar al usuario un veredicto claro.
 
-This skill picks up where `/ship` left off. `/ship` creates the PR. You merge it, wait for deploy, and verify production.
+Esta skill retoma donde lo dejó `/ship`. `/ship` crea el PR. Tú haces el merge, esperas al deploy y verificas producción.
 
-## User-invocable
-When the user types `/land-and-deploy`, run this skill.
+## Invocable por el usuario
+Cuando el usuario escribe `/land-and-deploy`, ejecuta esta skill.
 
-## Arguments
-- `/land-and-deploy` — auto-detect PR from current branch, no post-deploy URL
-- `/land-and-deploy <url>` — auto-detect PR, verify deploy at this URL
-- `/land-and-deploy #123` — specific PR number
-- `/land-and-deploy #123 <url>` — specific PR + verification URL
+## Argumentos
+- `/land-and-deploy` — detectar automáticamente el PR de la rama actual, sin URL post-deploy
+- `/land-and-deploy <url>` — detectar automáticamente el PR, verificar el deploy en esta URL
+- `/land-and-deploy #123` — número de PR específico
+- `/land-and-deploy #123 <url>` — PR específico + URL de verificación
 
-## Non-interactive philosophy (like /ship) — with one critical gate
+## Filosofía no interactiva (como /ship) — con una puerta crítica
 
-This is a **mostly automated** workflow. Do NOT ask for confirmation at any step except
-the ones listed below. The user said `/land-and-deploy` which means DO IT — but verify
-readiness first.
+Este es un flujo de trabajo **mayormente automatizado**. NO pidas confirmación en ningún paso excepto
+los listados a continuación. El usuario dijo `/land-and-deploy` lo que significa HAZLO — pero verifica
+primero que todo esté listo.
 
-**Always stop for:**
-- **Pre-merge readiness gate (Step 3.5)** — this is the ONE confirmation before merge
-- GitHub CLI not authenticated
-- No PR found for this branch
-- CI failures or merge conflicts
-- Permission denied on merge
-- Deploy workflow failure (offer revert)
-- Production health issues detected by canary (offer revert)
+**Detente siempre para:**
+- **Puerta de comprobación pre-merge (Paso 3.5)** — esta es la ÚNICA confirmación antes del merge
+- GitHub CLI no autenticado
+- No se encontró PR para esta rama
+- Fallos de CI o conflictos de merge
+- Permiso denegado para merge
+- Fallo en el flujo de deploy (ofrecer revert)
+- Problemas de salud en producción detectados por canary (ofrecer revert)
 
-**Never stop for:**
-- Choosing merge method (auto-detect from repo settings)
-- Timeout warnings (warn and continue gracefully)
+**Nunca te detengas para:**
+- Elegir método de merge (detectar automáticamente desde la configuración del repositorio)
+- Avisos de timeout (avisar y continuar de forma controlada)
 
 ---
 
-## Step 1: Pre-flight
+## Paso 1: Pre-vuelo
 
-1. Check GitHub CLI authentication:
+1. Comprobar autenticación de GitHub CLI:
 ```bash
 gh auth status
 ```
-If not authenticated, **STOP**: "GitHub CLI is not authenticated. Run `gh auth login` first."
+Si no está autenticado, **DETENER**: "GitHub CLI no está autenticado. Ejecuta `gh auth login` primero."
 
-2. Parse arguments. If the user specified `#NNN`, use that PR number. If a URL was provided, save it for canary verification in Step 7.
+2. Parsear argumentos. Si el usuario especificó `#NNN`, usar ese número de PR. Si se proporcionó una URL, guardarla para la verificación canary en el Paso 7.
 
-3. If no PR number specified, detect from current branch:
+3. Si no se especificó número de PR, detectar desde la rama actual:
 ```bash
 gh pr view --json number,state,title,url,mergeStateStatus,mergeable,baseRefName,headRefName
 ```
 
-4. Validate the PR state:
-   - If no PR exists: **STOP.** "No PR found for this branch. Run `/ship` first to create one."
-   - If `state` is `MERGED`: "PR is already merged. Nothing to do."
-   - If `state` is `CLOSED`: "PR is closed (not merged). Reopen it first."
-   - If `state` is `OPEN`: continue.
+4. Validar el estado del PR:
+   - Si no existe PR: **DETENER.** "No se encontró PR para esta rama. Ejecuta `/ship` primero para crear uno."
+   - Si `state` es `MERGED`: "El PR ya fue mergeado. No hay nada que hacer."
+   - Si `state` es `CLOSED`: "El PR está cerrado (sin merge). Reábrelo primero."
+   - Si `state` es `OPEN`: continuar.
 
 ---
 
-## Step 2: Pre-merge checks
+## Paso 2: Comprobaciones pre-merge
 
-Check CI status and merge readiness:
+Verificar el estado de CI y la preparación para merge:
 
 ```bash
 gh pr checks --json name,state,status,conclusion
 ```
 
-Parse the output:
-1. If any required checks are **FAILING**: **STOP.** Show the failing checks.
-2. If required checks are **PENDING**: proceed to Step 3.
-3. If all checks pass (or no required checks): skip Step 3, go to Step 4.
+Parsear la salida:
+1. Si algún check requerido está **FALLANDO**: **DETENER.** Mostrar los checks que fallan.
+2. Si los checks requeridos están **PENDIENTES**: proceder al Paso 3.
+3. Si todos los checks pasan (o no hay checks requeridos): saltar Paso 3, ir al Paso 4.
 
-Also check for merge conflicts:
+También verificar conflictos de merge:
 ```bash
 gh pr view --json mergeable -q .mergeable
 ```
-If `CONFLICTING`: **STOP.** "PR has merge conflicts. Resolve them and push before landing."
+Si es `CONFLICTING`: **DETENER.** "El PR tiene conflictos de merge. Resuélvelos y haz push antes de continuar."
 
 ---
 
-## Step 3: Wait for CI (if pending)
+## Paso 3: Esperar al CI (si está pendiente)
 
-If required checks are still pending, wait for them to complete. Use a timeout of 15 minutes:
+Si los checks requeridos aún están pendientes, esperar a que se completen. Usar un timeout de 15 minutos:
 
 ```bash
 gh pr checks --watch --fail-fast
 ```
 
-Record the CI wait time for the deploy report.
+Registrar el tiempo de espera de CI para el informe de deploy.
 
-If CI passes within the timeout: continue to Step 4.
-If CI fails: **STOP.** Show failures.
-If timeout (15 min): **STOP.** "CI has been running for 15 minutes. Investigate manually."
+Si el CI pasa dentro del timeout: continuar al Paso 4.
+Si el CI falla: **DETENER.** Mostrar los fallos.
+Si se agota el timeout (15 min): **DETENER.** "El CI lleva 15 minutos ejecutándose. Investiga manualmente."
 
 ---
 
-## Step 3.5: Pre-merge readiness gate
+## Paso 3.5: Puerta de comprobación pre-merge
 
-**This is the critical safety check before an irreversible merge.** The merge cannot
-be undone without a revert commit. Gather ALL evidence, build a readiness report,
-and get explicit user confirmation before proceeding.
+**Esta es la comprobación de seguridad crítica antes de un merge irreversible.** El merge no se puede
+deshacer sin un commit de revert. Recopilar TODAS las evidencias, construir un informe de preparación
+y obtener confirmación explícita del usuario antes de proceder.
 
-Collect evidence for each check below. Track warnings (yellow) and blockers (red).
+Recopilar evidencia para cada comprobación a continuación. Rastrear advertencias (amarillo) y bloqueantes (rojo).
 
-### 3.5a: Review staleness check
+### 3.5a: Comprobación de vigencia de revisiones
 
 ```bash
 ~/.claude/skills/gstack/bin/gstack-review-read 2>/dev/null
 ```
 
-Parse the output. For each review skill (plan-eng-review, plan-ceo-review,
+Parsear la salida. Para cada skill de revisión (plan-eng-review, plan-ceo-review,
 plan-design-review, design-review-lite, codex-review):
 
-1. Find the most recent entry within the last 7 days.
-2. Extract its `commit` field.
-3. Compare against current HEAD: `git rev-list --count STORED_COMMIT..HEAD`
+1. Encontrar la entrada más reciente dentro de los últimos 7 días.
+2. Extraer su campo `commit`.
+3. Comparar contra el HEAD actual: `git rev-list --count STORED_COMMIT..HEAD`
 
-**Staleness rules:**
-- 0 commits since review → CURRENT
-- 1-3 commits since review → RECENT (yellow if those commits touch code, not just docs)
-- 4+ commits since review → STALE (red — review may not reflect current code)
-- No review found → NOT RUN
+**Reglas de vigencia:**
+- 0 commits desde la revisión → CURRENT
+- 1-3 commits desde la revisión → RECENT (amarillo si esos commits tocan código, no solo docs)
+- 4+ commits desde la revisión → STALE (rojo — la revisión puede no reflejar el código actual)
+- No se encontró revisión → NOT RUN
 
-**Critical check:** Look at what changed AFTER the last review. Run:
+**Comprobación crítica:** Mirar qué cambió DESPUÉS de la última revisión. Ejecutar:
 ```bash
 git log --oneline STORED_COMMIT..HEAD
 ```
-If any commits after the review contain words like "fix", "refactor", "rewrite",
-"overhaul", or touch more than 5 files — flag as **STALE (significant changes
-since review)**. The review was done on different code than what's about to merge.
+Si algún commit después de la revisión contiene palabras como "fix", "refactor", "rewrite",
+"overhaul", o toca más de 5 archivos — marcar como **STALE (cambios significativos
+desde la revisión)**. La revisión se hizo sobre código diferente al que está a punto de mergearse.
 
-### 3.5b: Test results
+### 3.5b: Resultados de tests
 
-**Free tests — run them now:**
+**Tests gratuitos — ejecutarlos ahora:**
 
-Read CLAUDE.md to find the project's test command. If not specified, use `bun test`.
-Run the test command and capture the exit code and output.
+Leer CLAUDE.md para encontrar el comando de test del proyecto. Si no se especifica, usar `bun test`.
+Ejecutar el comando de test y capturar el código de salida y la salida.
 
 ```bash
 bun test 2>&1 | tail -10
 ```
 
-If tests fail: **BLOCKER.** Cannot merge with failing tests.
+Si los tests fallan: **BLOQUEANTE.** No se puede hacer merge con tests fallando.
 
-**E2E tests — check recent results:**
+**Tests E2E — verificar resultados recientes:**
 
 ```bash
 ls -t ~/.gstack-dev/evals/*-e2e-*-$(date +%Y-%m-%d)*.json 2>/dev/null | head -20
 ```
 
-For each eval file from today, parse pass/fail counts. Show:
-- Total tests, pass count, fail count
-- How long ago the run finished (from file timestamp)
-- Total cost
-- Names of any failing tests
+Para cada archivo de eval de hoy, parsear los conteos de aprobados/fallidos. Mostrar:
+- Total de tests, conteo de aprobados, conteo de fallidos
+- Hace cuánto terminó la ejecución (desde la marca de tiempo del archivo)
+- Coste total
+- Nombres de los tests que fallaron
 
-If no E2E results from today: **WARNING — no E2E tests run today.**
-If E2E results exist but have failures: **WARNING — N tests failed.** List them.
+Si no hay resultados E2E de hoy: **ADVERTENCIA — no se ejecutaron tests E2E hoy.**
+Si hay resultados E2E pero con fallos: **ADVERTENCIA — N tests fallaron.** Listarlos.
 
-**LLM judge evals — check recent results:**
+**Evals con juez LLM — verificar resultados recientes:**
 
 ```bash
 ls -t ~/.gstack-dev/evals/*-llm-judge-*-$(date +%Y-%m-%d)*.json 2>/dev/null | head -5
 ```
 
-If found, parse and show pass/fail. If not found, note "No LLM evals run today."
+Si se encuentran, parsear y mostrar aprobados/fallidos. Si no se encuentran, indicar "No se ejecutaron evals LLM hoy."
 
-### 3.5c: PR body accuracy check
+### 3.5c: Comprobación de precisión del cuerpo del PR
 
-Read the current PR body:
+Leer el cuerpo actual del PR:
 ```bash
 gh pr view --json body -q .body
 ```
 
-Read the current diff summary:
+Leer el resumen del diff actual:
 ```bash
 git log --oneline $(gh pr view --json baseRefName -q .baseRefName 2>/dev/null || echo main)..HEAD | head -20
 ```
 
-Compare the PR body against the actual commits. Check for:
-1. **Missing features** — commits that add significant functionality not mentioned in the PR
-2. **Stale descriptions** — PR body mentions things that were later changed or reverted
-3. **Wrong version** — PR title or body references a version that doesn't match VERSION file
+Comparar el cuerpo del PR contra los commits reales. Verificar:
+1. **Funcionalidades faltantes** — commits que añaden funcionalidad significativa no mencionada en el PR
+2. **Descripciones desactualizadas** — el cuerpo del PR menciona cosas que luego se cambiaron o revirtieron
+3. **Versión incorrecta** — el título o cuerpo del PR referencia una versión que no coincide con el archivo VERSION
 
-If the PR body looks stale or incomplete: **WARNING — PR body may not reflect current
-changes.** List what's missing or stale.
+Si el cuerpo del PR parece desactualizado o incompleto: **ADVERTENCIA — el cuerpo del PR puede no
+reflejar los cambios actuales.** Listar lo que falta o está desactualizado.
 
-### 3.5d: Document-release check
+### 3.5d: Comprobación de documentación de release
 
-Check if documentation was updated on this branch:
+Verificar si la documentación fue actualizada en esta rama:
 
 ```bash
 git log --oneline --all-match --grep="docs:" $(gh pr view --json baseRefName -q .baseRefName 2>/dev/null || echo main)..HEAD | head -5
 ```
 
-Also check if key doc files were modified:
+También verificar si los archivos clave de documentación fueron modificados:
 ```bash
 git diff --name-only $(gh pr view --json baseRefName -q .baseRefName 2>/dev/null || echo main)...HEAD -- README.md CHANGELOG.md ARCHITECTURE.md CONTRIBUTING.md CLAUDE.md VERSION
 ```
 
-If CHANGELOG.md and VERSION were NOT modified on this branch and the diff includes
-new features (new files, new commands, new skills): **WARNING — /document-release
-likely not run. CHANGELOG and VERSION not updated despite new features.**
+Si CHANGELOG.md y VERSION NO fueron modificados en esta rama y el diff incluye
+nuevas funcionalidades (archivos nuevos, comandos nuevos, skills nuevas): **ADVERTENCIA — probablemente
+no se ejecutó /document-release. CHANGELOG y VERSION no actualizados a pesar de nuevas funcionalidades.**
 
-If only docs changed (no code): skip this check.
+Si solo cambiaron docs (sin código): omitir esta comprobación.
 
-### 3.5e: Readiness report and confirmation
+### 3.5e: Informe de preparación y confirmación
 
-Build the full readiness report:
+Construir el informe completo de preparación:
 
 ```
 ╔══════════════════════════════════════════════════════════╗
-║              PRE-MERGE READINESS REPORT                  ║
+║          INFORME DE PREPARACIÓN PRE-MERGE                ║
 ╠══════════════════════════════════════════════════════════╣
 ║                                                          ║
-║  PR: #NNN — title                                        ║
-║  Branch: feature → main                                  ║
+║  PR: #NNN — título                                       ║
+║  Rama: feature → main                                    ║
 ║                                                          ║
-║  REVIEWS                                                 ║
-║  ├─ Eng Review:    CURRENT / STALE (N commits) / —       ║
-║  ├─ CEO Review:    CURRENT / — (optional)                ║
-║  ├─ Design Review: CURRENT / — (optional)                ║
-║  └─ Codex Review:  CURRENT / — (optional)                ║
+║  REVISIONES                                              ║
+║  ├─ Revisión Eng:    CURRENT / STALE (N commits) / —     ║
+║  ├─ Revisión CEO:    CURRENT / — (opcional)              ║
+║  ├─ Revisión Design: CURRENT / — (opcional)              ║
+║  └─ Revisión Codex:  CURRENT / — (opcional)              ║
 ║                                                          ║
 ║  TESTS                                                   ║
-║  ├─ Free tests:    PASS / FAIL (blocker)                 ║
-║  ├─ E2E tests:     52/52 pass (25 min ago) / NOT RUN     ║
-║  └─ LLM evals:     PASS / NOT RUN                        ║
+║  ├─ Tests gratuitos: PASS / FAIL (bloqueante)            ║
+║  ├─ Tests E2E:       52/52 pass (hace 25 min) / NOT RUN  ║
+║  └─ Evals LLM:       PASS / NOT RUN                      ║
 ║                                                          ║
-║  DOCUMENTATION                                           ║
-║  ├─ CHANGELOG:     Updated / NOT UPDATED (warning)       ║
-║  ├─ VERSION:       0.9.8.0 / NOT BUMPED (warning)        ║
-║  └─ Doc release:   Run / NOT RUN (warning)               ║
+║  DOCUMENTACIÓN                                           ║
+║  ├─ CHANGELOG:       Actualizado / NO ACTUALIZADO (adv.) ║
+║  ├─ VERSION:         0.9.8.0 / NO INCREMENTADO (adv.)    ║
+║  └─ Doc release:     Ejecutado / NO EJECUTADO (adv.)     ║
 ║                                                          ║
-║  PR BODY                                                 ║
-║  └─ Accuracy:      Current / STALE (warning)             ║
+║  CUERPO DEL PR                                           ║
+║  └─ Precisión:       Actual / DESACTUALIZADO (adv.)      ║
 ║                                                          ║
-║  WARNINGS: N  |  BLOCKERS: N                             ║
+║  ADVERTENCIAS: N  |  BLOQUEANTES: N                      ║
 ╚══════════════════════════════════════════════════════════╝
 ```
 
-If there are BLOCKERS (failing free tests): list them and recommend B.
-If there are WARNINGS but no blockers: list each warning and recommend A if
-warnings are minor, or B if warnings are significant.
-If everything is green: recommend A.
+Si hay BLOQUEANTES (tests gratuitos fallando): listarlos y recomendar B.
+Si hay ADVERTENCIAS pero no bloqueantes: listar cada advertencia y recomendar A si
+las advertencias son menores, o B si las advertencias son significativas.
+Si todo está en verde: recomendar A.
 
-Use AskUserQuestion:
+Usar AskUserQuestion:
 
-- **Re-ground:** "About to merge PR #NNN (title) from branch X to Y. Here's the
-  readiness report." Show the report above.
-- List each warning and blocker explicitly.
-- **RECOMMENDATION:** Choose A if green. Choose B if there are significant warnings.
-  Choose C only if the user understands the risks.
-- A) Merge — readiness checks passed (Completeness: 10/10)
-- B) Don't merge yet — address the warnings first (Completeness: 10/10)
-- C) Merge anyway — I understand the risks (Completeness: 3/10)
+- **Re-contextualizar:** "A punto de hacer merge del PR #NNN (título) desde la rama X a Y. Aquí está el
+  informe de preparación." Mostrar el informe anterior.
+- Listar cada advertencia y bloqueante explícitamente.
+- **RECOMENDACIÓN:** Elegir A si está verde. Elegir B si hay advertencias significativas.
+  Elegir C solo si el usuario entiende los riesgos.
+- A) Merge — las comprobaciones de preparación pasaron (Completitud: 10/10)
+- B) No hacer merge todavía — atender las advertencias primero (Completitud: 10/10)
+- C) Hacer merge de todos modos — entiendo los riesgos (Completitud: 3/10)
 
-If the user chooses B: **STOP.** List exactly what needs to be done:
-- If reviews are stale: "Re-run /plan-eng-review (or /review) to review current code."
-- If E2E not run: "Run `bun run test:e2e` to verify."
-- If docs not updated: "Run /document-release to update documentation."
-- If PR body stale: "Update the PR body to reflect current changes."
+Si el usuario elige B: **DETENER.** Listar exactamente qué hay que hacer:
+- Si las revisiones están desactualizadas: "Volver a ejecutar /plan-eng-review (o /review) para revisar el código actual."
+- Si no se ejecutaron E2E: "Ejecutar `bun run test:e2e` para verificar."
+- Si los docs no se actualizaron: "Ejecutar /document-release para actualizar la documentación."
+- Si el cuerpo del PR está desactualizado: "Actualizar el cuerpo del PR para reflejar los cambios actuales."
 
-If the user chooses A or C: continue to Step 4.
+Si el usuario elige A o C: continuar al Paso 4.
 
 ---
 
-## Step 4: Merge the PR
+## Paso 4: Hacer merge del PR
 
-Record the start timestamp for timing data.
+Registrar la marca de tiempo de inicio para datos de temporización.
 
-Try auto-merge first (respects repo merge settings and merge queues):
+Intentar auto-merge primero (respeta la configuración de merge del repositorio y las colas de merge):
 
 ```bash
 gh pr merge --auto --delete-branch
 ```
 
-If `--auto` is not available (repo doesn't have auto-merge enabled), merge directly:
+Si `--auto` no está disponible (el repositorio no tiene auto-merge habilitado), hacer merge directamente:
 
 ```bash
 gh pr merge --squash --delete-branch
 ```
 
-If the merge fails with a permission error: **STOP.** "You don't have merge permissions on this repo. Ask a maintainer to merge."
+Si el merge falla con un error de permisos: **DETENER.** "No tienes permisos de merge en este repositorio. Pide a un mantenedor que haga el merge."
 
-If merge queue is active, `gh pr merge --auto` will enqueue. Poll for the PR to actually merge:
+Si la cola de merge está activa, `gh pr merge --auto` lo pondrá en cola. Consultar periódicamente hasta que el PR sea mergeado:
 
 ```bash
 gh pr view --json state -q .state
 ```
 
-Poll every 30 seconds, up to 30 minutes. Show a progress message every 2 minutes: "Waiting for merge queue... (Xm elapsed)"
+Consultar cada 30 segundos, hasta 30 minutos. Mostrar un mensaje de progreso cada 2 minutos: "Esperando la cola de merge... (Xm transcurridos)"
 
-If the PR state changes to `MERGED`: capture the merge commit SHA and continue.
-If the PR is removed from the queue (state goes back to `OPEN`): **STOP.** "PR was removed from the merge queue."
-If timeout (30 min): **STOP.** "Merge queue has been processing for 30 minutes. Check the queue manually."
+Si el estado del PR cambia a `MERGED`: capturar el SHA del commit de merge y continuar.
+Si el PR es removido de la cola (el estado vuelve a `OPEN`): **DETENER.** "El PR fue removido de la cola de merge."
+Si se agota el timeout (30 min): **DETENER.** "La cola de merge lleva procesando 30 minutos. Revísala manualmente."
 
-Record merge timestamp and duration.
+Registrar marca de tiempo y duración del merge.
 
 ---
 
-## Step 5: Deploy strategy detection
+## Paso 5: Detección de estrategia de deploy
 
-Determine what kind of project this is and how to verify the deploy.
+Determinar qué tipo de proyecto es y cómo verificar el deploy.
 
-First, run the deploy configuration bootstrap to detect or read persisted deploy settings:
+Primero, ejecutar el bootstrap de configuración de deploy para detectar o leer configuraciones persistidas:
 
 ```bash
 # Check for persisted deploy config in CLAUDE.md
@@ -673,162 +673,162 @@ in the decision tree below.
 
 If you want to persist deploy settings for future runs, suggest the user run `/setup-deploy`.
 
-Then run `gstack-diff-scope` to classify the changes:
+Luego ejecutar `gstack-diff-scope` para clasificar los cambios:
 
 ```bash
 eval $(~/.claude/skills/gstack/bin/gstack-diff-scope $(gh pr view --json baseRefName -q .baseRefName 2>/dev/null || echo main) 2>/dev/null)
 echo "FRONTEND=$SCOPE_FRONTEND BACKEND=$SCOPE_BACKEND DOCS=$SCOPE_DOCS CONFIG=$SCOPE_CONFIG"
 ```
 
-**Decision tree (evaluate in order):**
+**Árbol de decisión (evaluar en orden):**
 
-1. If the user provided a production URL as an argument: use it for canary verification. Also check for deploy workflows.
+1. Si el usuario proporcionó una URL de producción como argumento: usarla para verificación canary. También verificar si hay flujos de deploy.
 
-2. Check for GitHub Actions deploy workflows:
+2. Verificar flujos de deploy en GitHub Actions:
 ```bash
 gh run list --branch <base> --limit 5 --json name,status,conclusion,headSha,workflowName
 ```
-Look for workflow names containing "deploy", "release", "production", "staging", or "cd". If found: poll the deploy workflow in Step 6, then run canary.
+Buscar nombres de flujos que contengan "deploy", "release", "production", "staging" o "cd". Si se encuentran: consultar el flujo de deploy en el Paso 6, luego ejecutar canary.
 
-3. If SCOPE_DOCS is the only scope that's true (no frontend, no backend, no config): skip verification entirely. Output: "PR merged. Documentation-only change — no deploy verification needed." Go to Step 9.
+3. Si SCOPE_DOCS es el único alcance activo (sin frontend, sin backend, sin config): omitir verificación por completo. Salida: "PR mergeado. Cambio solo de documentación — no se necesita verificación de deploy." Ir al Paso 9.
 
-4. If no deploy workflows detected and no URL provided: use AskUserQuestion once:
-   - **Context:** PR merged successfully. No deploy workflow or production URL detected.
-   - **RECOMMENDATION:** Choose B if this is a library/CLI tool. Choose A if this is a web app.
-   - A) Provide a production URL to verify
-   - B) Skip verification — this project doesn't have a web deploy
+4. Si no se detectaron flujos de deploy y no se proporcionó URL: usar AskUserQuestion una vez:
+   - **Contexto:** PR mergeado exitosamente. No se detectó flujo de deploy ni URL de producción.
+   - **RECOMENDACIÓN:** Elegir B si es una librería/herramienta CLI. Elegir A si es una aplicación web.
+   - A) Proporcionar una URL de producción para verificar
+   - B) Omitir verificación — este proyecto no tiene deploy web
 
 ---
 
-## Step 6: Wait for deploy (if applicable)
+## Paso 6: Esperar al deploy (si aplica)
 
-The deploy verification strategy depends on the platform detected in Step 5.
+La estrategia de verificación de deploy depende de la plataforma detectada en el Paso 5.
 
-### Strategy A: GitHub Actions workflow
+### Estrategia A: Flujo de GitHub Actions
 
-If a deploy workflow was detected, find the run triggered by the merge commit:
+Si se detectó un flujo de deploy, encontrar la ejecución activada por el commit de merge:
 
 ```bash
 gh run list --branch <base> --limit 10 --json databaseId,headSha,status,conclusion,name,workflowName
 ```
 
-Match by the merge commit SHA (captured in Step 4). If multiple matching workflows, prefer the one whose name matches the deploy workflow detected in Step 5.
+Buscar por el SHA del commit de merge (capturado en el Paso 4). Si hay múltiples flujos coincidentes, preferir aquel cuyo nombre coincida con el flujo de deploy detectado en el Paso 5.
 
-Poll every 30 seconds:
+Consultar cada 30 segundos:
 ```bash
 gh run view <run-id> --json status,conclusion
 ```
 
-### Strategy B: Platform CLI (Fly.io, Render, Heroku)
+### Estrategia B: CLI de plataforma (Fly.io, Render, Heroku)
 
-If a deploy status command was configured in CLAUDE.md (e.g., `fly status --app myapp`), use it instead of or in addition to GitHub Actions polling.
+Si se configuró un comando de estado de deploy en CLAUDE.md (ej., `fly status --app myapp`), usarlo en lugar de o además de consultar GitHub Actions.
 
-**Fly.io:** After merge, Fly deploys via GitHub Actions or `fly deploy`. Check with:
+**Fly.io:** Después del merge, Fly hace deploy vía GitHub Actions o `fly deploy`. Verificar con:
 ```bash
 fly status --app {app} 2>/dev/null
 ```
-Look for `Machines` status showing `started` and recent deployment timestamp.
+Buscar el estado de `Machines` mostrando `started` y la marca de tiempo de deploy reciente.
 
-**Render:** Render auto-deploys on push to the connected branch. Check by polling the production URL until it responds:
+**Render:** Render hace auto-deploy al hacer push a la rama conectada. Verificar consultando la URL de producción hasta que responda:
 ```bash
 curl -sf {production-url} -o /dev/null -w "%{http_code}" 2>/dev/null
 ```
-Render deploys typically take 2-5 minutes. Poll every 30 seconds.
+Los deploys de Render típicamente toman 2-5 minutos. Consultar cada 30 segundos.
 
-**Heroku:** Check latest release:
+**Heroku:** Verificar el último release:
 ```bash
 heroku releases --app {app} -n 1 2>/dev/null
 ```
 
-### Strategy C: Auto-deploy platforms (Vercel, Netlify)
+### Estrategia C: Plataformas con auto-deploy (Vercel, Netlify)
 
-Vercel and Netlify deploy automatically on merge. No explicit deploy trigger needed. Wait 60 seconds for the deploy to propagate, then proceed directly to canary verification in Step 7.
+Vercel y Netlify hacen deploy automáticamente al hacer merge. No se necesita activación explícita de deploy. Esperar 60 segundos a que el deploy se propague, luego proceder directamente a la verificación canary en el Paso 7.
 
-### Strategy D: Custom deploy hooks
+### Estrategia D: Hooks de deploy personalizados
 
-If CLAUDE.md has a custom deploy status command in the "Custom deploy hooks" section, run that command and check its exit code.
+Si CLAUDE.md tiene un comando personalizado de estado de deploy en la sección "Custom deploy hooks", ejecutar ese comando y verificar su código de salida.
 
-### Common: Timing and failure handling
+### Común: Temporización y manejo de fallos
 
-Record deploy start time. Show progress every 2 minutes: "Deploy in progress... (Xm elapsed)"
+Registrar hora de inicio del deploy. Mostrar progreso cada 2 minutos: "Deploy en progreso... (Xm transcurridos)"
 
-If deploy succeeds (`conclusion` is `success` or health check passes): record deploy duration, continue to Step 7.
+Si el deploy tiene éxito (`conclusion` es `success` o el health check pasa): registrar duración del deploy, continuar al Paso 7.
 
-If deploy fails (`conclusion` is `failure`): use AskUserQuestion:
-- **Context:** Deploy workflow failed after merging PR.
-- **RECOMMENDATION:** Choose A to investigate before reverting.
-- A) Investigate the deploy logs
-- B) Create a revert commit on the base branch
-- C) Continue anyway — the deploy failure might be unrelated
+Si el deploy falla (`conclusion` es `failure`): usar AskUserQuestion:
+- **Contexto:** El flujo de deploy falló después de hacer merge del PR.
+- **RECOMENDACIÓN:** Elegir A para investigar antes de revertir.
+- A) Investigar los logs del deploy
+- B) Crear un commit de revert en la rama base
+- C) Continuar de todos modos — el fallo del deploy podría no estar relacionado
 
-If timeout (20 min): warn "Deploy has been running for 20 minutes" and ask whether to continue waiting or skip verification.
+Si se agota el timeout (20 min): avisar "El deploy lleva 20 minutos ejecutándose" y preguntar si continuar esperando u omitir la verificación.
 
 ---
 
-## Step 7: Canary verification (conditional depth)
+## Paso 7: Verificación canary (profundidad condicional)
 
-Use the diff-scope classification from Step 5 to determine canary depth:
+Usar la clasificación de diff-scope del Paso 5 para determinar la profundidad canary:
 
-| Diff Scope | Canary Depth |
-|------------|-------------|
-| SCOPE_DOCS only | Already skipped in Step 5 |
-| SCOPE_CONFIG only | Smoke: `$B goto` + verify 200 status |
-| SCOPE_BACKEND only | Console errors + perf check |
-| SCOPE_FRONTEND (any) | Full: console + perf + screenshot |
-| Mixed scopes | Full canary |
+| Alcance del Diff | Profundidad Canary |
+|-------------------|-------------------|
+| Solo SCOPE_DOCS | Ya se omitió en el Paso 5 |
+| Solo SCOPE_CONFIG | Smoke: `$B goto` + verificar estado 200 |
+| Solo SCOPE_BACKEND | Errores de consola + comprobación de rendimiento |
+| SCOPE_FRONTEND (cualquiera) | Completa: consola + rendimiento + captura de pantalla |
+| Alcances mixtos | Canary completo |
 
-**Full canary sequence:**
+**Secuencia canary completa:**
 
 ```bash
 $B goto <url>
 ```
 
-Check that the page loaded successfully (200, not an error page).
+Verificar que la página cargó exitosamente (200, no una página de error).
 
 ```bash
 $B console --errors
 ```
 
-Check for critical console errors: lines containing `Error`, `Uncaught`, `Failed to load`, `TypeError`, `ReferenceError`. Ignore warnings.
+Verificar errores críticos de consola: líneas que contengan `Error`, `Uncaught`, `Failed to load`, `TypeError`, `ReferenceError`. Ignorar advertencias.
 
 ```bash
 $B perf
 ```
 
-Check that page load time is under 10 seconds.
+Verificar que el tiempo de carga de la página sea menor a 10 segundos.
 
 ```bash
 $B text
 ```
 
-Verify the page has content (not blank, not a generic error page).
+Verificar que la página tiene contenido (no está en blanco, no es una página de error genérica).
 
 ```bash
 $B snapshot -i -a -o ".gstack/deploy-reports/post-deploy.png"
 ```
 
-Take an annotated screenshot as evidence.
+Tomar una captura de pantalla anotada como evidencia.
 
-**Health assessment:**
-- Page loads successfully with 200 status → PASS
-- No critical console errors → PASS
-- Page has real content (not blank or error screen) → PASS
-- Loads in under 10 seconds → PASS
+**Evaluación de salud:**
+- La página carga exitosamente con estado 200 → PASS
+- Sin errores críticos de consola → PASS
+- La página tiene contenido real (no en blanco ni pantalla de error) → PASS
+- Carga en menos de 10 segundos → PASS
 
-If all pass: mark as HEALTHY, continue to Step 9.
+Si todo pasa: marcar como HEALTHY, continuar al Paso 9.
 
-If any fail: show the evidence (screenshot path, console errors, perf numbers). Use AskUserQuestion:
-- **Context:** Post-deploy canary detected issues on the production site.
-- **RECOMMENDATION:** Choose based on severity — B for critical (site down), A for minor (console errors).
-- A) Expected (deploy in progress, cache clearing) — mark as healthy
-- B) Broken — create a revert commit
-- C) Investigate further (open the site, look at logs)
+Si alguno falla: mostrar la evidencia (ruta de captura de pantalla, errores de consola, números de rendimiento). Usar AskUserQuestion:
+- **Contexto:** La verificación canary post-deploy detectó problemas en el sitio de producción.
+- **RECOMENDACIÓN:** Elegir según la severidad — B para crítico (sitio caído), A para menor (errores de consola).
+- A) Esperado (deploy en progreso, limpieza de caché) — marcar como healthy
+- B) Roto — crear un commit de revert
+- C) Investigar más (abrir el sitio, revisar los logs)
 
 ---
 
-## Step 8: Revert (if needed)
+## Paso 8: Revert (si es necesario)
 
-If the user chose to revert at any point:
+Si el usuario eligió revertir en algún punto:
 
 ```bash
 git fetch origin <base>
@@ -837,83 +837,83 @@ git revert <merge-commit-sha> --no-edit
 git push origin <base>
 ```
 
-If the revert has conflicts: warn "Revert has conflicts — manual resolution needed. The merge commit SHA is `<sha>`. You can run `git revert <sha>` manually."
+Si el revert tiene conflictos: avisar "El revert tiene conflictos — se necesita resolución manual. El SHA del commit de merge es `<sha>`. Puedes ejecutar `git revert <sha>` manualmente."
 
-If the base branch has push protections: warn "Branch protections may prevent direct push — create a revert PR instead: `gh pr create --title 'revert: <original PR title>'`"
+Si la rama base tiene protecciones de push: avisar "Las protecciones de rama pueden impedir push directo — crea un PR de revert en su lugar: `gh pr create --title 'revert: <título del PR original>'`"
 
-After a successful revert, note the revert commit SHA and continue to Step 9 with status REVERTED.
+Después de un revert exitoso, anotar el SHA del commit de revert y continuar al Paso 9 con estado REVERTED.
 
 ---
 
-## Step 9: Deploy report
+## Paso 9: Informe de deploy
 
-Create the deploy report directory:
+Crear el directorio del informe de deploy:
 
 ```bash
 mkdir -p .gstack/deploy-reports
 ```
 
-Produce and display the ASCII summary:
+Producir y mostrar el resumen ASCII:
 
 ```
-LAND & DEPLOY REPORT
-═════════════════════
-PR:           #<number> — <title>
-Branch:       <head-branch> → <base-branch>
-Merged:       <timestamp> (<merge method>)
-Merge SHA:    <sha>
+INFORME DE LAND & DEPLOY
+═════════════════════════
+PR:             #<number> — <título>
+Rama:           <head-branch> → <base-branch>
+Mergeado:       <marca de tiempo> (<método de merge>)
+SHA de Merge:   <sha>
 
-Timing:
-  CI wait:    <duration>
-  Queue:      <duration or "direct merge">
-  Deploy:     <duration or "no workflow detected">
-  Canary:     <duration or "skipped">
-  Total:      <end-to-end duration>
+Temporización:
+  Espera CI:    <duración>
+  Cola:         <duración o "merge directo">
+  Deploy:       <duración o "sin flujo detectado">
+  Canary:       <duración o "omitido">
+  Total:        <duración total>
 
-CI:           <PASSED / SKIPPED>
-Deploy:       <PASSED / FAILED / NO WORKFLOW>
-Verification: <HEALTHY / DEGRADED / SKIPPED / REVERTED>
-  Scope:      <FRONTEND / BACKEND / CONFIG / DOCS / MIXED>
-  Console:    <N errors or "clean">
-  Load time:  <Xs>
-  Screenshot: <path or "none">
+CI:             <PASSED / SKIPPED>
+Deploy:         <PASSED / FAILED / NO WORKFLOW>
+Verificación:   <HEALTHY / DEGRADED / SKIPPED / REVERTED>
+  Alcance:      <FRONTEND / BACKEND / CONFIG / DOCS / MIXED>
+  Consola:      <N errores o "limpia">
+  Tiempo carga: <Xs>
+  Captura:      <ruta o "ninguna">
 
-VERDICT: <DEPLOYED AND VERIFIED / DEPLOYED (UNVERIFIED) / REVERTED>
+VEREDICTO: <DEPLOYED AND VERIFIED / DEPLOYED (UNVERIFIED) / REVERTED>
 ```
 
-Save report to `.gstack/deploy-reports/{date}-pr{number}-deploy.md`.
+Guardar informe en `.gstack/deploy-reports/{date}-pr{number}-deploy.md`.
 
-Log to the review dashboard:
+Registrar en el panel de revisiones:
 
 ```bash
 eval "$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)"
 mkdir -p ~/.gstack/projects/$SLUG
 ```
 
-Write a JSONL entry with timing data:
+Escribir una entrada JSONL con datos de temporización:
 ```json
 {"skill":"land-and-deploy","timestamp":"<ISO>","status":"<SUCCESS/REVERTED>","pr":<number>,"merge_sha":"<sha>","deploy_status":"<HEALTHY/DEGRADED/SKIPPED>","ci_wait_s":<N>,"queue_s":<N>,"deploy_s":<N>,"canary_s":<N>,"total_s":<N>}
 ```
 
 ---
 
-## Step 10: Suggest follow-ups
+## Paso 10: Sugerir seguimientos
 
-After the deploy report, suggest relevant follow-ups:
+Después del informe de deploy, sugerir seguimientos relevantes:
 
-- If a production URL was verified: "Run `/canary <url> --duration 10m` for extended monitoring."
-- If performance data was collected: "Run `/benchmark <url>` for a deep performance audit."
-- "Run `/document-release` to update project documentation."
+- Si se verificó una URL de producción: "Ejecuta `/canary <url> --duration 10m` para monitoreo extendido."
+- Si se recopilaron datos de rendimiento: "Ejecuta `/benchmark <url>` para una auditoría profunda de rendimiento."
+- "Ejecuta `/document-release` para actualizar la documentación del proyecto."
 
 ---
 
-## Important Rules
+## Reglas importantes
 
-- **Never force push.** Use `gh pr merge` which is safe.
-- **Never skip CI.** If checks are failing, stop.
-- **Auto-detect everything.** PR number, merge method, deploy strategy, project type. Only ask when information genuinely can't be inferred.
-- **Poll with backoff.** Don't hammer GitHub API. 30-second intervals for CI/deploy, with reasonable timeouts.
-- **Revert is always an option.** At every failure point, offer revert as an escape hatch.
-- **Single-pass verification, not continuous monitoring.** `/land-and-deploy` checks once. `/canary` does the extended monitoring loop.
-- **Clean up.** Delete the feature branch after merge (via `--delete-branch`).
-- **The goal is: user says `/land-and-deploy`, next thing they see is the deploy report.**
+- **Nunca hacer force push.** Usar `gh pr merge` que es seguro.
+- **Nunca saltarse el CI.** Si los checks están fallando, detenerse.
+- **Detectar todo automáticamente.** Número de PR, método de merge, estrategia de deploy, tipo de proyecto. Solo preguntar cuando la información genuinamente no se pueda inferir.
+- **Consultar con espera progresiva.** No bombardear la API de GitHub. Intervalos de 30 segundos para CI/deploy, con timeouts razonables.
+- **Revert siempre es una opción.** En cada punto de fallo, ofrecer revert como vía de escape.
+- **Verificación de un solo paso, no monitoreo continuo.** `/land-and-deploy` verifica una vez. `/canary` hace el ciclo de monitoreo extendido.
+- **Limpiar.** Eliminar la rama de feature después del merge (mediante `--delete-branch`).
+- **El objetivo es: el usuario dice `/land-and-deploy`, lo siguiente que ve es el informe de deploy.**

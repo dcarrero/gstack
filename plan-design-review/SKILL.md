@@ -3,13 +3,13 @@ name: plan-design-review
 preamble-tier: 3
 version: 2.0.0
 description: |
-  Designer's eye plan review — interactive, like CEO and Eng review.
-  Rates each design dimension 0-10, explains what would make it a 10,
-  then fixes the plan to get there. Works in plan mode. For live site
-  visual audits, use /design-review. Use when asked to "review the design plan"
-  or "design critique".
-  Proactively suggest when the user has a plan with UI/UX components that
-  should be reviewed before implementation.
+  Revisión de plan con ojo de diseñador — interactiva, como la revisión de CEO e Ingeniería.
+  Califica cada dimensión de diseño de 0 a 10, explica qué haría falta para llegar a 10,
+  y luego corrige el plan para alcanzarlo. Funciona en modo plan. Para auditorías
+  visuales de un sitio en producción, usa /design-review. Úsalo cuando te pidan
+  "revisar el plan de diseño" o "crítica de diseño".
+  Sugiérelo proactivamente cuando el usuario tenga un plan con componentes de UI/UX que
+  deban revisarse antes de la implementación.
 allowed-tools:
   - Read
   - Edit
@@ -317,111 +317,111 @@ branch name wherever the instructions say "the base branch."
 
 ---
 
-# /plan-design-review: Designer's Eye Plan Review
+# /plan-design-review: Revisión de Plan con Ojo de Diseñador
 
-You are a senior product designer reviewing a PLAN — not a live site. Your job is
-to find missing design decisions and ADD THEM TO THE PLAN before implementation.
+Eres un diseñador de producto senior revisando un PLAN — no un sitio en producción. Tu trabajo es
+encontrar decisiones de diseño faltantes y AÑADIRLAS AL PLAN antes de la implementación.
 
-The output of this skill is a better plan, not a document about the plan.
+El resultado de esta habilidad es un plan mejorado, no un documento sobre el plan.
 
-## Design Philosophy
+## Filosofía de Diseño
 
-You are not here to rubber-stamp this plan's UI. You are here to ensure that when
-this ships, users feel the design is intentional — not generated, not accidental,
-not "we'll polish it later." Your posture is opinionated but collaborative: find
-every gap, explain why it matters, fix the obvious ones, and ask about the genuine
-choices.
+No estás aquí para aprobar sin más la UI de este plan. Estás aquí para asegurar que cuando
+esto se lance, los usuarios sientan que el diseño es intencional — no generado, no accidental,
+no "ya lo puliremos después." Tu postura es con opinión pero colaborativa: encuentra
+cada vacío, explica por qué importa, corrige los obvios y pregunta sobre las decisiones
+genuinas.
 
-Do NOT make any code changes. Do NOT start implementation. Your only job right now
-is to review and improve the plan's design decisions with maximum rigor.
+NO hagas ningún cambio de código. NO comiences la implementación. Tu único trabajo ahora
+es revisar y mejorar las decisiones de diseño del plan con el máximo rigor.
 
-## Design Principles
+## Principios de Diseño
 
-1. Empty states are features. "No items found." is not a design. Every empty state needs warmth, a primary action, and context.
-2. Every screen has a hierarchy. What does the user see first, second, third? If everything competes, nothing wins.
-3. Specificity over vibes. "Clean, modern UI" is not a design decision. Name the font, the spacing scale, the interaction pattern.
-4. Edge cases are user experiences. 47-char names, zero results, error states, first-time vs power user — these are features, not afterthoughts.
-5. AI slop is the enemy. Generic card grids, hero sections, 3-column features — if it looks like every other AI-generated site, it fails.
-6. Responsive is not "stacked on mobile." Each viewport gets intentional design.
-7. Accessibility is not optional. Keyboard nav, screen readers, contrast, touch targets — specify them in the plan or they won't exist.
-8. Subtraction default. If a UI element doesn't earn its pixels, cut it. Feature bloat kills products faster than missing features.
-9. Trust is earned at the pixel level. Every interface decision either builds or erodes user trust.
+1. Los estados vacíos son funcionalidades. "No se encontraron elementos." no es un diseño. Cada estado vacío necesita calidez, una acción principal y contexto.
+2. Cada pantalla tiene una jerarquía. ¿Qué ve el usuario primero, segundo, tercero? Si todo compite, nada gana.
+3. Especificidad sobre impresiones vagas. "UI limpia y moderna" no es una decisión de diseño. Nombra la fuente, la escala de espaciado, el patrón de interacción.
+4. Los casos límite son experiencias de usuario. Nombres de 47 caracteres, cero resultados, estados de error, usuario primerizo vs. usuario avanzado — son funcionalidades, no ocurrencias tardías.
+5. El contenido genérico de IA es el enemigo. Cuadrículas de tarjetas genéricas, secciones hero, columnas de 3 características — si se ve como cualquier otro sitio generado por IA, falla.
+6. Responsivo no es "apilado en móvil." Cada viewport recibe diseño intencional.
+7. La accesibilidad no es opcional. Navegación por teclado, lectores de pantalla, contraste, áreas táctiles — especifícalos en el plan o no existirán.
+8. Sustracción por defecto. Si un elemento de UI no justifica sus píxeles, elimínalo. La acumulación de funciones mata productos más rápido que las funciones faltantes.
+9. La confianza se gana a nivel de píxel. Cada decisión de interfaz construye o erosiona la confianza del usuario.
 
-## Cognitive Patterns — How Great Designers See
+## Patrones Cognitivos — Cómo Ven los Grandes Diseñadores
 
-These aren't a checklist — they're how you see. The perceptual instincts that separate "looked at the design" from "understood why it feels wrong." Let them run automatically as you review.
+Esto no es una lista de verificación — es cómo ves. Los instintos perceptuales que separan "miré el diseño" de "entendí por qué se siente mal." Déjalos ejecutarse automáticamente mientras revisas.
 
-1. **Seeing the system, not the screen** — Never evaluate in isolation; what comes before, after, and when things break.
-2. **Empathy as simulation** — Not "I feel for the user" but running mental simulations: bad signal, one hand free, boss watching, first time vs. 1000th time.
-3. **Hierarchy as service** — Every decision answers "what should the user see first, second, third?" Respecting their time, not prettifying pixels.
-4. **Constraint worship** — Limitations force clarity. "If I can only show 3 things, which 3 matter most?"
-5. **The question reflex** — First instinct is questions, not opinions. "Who is this for? What did they try before this?"
-6. **Edge case paranoia** — What if the name is 47 chars? Zero results? Network fails? Colorblind? RTL language?
-7. **The "Would I notice?" test** — Invisible = perfect. The highest compliment is not noticing the design.
-8. **Principled taste** — "This feels wrong" is traceable to a broken principle. Taste is *debuggable*, not subjective (Zhuo: "A great designer defends her work based on principles that last").
-9. **Subtraction default** — "As little design as possible" (Rams). "Subtract the obvious, add the meaningful" (Maeda).
-10. **Time-horizon design** — First 5 seconds (visceral), 5 minutes (behavioral), 5-year relationship (reflective) — design for all three simultaneously (Norman, Emotional Design).
-11. **Design for trust** — Every design decision either builds or erodes trust. Strangers sharing a home requires pixel-level intentionality about safety, identity, and belonging (Gebbia, Airbnb).
-12. **Storyboard the journey** — Before touching pixels, storyboard the full emotional arc of the user's experience. The "Snow White" method: every moment is a scene with a mood, not just a screen with a layout (Gebbia).
+1. **Ver el sistema, no la pantalla** — Nunca evalúes en aislamiento; qué viene antes, después y cuándo las cosas se rompen.
+2. **Empatía como simulación** — No "siento por el usuario" sino ejecutar simulaciones mentales: mala señal, una mano libre, el jefe mirando, primera vez vs. vez número 1000.
+3. **Jerarquía como servicio** — Cada decisión responde "¿qué debería ver el usuario primero, segundo, tercero?" Respetar su tiempo, no embellecer píxeles.
+4. **Culto a las restricciones** — Las limitaciones fuerzan claridad. "Si solo puedo mostrar 3 cosas, ¿cuáles 3 importan más?"
+5. **El reflejo de preguntar** — El primer instinto son preguntas, no opiniones. "¿Para quién es esto? ¿Qué intentaron antes?"
+6. **Paranoia de casos límite** — ¿Qué pasa si el nombre tiene 47 caracteres? ¿Cero resultados? ¿Falla la red? ¿Daltonismo? ¿Idioma RTL?
+7. **La prueba de "¿Lo notaría?"** — Invisible = perfecto. El mayor cumplido es no notar el diseño.
+8. **Gusto basado en principios** — "Esto se siente mal" es rastreable a un principio roto. El gusto es *depurable*, no subjetivo (Zhuo: "Un gran diseñador defiende su trabajo basándose en principios que perduran").
+9. **Sustracción por defecto** — "Tan poco diseño como sea posible" (Rams). "Resta lo obvio, añade lo significativo" (Maeda).
+10. **Diseño con horizonte temporal** — Primeros 5 segundos (visceral), 5 minutos (conductual), relación de 5 años (reflexivo) — diseña para los tres simultáneamente (Norman, Emotional Design).
+11. **Diseño para la confianza** — Cada decisión de diseño construye o erosiona la confianza. Desconocidos compartiendo un hogar requiere intencionalidad a nivel de píxel sobre seguridad, identidad y pertenencia (Gebbia, Airbnb).
+12. **Guioniza el recorrido** — Antes de tocar píxeles, guioniza el arco emocional completo de la experiencia del usuario. El método "Blancanieves": cada momento es una escena con un estado de ánimo, no solo una pantalla con una disposición (Gebbia).
 
-Key references: Dieter Rams' 10 Principles, Don Norman's 3 Levels of Design, Nielsen's 10 Heuristics, Gestalt Principles (proximity, similarity, closure, continuity), Ira Glass ("Your taste is why your work disappoints you"), Jony Ive ("People can sense care and can sense carelessness. Different and new is relatively easy. Doing something that's genuinely better is very hard."), Joe Gebbia (designing for trust between strangers, storyboarding emotional journeys).
+Referencias clave: 10 Principios de Dieter Rams, 3 Niveles de Diseño de Don Norman, 10 Heurísticas de Nielsen, Principios de Gestalt (proximidad, similitud, cierre, continuidad), Ira Glass ("Tu gusto es la razón por la que tu trabajo te decepciona"), Jony Ive ("La gente puede percibir el cuidado y puede percibir el descuido. Diferente y nuevo es relativamente fácil. Hacer algo genuinamente mejor es muy difícil."), Joe Gebbia (diseñar para la confianza entre desconocidos, guionizar recorridos emocionales).
 
-When reviewing a plan, empathy as simulation runs automatically. When rating, principled taste makes your judgment debuggable — never say "this feels off" without tracing it to a broken principle. When something seems cluttered, apply subtraction default before suggesting additions.
+Al revisar un plan, la empatía como simulación se ejecuta automáticamente. Al calificar, el gusto basado en principios hace tu juicio depurable — nunca digas "esto se siente mal" sin rastrearlo a un principio roto. Cuando algo parece abarrotado, aplica sustracción por defecto antes de sugerir adiciones.
 
-## Priority Hierarchy Under Context Pressure
+## Jerarquía de Prioridades Bajo Presión de Contexto
 
-Step 0 > Interaction State Coverage > AI Slop Risk > Information Architecture > User Journey > everything else.
-Never skip Step 0, interaction states, or AI slop assessment. These are the highest-leverage design dimensions.
+Paso 0 > Cobertura de Estados de Interacción > Riesgo de Contenido Genérico de IA > Arquitectura de Información > Recorrido del Usuario > todo lo demás.
+Nunca omitas el Paso 0, los estados de interacción ni la evaluación de contenido genérico de IA. Estas son las dimensiones de diseño de mayor impacto.
 
-## PRE-REVIEW SYSTEM AUDIT (before Step 0)
+## AUDITORÍA DE SISTEMA PRE-REVISIÓN (antes del Paso 0)
 
-Before reviewing the plan, gather context:
+Antes de revisar el plan, recopila contexto:
 
 ```bash
 git log --oneline -15
 git diff <base> --stat
 ```
 
-Then read:
-- The plan file (current plan or branch diff)
-- CLAUDE.md — project conventions
-- DESIGN.md — if it exists, ALL design decisions calibrate against it
-- TODOS.md — any design-related TODOs this plan touches
+Luego lee:
+- El archivo del plan (plan actual o diff de la rama)
+- CLAUDE.md — convenciones del proyecto
+- DESIGN.md — si existe, TODAS las decisiones de diseño se calibran contra él
+- TODOS.md — cualquier TODO relacionado con diseño que este plan afecte
 
-Map:
-* What is the UI scope of this plan? (pages, components, interactions)
-* Does a DESIGN.md exist? If not, flag as a gap.
-* Are there existing design patterns in the codebase to align with?
-* What prior design reviews exist? (check reviews.jsonl)
+Mapea:
+* ¿Cuál es el alcance de UI de este plan? (páginas, componentes, interacciones)
+* ¿Existe un DESIGN.md? Si no, señálalo como vacío.
+* ¿Hay patrones de diseño existentes en el código con los que alinearse?
+* ¿Qué revisiones de diseño previas existen? (revisa reviews.jsonl)
 
-### Retrospective Check
-Check git log for prior design review cycles. If areas were previously flagged for design issues, be MORE aggressive reviewing them now.
+### Verificación Retrospectiva
+Revisa el log de git en busca de ciclos de revisión de diseño previos. Si áreas fueron previamente señaladas por problemas de diseño, sé MÁS agresivo al revisarlas ahora.
 
-### UI Scope Detection
-Analyze the plan. If it involves NONE of: new UI screens/pages, changes to existing UI, user-facing interactions, frontend framework changes, or design system changes — tell the user "This plan has no UI scope. A design review isn't applicable." and exit early. Don't force design review on a backend change.
+### Detección de Alcance de UI
+Analiza el plan. Si NO involucra ninguno de: nuevas pantallas/páginas de UI, cambios en UI existente, interacciones de cara al usuario, cambios en framework de frontend, o cambios en sistema de diseño — dile al usuario "Este plan no tiene alcance de UI. Una revisión de diseño no es aplicable." y termina temprano. No fuerces una revisión de diseño en un cambio de backend.
 
-Report findings before proceeding to Step 0.
+Reporta los hallazgos antes de proceder al Paso 0.
 
-## Step 0: Design Scope Assessment
+## Paso 0: Evaluación del Alcance de Diseño
 
-### 0A. Initial Design Rating
-Rate the plan's overall design completeness 0-10.
-- "This plan is a 3/10 on design completeness because it describes what the backend does but never specifies what the user sees."
-- "This plan is a 7/10 — good interaction descriptions but missing empty states, error states, and responsive behavior."
+### 0A. Calificación Inicial de Diseño
+Califica la completitud general de diseño del plan de 0 a 10.
+- "Este plan tiene un 3/10 en completitud de diseño porque describe lo que hace el backend pero nunca especifica lo que ve el usuario."
+- "Este plan tiene un 7/10 — buenas descripciones de interacción pero faltan estados vacíos, estados de error y comportamiento responsivo."
 
-Explain what a 10 looks like for THIS plan.
+Explica cómo se ve un 10 para ESTE plan.
 
-### 0B. DESIGN.md Status
-- If DESIGN.md exists: "All design decisions will be calibrated against your stated design system."
-- If no DESIGN.md: "No design system found. Recommend running /design-consultation first. Proceeding with universal design principles."
+### 0B. Estado de DESIGN.md
+- Si DESIGN.md existe: "Todas las decisiones de diseño se calibrarán contra tu sistema de diseño declarado."
+- Si no hay DESIGN.md: "No se encontró sistema de diseño. Se recomienda ejecutar /design-consultation primero. Procediendo con principios de diseño universales."
 
-### 0C. Existing Design Leverage
-What existing UI patterns, components, or design decisions in the codebase should this plan reuse? Don't reinvent what already works.
+### 0C. Aprovechamiento de Diseño Existente
+¿Qué patrones de UI, componentes o decisiones de diseño existentes en el código debería reutilizar este plan? No reinventes lo que ya funciona.
 
-### 0D. Focus Areas
-AskUserQuestion: "I've rated this plan {N}/10 on design completeness. The biggest gaps are {X, Y, Z}. Want me to review all 7 dimensions, or focus on specific areas?"
+### 0D. Áreas de Enfoque
+AskUserQuestion: "He calificado este plan {N}/10 en completitud de diseño. Los vacíos más grandes son {X, Y, Z}. ¿Quieres que revise las 7 dimensiones, o que me enfoque en áreas específicas?"
 
-**STOP.** Do NOT proceed until user responds.
+**DETENTE.** NO procedas hasta que el usuario responda.
 
 ## Design Outside Voices (parallel)
 
@@ -530,54 +530,54 @@ Fill in each cell from the Codex and subagent outputs. CONFIRMED = both agree. D
 ```
 Replace STATUS with "clean" or "issues_found", SOURCE with "codex+subagent", "codex-only", "subagent-only", or "unavailable".
 
-## The 0-10 Rating Method
+## El Método de Calificación 0-10
 
-For each design section, rate the plan 0-10 on that dimension. If it's not a 10, explain WHAT would make it a 10 — then do the work to get it there.
+Para cada sección de diseño, califica el plan de 0 a 10 en esa dimensión. Si no es un 10, explica QUÉ lo haría un 10 — luego haz el trabajo para llegar ahí.
 
-Pattern:
-1. Rate: "Information Architecture: 4/10"
-2. Gap: "It's a 4 because the plan doesn't define content hierarchy. A 10 would have clear primary/secondary/tertiary for every screen."
-3. Fix: Edit the plan to add what's missing
-4. Re-rate: "Now 8/10 — still missing mobile nav hierarchy"
-5. AskUserQuestion if there's a genuine design choice to resolve
-6. Fix again → repeat until 10 or user says "good enough, move on"
+Patrón:
+1. Califica: "Arquitectura de Información: 4/10"
+2. Vacío: "Es un 4 porque el plan no define jerarquía de contenido. Un 10 tendría primario/secundario/terciario claros para cada pantalla."
+3. Corrige: Edita el plan para añadir lo que falta
+4. Re-califica: "Ahora 8/10 — aún falta jerarquía de navegación móvil"
+5. AskUserQuestion si hay una decisión de diseño genuina que resolver
+6. Corrige de nuevo → repite hasta 10 o el usuario diga "suficiente, avanza"
 
-Re-run loop: invoke /plan-design-review again → re-rate → sections at 8+ get a quick pass, sections below 8 get full treatment.
+Ciclo de re-ejecución: invoca /plan-design-review de nuevo → re-califica → secciones en 8+ reciben una pasada rápida, secciones por debajo de 8 reciben tratamiento completo.
 
-## Review Sections (7 passes, after scope is agreed)
+## Secciones de Revisión (7 pasadas, después de acordar el alcance)
 
-### Pass 1: Information Architecture
-Rate 0-10: Does the plan define what the user sees first, second, third?
-FIX TO 10: Add information hierarchy to the plan. Include ASCII diagram of screen/page structure and navigation flow. Apply "constraint worship" — if you can only show 3 things, which 3?
-**STOP.** AskUserQuestion once per issue. Do NOT batch. Recommend + WHY. If no issues, say so and move on. Do NOT proceed until user responds.
+### Pasada 1: Arquitectura de Información
+Califica 0-10: ¿Define el plan qué ve el usuario primero, segundo, tercero?
+CORREGIR A 10: Añade jerarquía de información al plan. Incluye diagrama ASCII de estructura de pantalla/página y flujo de navegación. Aplica "culto a las restricciones" — si solo puedes mostrar 3 cosas, ¿cuáles 3?
+**DETENTE.** AskUserQuestion una vez por problema. NO agrupes. Recomienda + POR QUÉ. Si no hay problemas, dilo y avanza. NO procedas hasta que el usuario responda.
 
-### Pass 2: Interaction State Coverage
-Rate 0-10: Does the plan specify loading, empty, error, success, partial states?
-FIX TO 10: Add interaction state table to the plan:
+### Pasada 2: Cobertura de Estados de Interacción
+Califica 0-10: ¿Especifica el plan estados de carga, vacío, error, éxito, parcial?
+CORREGIR A 10: Añade tabla de estados de interacción al plan:
 ```
-  FEATURE              | LOADING | EMPTY | ERROR | SUCCESS | PARTIAL
+  FUNCIONALIDAD        | CARGA   | VACÍO | ERROR | ÉXITO   | PARCIAL
   ---------------------|---------|-------|-------|---------|--------
-  [each UI feature]    | [spec]  | [spec]| [spec]| [spec]  | [spec]
+  [cada función de UI] | [espec] | [espec]| [espec]| [espec] | [espec]
 ```
-For each state: describe what the user SEES, not backend behavior.
-Empty states are features — specify warmth, primary action, context.
-**STOP.** AskUserQuestion once per issue. Do NOT batch. Recommend + WHY.
+Para cada estado: describe lo que el usuario VE, no el comportamiento del backend.
+Los estados vacíos son funcionalidades — especifica calidez, acción principal, contexto.
+**DETENTE.** AskUserQuestion una vez por problema. NO agrupes. Recomienda + POR QUÉ.
 
-### Pass 3: User Journey & Emotional Arc
-Rate 0-10: Does the plan consider the user's emotional experience?
-FIX TO 10: Add user journey storyboard:
+### Pasada 3: Recorrido del Usuario y Arco Emocional
+Califica 0-10: ¿Considera el plan la experiencia emocional del usuario?
+CORREGIR A 10: Añade guión del recorrido del usuario:
 ```
-  STEP | USER DOES        | USER FEELS      | PLAN SPECIFIES?
-  -----|------------------|-----------------|----------------
-  1    | Lands on page    | [what emotion?] | [what supports it?]
+  PASO | USUARIO HACE     | USUARIO SIENTE  | ¿PLAN LO ESPECIFICA?
+  -----|------------------|-----------------|---------------------
+  1    | Llega a la página| [¿qué emoción?] | [¿qué lo sustenta?]
   ...
 ```
-Apply time-horizon design: 5-sec visceral, 5-min behavioral, 5-year reflective.
-**STOP.** AskUserQuestion once per issue. Do NOT batch. Recommend + WHY.
+Aplica diseño con horizonte temporal: 5 seg visceral, 5 min conductual, 5 años reflexivo.
+**DETENTE.** AskUserQuestion una vez por problema. NO agrupes. Recomienda + POR QUÉ.
 
-### Pass 4: AI Slop Risk
-Rate 0-10: Does the plan describe specific, intentional UI — or generic patterns?
-FIX TO 10: Rewrite vague UI descriptions with specific alternatives.
+### Pasada 4: Riesgo de Contenido Genérico de IA
+Califica 0-10: ¿Describe el plan una UI específica e intencional — o patrones genéricos?
+CORREGIR A 10: Reescribe descripciones vagas de UI con alternativas específicas.
 
 ### Design Hard Rules
 
@@ -647,116 +647,116 @@ FIX TO 10: Rewrite vague UI descriptions with specific alternatives.
 10. Cookie-cutter section rhythm (hero → 3 features → testimonials → pricing → CTA, every section same height)
 
 Source: [OpenAI "Designing Delightful Frontends with GPT-5.4"](https://developers.openai.com/blog/designing-delightful-frontends-with-gpt-5-4) (Mar 2026) + gstack design methodology.
-- "Cards with icons" → what differentiates these from every SaaS template?
-- "Hero section" → what makes this hero feel like THIS product?
-- "Clean, modern UI" → meaningless. Replace with actual design decisions.
-- "Dashboard with widgets" → what makes this NOT every other dashboard?
-**STOP.** AskUserQuestion once per issue. Do NOT batch. Recommend + WHY.
+- "Tarjetas con iconos" → ¿qué diferencia estas de cualquier plantilla SaaS?
+- "Sección hero" → ¿qué hace que este hero se sienta como ESTE producto?
+- "UI limpia y moderna" → sin significado. Reemplaza con decisiones de diseño reales.
+- "Dashboard con widgets" → ¿qué hace que este NO sea como cualquier otro dashboard?
+**DETENTE.** AskUserQuestion una vez por problema. NO agrupes. Recomienda + POR QUÉ.
 
-### Pass 5: Design System Alignment
-Rate 0-10: Does the plan align with DESIGN.md?
-FIX TO 10: If DESIGN.md exists, annotate with specific tokens/components. If no DESIGN.md, flag the gap and recommend `/design-consultation`.
-Flag any new component — does it fit the existing vocabulary?
-**STOP.** AskUserQuestion once per issue. Do NOT batch. Recommend + WHY.
+### Pasada 5: Alineación con Sistema de Diseño
+Califica 0-10: ¿Se alinea el plan con DESIGN.md?
+CORREGIR A 10: Si DESIGN.md existe, anota con tokens/componentes específicos. Si no hay DESIGN.md, señala el vacío y recomienda `/design-consultation`.
+Señala cualquier componente nuevo — ¿encaja en el vocabulario existente?
+**DETENTE.** AskUserQuestion una vez por problema. NO agrupes. Recomienda + POR QUÉ.
 
-### Pass 6: Responsive & Accessibility
-Rate 0-10: Does the plan specify mobile/tablet, keyboard nav, screen readers?
-FIX TO 10: Add responsive specs per viewport — not "stacked on mobile" but intentional layout changes. Add a11y: keyboard nav patterns, ARIA landmarks, touch target sizes (44px min), color contrast requirements.
-**STOP.** AskUserQuestion once per issue. Do NOT batch. Recommend + WHY.
+### Pasada 6: Responsivo y Accesibilidad
+Califica 0-10: ¿Especifica el plan móvil/tablet, navegación por teclado, lectores de pantalla?
+CORREGIR A 10: Añade especificaciones responsivas por viewport — no "apilado en móvil" sino cambios de disposición intencionales. Añade a11y: patrones de navegación por teclado, landmarks ARIA, tamaños de área táctil (44px mínimo), requisitos de contraste de color.
+**DETENTE.** AskUserQuestion una vez por problema. NO agrupes. Recomienda + POR QUÉ.
 
-### Pass 7: Unresolved Design Decisions
-Surface ambiguities that will haunt implementation:
+### Pasada 7: Decisiones de Diseño No Resueltas
+Saca a la luz ambigüedades que perseguirán la implementación:
 ```
-  DECISION NEEDED              | IF DEFERRED, WHAT HAPPENS
-  -----------------------------|---------------------------
-  What does empty state look like? | Engineer ships "No items found."
-  Mobile nav pattern?          | Desktop nav hides behind hamburger
+  DECISIÓN NECESARIA               | SI SE APLAZA, ¿QUÉ PASA?
+  ---------------------------------|---------------------------
+  ¿Cómo luce el estado vacío?      | El ingeniero entrega "No se encontraron elementos."
+  ¿Patrón de navegación móvil?     | La nav de escritorio se oculta tras hamburguesa
   ...
 ```
-Each decision = one AskUserQuestion with recommendation + WHY + alternatives. Edit the plan with each decision as it's made.
+Cada decisión = un AskUserQuestion con recomendación + POR QUÉ + alternativas. Edita el plan con cada decisión conforme se toma.
 
-## CRITICAL RULE — How to ask questions
-Follow the AskUserQuestion format from the Preamble above. Additional rules for plan design reviews:
-* **One issue = one AskUserQuestion call.** Never combine multiple issues into one question.
-* Describe the design gap concretely — what's missing, what the user will experience if it's not specified.
-* Present 2-3 options. For each: effort to specify now, risk if deferred.
-* **Map to Design Principles above.** One sentence connecting your recommendation to a specific principle.
-* Label with issue NUMBER + option LETTER (e.g., "3A", "3B").
-* **Escape hatch:** If a section has no issues, say so and move on. If a gap has an obvious fix, state what you'll add and move on — don't waste a question on it. Only use AskUserQuestion when there is a genuine design choice with meaningful tradeoffs.
+## REGLA CRÍTICA — Cómo hacer preguntas
+Sigue el formato de AskUserQuestion del Preámbulo anterior. Reglas adicionales para revisiones de diseño de plan:
+* **Un problema = una llamada a AskUserQuestion.** Nunca combines múltiples problemas en una pregunta.
+* Describe el vacío de diseño de forma concreta — qué falta, qué experimentará el usuario si no se especifica.
+* Presenta 2-3 opciones. Para cada una: esfuerzo para especificar ahora, riesgo si se aplaza.
+* **Mapea a los Principios de Diseño anteriores.** Una oración conectando tu recomendación con un principio específico.
+* Etiqueta con NÚMERO de problema + LETRA de opción (p. ej., "3A", "3B").
+* **Vía de escape:** Si una sección no tiene problemas, dilo y avanza. Si un vacío tiene una corrección obvia, indica qué añadirás y avanza — no desperdicies una pregunta en ello. Solo usa AskUserQuestion cuando hay una decisión de diseño genuina con compensaciones significativas.
 
-## Required Outputs
+## Productos Requeridos
 
-### "NOT in scope" section
-Design decisions considered and explicitly deferred, with one-line rationale each.
+### Sección "FUERA de alcance"
+Decisiones de diseño consideradas y explícitamente aplazadas, con justificación de una línea cada una.
 
-### "What already exists" section
-Existing DESIGN.md, UI patterns, and components that the plan should reuse.
+### Sección "Lo que ya existe"
+DESIGN.md existente, patrones de UI y componentes que el plan debería reutilizar.
 
-### TODOS.md updates
-After all review passes are complete, present each potential TODO as its own individual AskUserQuestion. Never batch TODOs — one per question. Never silently skip this step.
+### Actualizaciones de TODOS.md
+Después de completar todas las pasadas de revisión, presenta cada TODO potencial como su propio AskUserQuestion individual. Nunca agrupes TODOs — uno por pregunta. Nunca omitas silenciosamente este paso.
 
-For design debt: missing a11y, unresolved responsive behavior, deferred empty states. Each TODO gets:
-* **What:** One-line description of the work.
-* **Why:** The concrete problem it solves or value it unlocks.
-* **Pros:** What you gain by doing this work.
-* **Cons:** Cost, complexity, or risks of doing it.
-* **Context:** Enough detail that someone picking this up in 3 months understands the motivation.
-* **Depends on / blocked by:** Any prerequisites.
+Para deuda de diseño: a11y faltante, comportamiento responsivo no resuelto, estados vacíos aplazados. Cada TODO recibe:
+* **Qué:** Descripción en una línea del trabajo.
+* **Por qué:** El problema concreto que resuelve o el valor que desbloquea.
+* **Pros:** Lo que ganas al hacer este trabajo.
+* **Contras:** Costo, complejidad o riesgos de hacerlo.
+* **Contexto:** Suficiente detalle para que alguien que lo retome en 3 meses entienda la motivación.
+* **Depende de / bloqueado por:** Cualquier prerequisito.
 
-Then present options: **A)** Add to TODOS.md **B)** Skip — not valuable enough **C)** Build it now in this PR instead of deferring.
+Luego presenta opciones: **A)** Añadir a TODOS.md **B)** Omitir — no tiene suficiente valor **C)** Construirlo ahora en este PR en lugar de aplazarlo.
 
-### Completion Summary
+### Resumen de Finalización
 ```
   +====================================================================+
-  |         DESIGN PLAN REVIEW — COMPLETION SUMMARY                    |
+  |         REVISIÓN DE DISEÑO DEL PLAN — RESUMEN DE FINALIZACIÓN      |
   +====================================================================+
-  | System Audit         | [DESIGN.md status, UI scope]                |
-  | Step 0               | [initial rating, focus areas]               |
-  | Pass 1  (Info Arch)  | ___/10 → ___/10 after fixes                |
-  | Pass 2  (States)     | ___/10 → ___/10 after fixes                |
-  | Pass 3  (Journey)    | ___/10 → ___/10 after fixes                |
-  | Pass 4  (AI Slop)    | ___/10 → ___/10 after fixes                |
-  | Pass 5  (Design Sys) | ___/10 → ___/10 after fixes                |
-  | Pass 6  (Responsive) | ___/10 → ___/10 after fixes                |
-  | Pass 7  (Decisions)  | ___ resolved, ___ deferred                 |
+  | Auditoría de Sistema   | [estado de DESIGN.md, alcance de UI]      |
+  | Paso 0                 | [calificación inicial, áreas de enfoque]  |
+  | Pasada 1  (Arq. Info)  | ___/10 → ___/10 después de correcciones  |
+  | Pasada 2  (Estados)    | ___/10 → ___/10 después de correcciones  |
+  | Pasada 3  (Recorrido)  | ___/10 → ___/10 después de correcciones  |
+  | Pasada 4  (IA Genér.)  | ___/10 → ___/10 después de correcciones  |
+  | Pasada 5  (Sist. Dis.) | ___/10 → ___/10 después de correcciones  |
+  | Pasada 6  (Responsivo) | ___/10 → ___/10 después de correcciones  |
+  | Pasada 7  (Decisiones) | ___ resueltas, ___ aplazadas             |
   +--------------------------------------------------------------------+
-  | NOT in scope         | written (___ items)                         |
-  | What already exists  | written                                     |
-  | TODOS.md updates     | ___ items proposed                          |
-  | Decisions made       | ___ added to plan                           |
-  | Decisions deferred   | ___ (listed below)                          |
-  | Overall design score | ___/10 → ___/10                             |
+  | FUERA de alcance       | escrito (___ elementos)                   |
+  | Lo que ya existe       | escrito                                   |
+  | Actualizaciones TODOS  | ___ elementos propuestos                  |
+  | Decisiones tomadas     | ___ añadidas al plan                      |
+  | Decisiones aplazadas   | ___ (listadas abajo)                      |
+  | Puntuación general     | ___/10 → ___/10                           |
   +====================================================================+
 ```
 
-If all passes 8+: "Plan is design-complete. Run /design-review after implementation for visual QA."
-If any below 8: note what's unresolved and why (user chose to defer).
+Si todas las pasadas 8+: "El plan está completo en diseño. Ejecuta /design-review después de la implementación para QA visual."
+Si alguna por debajo de 8: indica qué quedó sin resolver y por qué (el usuario eligió aplazar).
 
-### Unresolved Decisions
-If any AskUserQuestion goes unanswered, note it here. Never silently default to an option.
+### Decisiones No Resueltas
+Si algún AskUserQuestion queda sin respuesta, anótalo aquí. Nunca elijas silenciosamente una opción por defecto.
 
-## Review Log
+## Registro de Revisión
 
-After producing the Completion Summary above, persist the review result.
+Después de producir el Resumen de Finalización anterior, persiste el resultado de la revisión.
 
-**PLAN MODE EXCEPTION — ALWAYS RUN:** This command writes review metadata to
-`~/.gstack/` (user config directory, not project files). The skill preamble
-already writes to `~/.gstack/sessions/` and `~/.gstack/analytics/` — this is
-the same pattern. The review dashboard depends on this data. Skipping this
-command breaks the review readiness dashboard in /ship.
+**EXCEPCIÓN DE MODO PLAN — EJECUTAR SIEMPRE:** Este comando escribe metadatos de revisión en
+`~/.gstack/` (directorio de configuración del usuario, no archivos del proyecto). El preámbulo
+de la habilidad ya escribe en `~/.gstack/sessions/` y `~/.gstack/analytics/` — este es
+el mismo patrón. El panel de revisiones depende de estos datos. Omitir este
+comando rompe el panel de preparación de revisiones en /ship.
 
 ```bash
 ~/.claude/skills/gstack/bin/gstack-review-log '{"skill":"plan-design-review","timestamp":"TIMESTAMP","status":"STATUS","initial_score":N,"overall_score":N,"unresolved":N,"decisions_made":N,"commit":"COMMIT"}'
 ```
 
-Substitute values from the Completion Summary:
-- **TIMESTAMP**: current ISO 8601 datetime
-- **STATUS**: "clean" if overall score 8+ AND 0 unresolved; otherwise "issues_open"
-- **initial_score**: initial overall design score before fixes (0-10)
-- **overall_score**: final overall design score after fixes (0-10)
-- **unresolved**: number of unresolved design decisions
-- **decisions_made**: number of design decisions added to the plan
-- **COMMIT**: output of `git rev-parse --short HEAD`
+Sustituye los valores del Resumen de Finalización:
+- **TIMESTAMP**: fecha y hora actual en formato ISO 8601
+- **STATUS**: "clean" si la puntuación general es 8+ Y 0 sin resolver; de lo contrario "issues_open"
+- **initial_score**: puntuación general inicial de diseño antes de correcciones (0-10)
+- **overall_score**: puntuación general final de diseño después de correcciones (0-10)
+- **unresolved**: número de decisiones de diseño no resueltas
+- **decisions_made**: número de decisiones de diseño añadidas al plan
+- **COMMIT**: salida de `git rev-parse --short HEAD`
 
 ## Review Readiness Dashboard
 
@@ -870,24 +870,24 @@ plan's living status.
 - Always place it as the very last section in the plan file. If it was found mid-file,
   move it: delete the old location and append at the end.
 
-## Next Steps — Review Chaining
+## Próximos Pasos — Encadenamiento de Revisiones
 
-After displaying the Review Readiness Dashboard, recommend the next review(s) based on what this design review discovered. Read the dashboard output to see which reviews have already been run and whether they are stale.
+Después de mostrar el Panel de Preparación de Revisiones, recomienda la(s) siguiente(s) revisión(es) basándote en lo que esta revisión de diseño descubrió. Lee la salida del panel para ver qué revisiones ya se han ejecutado y si están desactualizadas.
 
-**Recommend /plan-eng-review if eng review is not skipped globally** — check the dashboard output for `skip_eng_review`. If it is `true`, eng review is opted out — do not recommend it. Otherwise, eng review is the required shipping gate. If this design review added significant interaction specifications, new user flows, or changed the information architecture, emphasize that eng review needs to validate the architectural implications. If an eng review already exists but the commit hash shows it predates this design review, note that it may be stale and should be re-run.
+**Recomienda /plan-eng-review si la revisión de ingeniería no está omitida globalmente** — verifica en la salida del panel si `skip_eng_review` es `true`. Si lo es, la revisión de ingeniería está desactivada — no la recomiendes. De lo contrario, la revisión de ingeniería es la puerta obligatoria para el lanzamiento. Si esta revisión de diseño añadió especificaciones de interacción significativas, nuevos flujos de usuario o cambió la arquitectura de información, enfatiza que la revisión de ingeniería necesita validar las implicaciones arquitectónicas. Si ya existe una revisión de ingeniería pero el hash del commit muestra que es anterior a esta revisión de diseño, señala que puede estar desactualizada y debería re-ejecutarse.
 
-**Consider recommending /plan-ceo-review** — but only if this design review revealed fundamental product direction gaps. Specifically: if the overall design score started below 4/10, if the information architecture had major structural problems, or if the review surfaced questions about whether the right problem is being solved. AND no CEO review exists in the dashboard. This is a selective recommendation — most design reviews should NOT trigger a CEO review.
+**Considera recomendar /plan-ceo-review** — pero solo si esta revisión de diseño reveló vacíos fundamentales en la dirección del producto. Específicamente: si la puntuación general de diseño comenzó por debajo de 4/10, si la arquitectura de información tenía problemas estructurales importantes, o si la revisión sacó a la luz preguntas sobre si se está resolviendo el problema correcto. Y no existe una revisión de CEO en el panel. Esta es una recomendación selectiva — la mayoría de las revisiones de diseño NO deberían activar una revisión de CEO.
 
-**If both are needed, recommend eng review first** (required gate).
+**Si ambas son necesarias, recomienda primero la revisión de ingeniería** (puerta obligatoria).
 
-Use AskUserQuestion to present the next step. Include only applicable options:
-- **A)** Run /plan-eng-review next (required gate)
-- **B)** Run /plan-ceo-review (only if fundamental product gaps found)
-- **C)** Skip — I'll handle reviews manually
+Usa AskUserQuestion para presentar el siguiente paso. Incluye solo las opciones aplicables:
+- **A)** Ejecutar /plan-eng-review a continuación (puerta obligatoria)
+- **B)** Ejecutar /plan-ceo-review (solo si se encontraron vacíos fundamentales del producto)
+- **C)** Omitir — manejaré las revisiones manualmente
 
-## Formatting Rules
-* NUMBER issues (1, 2, 3...) and LETTERS for options (A, B, C...).
-* Label with NUMBER + LETTER (e.g., "3A", "3B").
-* One sentence max per option.
-* After each pass, pause and wait for feedback.
-* Rate before and after each pass for scannability.
+## Reglas de Formato
+* NUMERA los problemas (1, 2, 3...) y LETRAS para opciones (A, B, C...).
+* Etiqueta con NÚMERO + LETRA (p. ej., "3A", "3B").
+* Una oración máximo por opción.
+* Después de cada pasada, pausa y espera retroalimentación.
+* Califica antes y después de cada pasada para facilitar el escaneo.

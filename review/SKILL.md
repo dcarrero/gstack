@@ -3,10 +3,11 @@ name: review
 preamble-tier: 4
 version: 1.0.0
 description: |
-  Pre-landing PR review. Analyzes diff against the base branch for SQL safety, LLM trust
-  boundary violations, conditional side effects, and other structural issues. Use when
-  asked to "review this PR", "code review", "pre-landing review", or "check my diff".
-  Proactively suggest when the user is about to merge or land code changes.
+  Revisión pre-merge de PR. Analiza el diff contra la rama base en busca de seguridad SQL,
+  violaciones de límite de confianza de LLM, efectos secundarios condicionales y otros problemas
+  estructurales. Usar cuando se pida "revisar este PR", "revisión de código", "revisión pre-merge"
+  o "comprueba mi diff". Sugerir proactivamente cuando el usuario esté a punto de mergear o
+  integrar cambios de código.
 allowed-tools:
   - Bash
   - Read
@@ -317,218 +318,218 @@ branch name wherever the instructions say "the base branch."
 
 ---
 
-# Pre-Landing PR Review
+# Revisión Pre-Merge de PR
 
-You are running the `/review` workflow. Analyze the current branch's diff against the base branch for structural issues that tests don't catch.
-
----
-
-## Step 1: Check branch
-
-1. Run `git branch --show-current` to get the current branch.
-2. If on the base branch, output: **"Nothing to review — you're on the base branch or have no changes against it."** and stop.
-3. Run `git fetch origin <base> --quiet && git diff origin/<base> --stat` to check if there's a diff. If no diff, output the same message and stop.
+Estás ejecutando el flujo `/review`. Analiza el diff de la rama actual contra la rama base en busca de problemas estructurales que los tests no detectan.
 
 ---
 
-## Step 1.5: Scope Drift Detection
+## Paso 1: Comprobar la rama
 
-Before reviewing code quality, check: **did they build what was requested — nothing more, nothing less?**
+1. Ejecuta `git branch --show-current` para obtener la rama actual.
+2. Si estás en la rama base, muestra: **"Nada que revisar — estás en la rama base o no hay cambios respecto a ella."** y detente.
+3. Ejecuta `git fetch origin <base> --quiet && git diff origin/<base> --stat` para comprobar si hay diff. Si no hay diff, muestra el mismo mensaje y detente.
 
-1. Read `TODOS.md` (if it exists). Read PR description (`gh pr view --json body --jq .body 2>/dev/null || true`).
-   Read commit messages (`git log origin/<base>..HEAD --oneline`).
-   **If no PR exists:** rely on commit messages and TODOS.md for stated intent — this is the common case since /review runs before /ship creates the PR.
-2. Identify the **stated intent** — what was this branch supposed to accomplish?
-3. Run `git diff origin/<base>...HEAD --stat` and compare the files changed against the stated intent.
+---
 
-### Plan File Discovery
+## Paso 1.5: Detección de desviación de alcance
 
-1. **Conversation context (primary):** Check if there is an active plan file in this conversation — Claude Code system messages include plan file paths when in plan mode. Look for references like `~/.claude/plans/*.md` in system messages. If found, use it directly — this is the most reliable signal.
+Antes de revisar la calidad del código, comprueba: **¿construyeron lo que se pidió — ni más, ni menos?**
 
-2. **Content-based search (fallback):** If no plan file is referenced in conversation context, search by content:
+1. Lee `TODOS.md` (si existe). Lee la descripción del PR (`gh pr view --json body --jq .body 2>/dev/null || true`).
+   Lee los mensajes de commit (`git log origin/<base>..HEAD --oneline`).
+   **Si no existe PR:** apóyate en los mensajes de commit y TODOS.md para la intención declarada — este es el caso habitual ya que /review se ejecuta antes de que /ship cree el PR.
+2. Identifica la **intención declarada** — ¿qué debía lograr esta rama?
+3. Ejecuta `git diff origin/<base>...HEAD --stat` y compara los archivos modificados con la intención declarada.
+
+### Descubrimiento del Archivo de Plan
+
+1. **Contexto de la conversación (primario):** Comprueba si hay un archivo de plan activo en esta conversación — los mensajes del sistema de Claude Code incluyen rutas de archivos de plan cuando está en modo plan. Busca referencias como `~/.claude/plans/*.md` en los mensajes del sistema. Si se encuentra, úsalo directamente — esta es la señal más fiable.
+
+2. **Búsqueda por contenido (respaldo):** Si no se hace referencia a un archivo de plan en el contexto de la conversación, busca por contenido:
 
 ```bash
 BRANCH=$(git branch --show-current 2>/dev/null | tr '/' '-')
 REPO=$(basename "$(git rev-parse --show-toplevel 2>/dev/null)")
-# Try branch name match first (most specific)
+# Intentar primero coincidencia por nombre de rama (más específico)
 PLAN=$(ls -t ~/.claude/plans/*.md 2>/dev/null | xargs grep -l "$BRANCH" 2>/dev/null | head -1)
-# Fall back to repo name match
+# Recurrir a coincidencia por nombre de repo
 [ -z "$PLAN" ] && PLAN=$(ls -t ~/.claude/plans/*.md 2>/dev/null | xargs grep -l "$REPO" 2>/dev/null | head -1)
-# Last resort: most recent plan modified in the last 24 hours
+# Último recurso: plan más reciente modificado en las últimas 24 horas
 [ -z "$PLAN" ] && PLAN=$(find ~/.claude/plans -name '*.md' -mmin -1440 -maxdepth 1 2>/dev/null | xargs ls -t 2>/dev/null | head -1)
 [ -n "$PLAN" ] && echo "PLAN_FILE: $PLAN" || echo "NO_PLAN_FILE"
 ```
 
-3. **Validation:** If a plan file was found via content-based search (not conversation context), read the first 20 lines and verify it is relevant to the current branch's work. If it appears to be from a different project or feature, treat as "no plan file found."
+3. **Validación:** Si se encontró un archivo de plan mediante búsqueda por contenido (no por contexto de conversación), lee las primeras 20 líneas y verifica que es relevante para el trabajo de la rama actual. Si parece ser de un proyecto o funcionalidad diferente, trata como "archivo de plan no encontrado."
 
-**Error handling:**
-- No plan file found → skip with "No plan file detected — skipping."
-- Plan file found but unreadable (permissions, encoding) → skip with "Plan file found but unreadable — skipping."
+**Manejo de errores:**
+- Archivo de plan no encontrado → omite con "Archivo de plan no detectado — omitiendo."
+- Archivo de plan encontrado pero ilegible (permisos, codificación) → omite con "Archivo de plan encontrado pero ilegible — omitiendo."
 
-### Actionable Item Extraction
+### Extracción de Elementos Accionables
 
-Read the plan file. Extract every actionable item — anything that describes work to be done. Look for:
+Lee el archivo de plan. Extrae cada elemento accionable — cualquier cosa que describa trabajo por hacer. Busca:
 
-- **Checkbox items:** `- [ ] ...` or `- [x] ...`
-- **Numbered steps** under implementation headings: "1. Create ...", "2. Add ...", "3. Modify ..."
-- **Imperative statements:** "Add X to Y", "Create a Z service", "Modify the W controller"
-- **File-level specifications:** "New file: path/to/file.ts", "Modify path/to/existing.rb"
-- **Test requirements:** "Test that X", "Add test for Y", "Verify Z"
-- **Data model changes:** "Add column X to table Y", "Create migration for Z"
+- **Elementos checkbox:** `- [ ] ...` o `- [x] ...`
+- **Pasos numerados** bajo encabezados de implementación: "1. Crear ...", "2. Agregar ...", "3. Modificar ..."
+- **Declaraciones imperativas:** "Agregar X a Y", "Crear un servicio Z", "Modificar el controlador W"
+- **Especificaciones a nivel de archivo:** "Nuevo archivo: ruta/al/archivo.ts", "Modificar ruta/al/existente.rb"
+- **Requisitos de tests:** "Probar que X", "Agregar test para Y", "Verificar Z"
+- **Cambios de modelo de datos:** "Agregar columna X a tabla Y", "Crear migración para Z"
 
-**Ignore:**
-- Context/Background sections (`## Context`, `## Background`, `## Problem`)
-- Questions and open items (marked with ?, "TBD", "TODO: decide")
-- Review report sections (`## GSTACK REVIEW REPORT`)
-- Explicitly deferred items ("Future:", "Out of scope:", "NOT in scope:", "P2:", "P3:", "P4:")
-- CEO Review Decisions sections (these record choices, not work items)
+**Ignorar:**
+- Secciones de contexto/antecedentes (`## Contexto`, `## Antecedentes`, `## Problema`)
+- Preguntas y elementos abiertos (marcados con ?, "TBD", "TODO: decidir")
+- Secciones de informe de revisión (`## INFORME DE REVISIÓN GSTACK`)
+- Elementos explícitamente diferidos ("Futuro:", "Fuera de alcance:", "NO en alcance:", "P2:", "P3:", "P4:")
+- Secciones de Decisiones de Revisión CEO (registran decisiones, no elementos de trabajo)
 
-**Cap:** Extract at most 50 items. If the plan has more, note: "Showing top 50 of N plan items — full list in plan file."
+**Límite:** Extrae como máximo 50 elementos. Si el plan tiene más, indica: "Mostrando los 50 principales de N elementos del plan — lista completa en el archivo de plan."
 
-**No items found:** If the plan contains no extractable actionable items, skip with: "Plan file contains no actionable items — skipping completion audit."
+**Sin elementos encontrados:** Si el plan no contiene elementos accionables extraíbles, omite con: "El archivo de plan no contiene elementos accionables — omitiendo auditoría de completitud."
 
-For each item, note:
-- The item text (verbatim or concise summary)
-- Its category: CODE | TEST | MIGRATION | CONFIG | DOCS
+Para cada elemento, anota:
+- El texto del elemento (textual o resumen conciso)
+- Su categoría: CODE | TEST | MIGRATION | CONFIG | DOCS
 
-### Cross-Reference Against Diff
+### Cruce con el Diff
 
-Run `git diff origin/<base>...HEAD` and `git log origin/<base>..HEAD --oneline` to understand what was implemented.
+Ejecuta `git diff origin/<base>...HEAD` y `git log origin/<base>..HEAD --oneline` para entender qué se implementó.
 
-For each extracted plan item, check the diff and classify:
+Para cada elemento del plan extraído, revisa el diff y clasifica:
 
-- **DONE** — Clear evidence in the diff that this item was implemented. Cite the specific file(s) changed.
-- **PARTIAL** — Some work toward this item exists in the diff but it's incomplete (e.g., model created but controller missing, function exists but edge cases not handled).
-- **NOT DONE** — No evidence in the diff that this item was addressed.
-- **CHANGED** — The item was implemented using a different approach than the plan described, but the same goal is achieved. Note the difference.
+- **DONE** — Evidencia clara en el diff de que este elemento fue implementado. Cita los archivos específicos cambiados.
+- **PARTIAL** — Existe algo de trabajo hacia este elemento en el diff pero está incompleto (ej.: modelo creado pero falta el controlador, función existe pero no se manejan casos extremos).
+- **NOT DONE** — Sin evidencia en el diff de que este elemento fue abordado.
+- **CHANGED** — El elemento fue implementado usando un enfoque diferente al descrito en el plan, pero se logra el mismo objetivo. Anota la diferencia.
 
-**Be conservative with DONE** — require clear evidence in the diff. A file being touched is not enough; the specific functionality described must be present.
-**Be generous with CHANGED** — if the goal is met by different means, that counts as addressed.
+**Sé conservador con DONE** — requiere evidencia clara en el diff. Que un archivo se haya tocado no es suficiente; la funcionalidad específica descrita debe estar presente.
+**Sé generoso con CHANGED** — si el objetivo se cumple por medios diferentes, cuenta como abordado.
 
-### Output Format
+### Formato de Salida
 
 ```
-PLAN COMPLETION AUDIT
+AUDITORÍA DE COMPLETITUD DEL PLAN
 ═══════════════════════════════
-Plan: {plan file path}
+Plan: {ruta del archivo de plan}
 
-## Implementation Items
-  [DONE]      Create UserService — src/services/user_service.rb (+142 lines)
-  [PARTIAL]   Add validation — model validates but missing controller checks
-  [NOT DONE]  Add caching layer — no cache-related changes in diff
-  [CHANGED]   "Redis queue" → implemented with Sidekiq instead
+## Elementos de Implementación
+  [DONE]      Crear UserService — src/services/user_service.rb (+142 líneas)
+  [PARTIAL]   Agregar validación — el modelo valida pero faltan verificaciones del controlador
+  [NOT DONE]  Agregar capa de caché — sin cambios relacionados con caché en el diff
+  [CHANGED]   "Cola Redis" → implementado con Sidekiq en su lugar
 
-## Test Items
-  [DONE]      Unit tests for UserService — test/services/user_service_test.rb
-  [NOT DONE]  E2E test for signup flow
+## Elementos de Test
+  [DONE]      Tests unitarios para UserService — test/services/user_service_test.rb
+  [NOT DONE]  Test E2E del flujo de registro
 
-## Migration Items
-  [DONE]      Create users table — db/migrate/20240315_create_users.rb
+## Elementos de Migración
+  [DONE]      Crear tabla users — db/migrate/20240315_create_users.rb
 
 ─────────────────────────────────
-COMPLETION: 4/7 DONE, 1 PARTIAL, 1 NOT DONE, 1 CHANGED
+COMPLETITUD: 4/7 DONE, 1 PARTIAL, 1 NOT DONE, 1 CHANGED
 ─────────────────────────────────
 ```
 
-### Integration with Scope Drift Detection
+### Integración con Detección de Desviación de Alcance
 
-The plan completion results augment the existing Scope Drift Detection. If a plan file is found:
+Los resultados de completitud del plan complementan la Detección de Desviación de Alcance existente. Si se encuentra un archivo de plan:
 
-- **NOT DONE items** become additional evidence for **MISSING REQUIREMENTS** in the scope drift report.
-- **Items in the diff that don't match any plan item** become evidence for **SCOPE CREEP** detection.
+- Los elementos **NOT DONE** se convierten en evidencia adicional para **REQUISITOS FALTANTES** en el informe de desviación de alcance.
+- Los **elementos en el diff que no coinciden con ningún elemento del plan** se convierten en evidencia para detección de **SCOPE CREEP**.
 
-This is **INFORMATIONAL** — does not block the review (consistent with existing scope drift behavior).
+Esto es **INFORMATIONAL** — no bloquea la revisión (consistente con el comportamiento existente de desviación de alcance).
 
-Update the scope drift output to include plan file context:
+Actualiza la salida de desviación de alcance para incluir contexto del archivo de plan:
 
 ```
-Scope Check: [CLEAN / DRIFT DETECTED / REQUIREMENTS MISSING]
-Intent: <from plan file — 1-line summary>
-Plan: <plan file path>
-Delivered: <1-line summary of what the diff actually does>
-Plan items: N DONE, M PARTIAL, K NOT DONE
-[If NOT DONE: list each missing item]
-[If scope creep: list each out-of-scope change not in the plan]
+Verificación de Alcance: [LIMPIO / DESVIACIÓN DETECTADA / REQUISITOS FALTANTES]
+Intención: <del archivo de plan — resumen en 1 línea>
+Plan: <ruta del archivo de plan>
+Entregado: <resumen en 1 línea de lo que el diff realmente hace>
+Elementos del plan: N DONE, M PARTIAL, K NOT DONE
+[Si NOT DONE: lista cada elemento faltante]
+[Si scope creep: lista cada cambio fuera de alcance que no está en el plan]
 ```
 
-**No plan file found:** Fall back to existing scope drift behavior (check TODOS.md and PR description only).
+**Archivo de plan no encontrado:** Recurre al comportamiento existente de desviación de alcance (verificar solo TODOS.md y descripción del PR).
 
-4. Evaluate with skepticism (incorporating plan completion results if available):
+4. Evalúa con escepticismo (incorporando los resultados de auditoría del plan si están disponibles):
 
-   **SCOPE CREEP detection:**
-   - Files changed that are unrelated to the stated intent
-   - New features or refactors not mentioned in the plan
-   - "While I was in there..." changes that expand blast radius
+   **Detección de SCOPE CREEP:**
+   - Archivos modificados que no están relacionados con la intención declarada
+   - Nuevas funcionalidades o refactorizaciones no mencionadas en el plan
+   - Cambios tipo "ya que estaba ahí..." que amplían el radio de impacto
 
-   **MISSING REQUIREMENTS detection:**
-   - Requirements from TODOS.md/PR description not addressed in the diff
-   - Test coverage gaps for stated requirements
-   - Partial implementations (started but not finished)
+   **Detección de REQUIREMENTS MISSING:**
+   - Requisitos de TODOS.md/descripción del PR no abordados en el diff
+   - Brechas en la cobertura de tests para los requisitos declarados
+   - Implementaciones parciales (empezadas pero no terminadas)
 
-5. Output (before the main review begins):
+5. Muestra (antes de que comience la revisión principal):
    ```
    Scope Check: [CLEAN / DRIFT DETECTED / REQUIREMENTS MISSING]
-   Intent: <1-line summary of what was requested>
-   Delivered: <1-line summary of what the diff actually does>
-   [If drift: list each out-of-scope change]
-   [If missing: list each unaddressed requirement]
+   Intent: <resumen de 1 línea de lo solicitado>
+   Delivered: <resumen de 1 línea de lo que realmente hace el diff>
+   [Si hay desviación: listar cada cambio fuera de alcance]
+   [Si faltan requisitos: listar cada requisito no abordado]
    ```
 
-6. This is **INFORMATIONAL** — does not block the review. Proceed to Step 2.
+6. Esto es **INFORMATIONAL** — no bloquea la revisión. Continúa al Paso 2.
 
 ---
 
-## Step 2: Read the checklist
+## Paso 2: Leer el checklist
 
-Read `.claude/skills/review/checklist.md`.
+Lee `.claude/skills/review/checklist.md`.
 
-**If the file cannot be read, STOP and report the error.** Do not proceed without the checklist.
-
----
-
-## Step 2.5: Check for Greptile review comments
-
-Read `.claude/skills/review/greptile-triage.md` and follow the fetch, filter, classify, and **escalation detection** steps.
-
-**If no PR exists, `gh` fails, API returns an error, or there are zero Greptile comments:** Skip this step silently. Greptile integration is additive — the review works without it.
-
-**If Greptile comments are found:** Store the classifications (VALID & ACTIONABLE, VALID BUT ALREADY FIXED, FALSE POSITIVE, SUPPRESSED) — you will need them in Step 5.
+**Si no se puede leer el archivo, DETENTE e informa del error.** No continúes sin el checklist.
 
 ---
 
-## Step 3: Get the diff
+## Paso 2.5: Comprobar comentarios de revisión de Greptile
 
-Fetch the latest base branch to avoid false positives from stale local state:
+Lee `.claude/skills/review/greptile-triage.md` y sigue los pasos de obtención, filtrado, clasificación y **detección de escalado**.
+
+**Si no existe PR, `gh` falla, la API devuelve un error o no hay comentarios de Greptile:** Omite este paso silenciosamente. La integración con Greptile es aditiva — la revisión funciona sin ella.
+
+**Si se encuentran comentarios de Greptile:** Almacena las clasificaciones (VALID & ACTIONABLE, VALID BUT ALREADY FIXED, FALSE POSITIVE, SUPPRESSED) — las necesitarás en el Paso 5.
+
+---
+
+## Paso 3: Obtener el diff
+
+Descarga la última versión de la rama base para evitar falsos positivos por estado local desactualizado:
 
 ```bash
 git fetch origin <base> --quiet
 ```
 
-Run `git diff origin/<base>` to get the full diff. This includes both committed and uncommitted changes against the latest base branch.
+Ejecuta `git diff origin/<base>` para obtener el diff completo. Esto incluye tanto los cambios confirmados como los no confirmados contra la última versión de la rama base.
 
 ---
 
-## Step 4: Two-pass review
+## Paso 4: Revisión en dos pasadas
 
-Apply the checklist against the diff in two passes:
+Aplica el checklist contra el diff en dos pasadas:
 
-1. **Pass 1 (CRITICAL):** SQL & Data Safety, Race Conditions & Concurrency, LLM Output Trust Boundary, Enum & Value Completeness
-2. **Pass 2 (INFORMATIONAL):** Conditional Side Effects, Magic Numbers & String Coupling, Dead Code & Consistency, LLM Prompt Issues, Test Gaps, View/Frontend, Performance & Bundle Impact
+1. **Pasada 1 (CRITICAL):** Seguridad SQL y de datos, Condiciones de carrera y concurrencia, Límite de confianza de salida LLM, Completitud de enums y valores
+2. **Pasada 2 (INFORMATIONAL):** Efectos secundarios condicionales, Números mágicos y acoplamiento de strings, Código muerto y consistencia, Problemas de prompts LLM, Brechas de tests, Vista/Frontend, Rendimiento e impacto en bundle
 
-**Enum & Value Completeness requires reading code OUTSIDE the diff.** When the diff introduces a new enum value, status, tier, or type constant, use Grep to find all files that reference sibling values, then Read those files to check if the new value is handled. This is the one category where within-diff review is insufficient.
+**La completitud de enums y valores requiere leer código FUERA del diff.** Cuando el diff introduce un nuevo valor de enum, estado, tier o constante de tipo, usa Grep para encontrar todos los archivos que referencian valores hermanos, luego lee esos archivos para comprobar si el nuevo valor está gestionado. Esta es la única categoría donde la revisión dentro del diff es insuficiente.
 
-**Search-before-recommending:** When recommending a fix pattern (especially for concurrency, caching, auth, or framework-specific behavior):
-- Verify the pattern is current best practice for the framework version in use
-- Check if a built-in solution exists in newer versions before recommending a workaround
-- Verify API signatures against current docs (APIs change between versions)
+**Buscar antes de recomendar:** Al recomendar un patrón de corrección (especialmente para concurrencia, caché, autenticación o comportamiento específico del framework):
+- Verifica que el patrón sea la mejor práctica actual para la versión del framework en uso
+- Comprueba si existe una solución integrada en versiones más recientes antes de recomendar un workaround
+- Verifica las firmas de la API contra la documentación actual (las APIs cambian entre versiones)
 
-Takes seconds, prevents recommending outdated patterns. If WebSearch is unavailable, note it and proceed with in-distribution knowledge.
+Toma segundos, previene recomendar patrones obsoletos. Si WebSearch no está disponible, indícalo y continúa con el conocimiento disponible.
 
-Follow the output format specified in the checklist. Respect the suppressions — do NOT flag items listed in the "DO NOT flag" section.
+Sigue el formato de salida especificado en el checklist. Respeta las supresiones — NO marques elementos listados en la sección "DO NOT flag".
 
 ---
 
-## Step 4.5: Design Review (conditional)
+## Paso 4.5: Revisión de diseño (condicional)
 
 ## Design Review (conditional, diff-scoped)
 
@@ -585,11 +586,11 @@ cat "$TMPERR_DRL" && rm -f "$TMPERR_DRL"
 
 Present Codex output under a `CODEX (design):` header, merged with the checklist findings above.
 
-Include any design findings alongside the findings from Step 4. They follow the same Fix-First flow in Step 5 — AUTO-FIX for mechanical CSS fixes, ASK for everything else.
+Incluye cualquier hallazgo de diseño junto con los hallazgos del Paso 4. Siguen el mismo flujo Fix-First del Paso 5 — AUTO-FIX para correcciones mecánicas de CSS, ASK para todo lo demás.
 
 ---
 
-## Step 4.75: Test Coverage Diagram
+## Paso 4.75: Diagrama de cobertura de tests
 
 100% coverage is the goal. Evaluate every codepath changed in the diff and identify test gaps. Gaps become INFORMATIONAL findings that follow the Fix-First flow.
 
@@ -762,119 +763,119 @@ If no test framework detected → include gaps as INFORMATIONAL findings only, n
 
 **Diff is test-only changes:** Skip Step 4.75 entirely: "No new application code paths to audit."
 
-This step subsumes the "Test Gaps" category from Pass 2 — do not duplicate findings between the checklist Test Gaps item and this coverage diagram. Include any coverage gaps alongside the findings from Step 4 and Step 4.5. They follow the same Fix-First flow — gaps are INFORMATIONAL findings.
+Este paso subsume la categoría "Brechas de tests" de la Pasada 2 — no dupliques hallazgos entre el elemento de Brechas de tests del checklist y este diagrama de cobertura. Incluye cualquier brecha de cobertura junto con los hallazgos del Paso 4 y Paso 4.5. Siguen el mismo flujo Fix-First — las brechas son hallazgos INFORMATIONAL.
 
 ---
 
-## Step 5: Fix-First Review
+## Paso 5: Revisión Fix-First
 
-**Every finding gets action — not just critical ones.**
+**Cada hallazgo recibe acción — no solo los críticos.**
 
-Output a summary header: `Pre-Landing Review: N issues (X critical, Y informational)`
+Muestra una cabecera de resumen: `Revisión Pre-Merge: N problemas (X críticos, Y informativos)`
 
-### Step 5a: Classify each finding
+### Paso 5a: Clasificar cada hallazgo
 
-For each finding, classify as AUTO-FIX or ASK per the Fix-First Heuristic in
-checklist.md. Critical findings lean toward ASK; informational findings lean
-toward AUTO-FIX.
+Para cada hallazgo, clasifica como AUTO-FIX o ASK según la heurística Fix-First en
+checklist.md. Los hallazgos críticos tienden hacia ASK; los informativos tienden
+hacia AUTO-FIX.
 
-### Step 5b: Auto-fix all AUTO-FIX items
+### Paso 5b: Auto-corregir todos los elementos AUTO-FIX
 
-Apply each fix directly. For each one, output a one-line summary:
-`[AUTO-FIXED] [file:line] Problem → what you did`
+Aplica cada corrección directamente. Para cada una, muestra un resumen de una línea:
+`[AUTO-FIXED] [archivo:línea] Problema → qué hiciste`
 
-### Step 5c: Batch-ask about ASK items
+### Paso 5c: Preguntar en lote sobre los elementos ASK
 
-If there are ASK items remaining, present them in ONE AskUserQuestion:
+Si quedan elementos ASK, preséntalos en UNA sola AskUserQuestion:
 
-- List each item with a number, the severity label, the problem, and a recommended fix
-- For each item, provide options: A) Fix as recommended, B) Skip
-- Include an overall RECOMMENDATION
+- Lista cada elemento con un número, la etiqueta de severidad, el problema y la corrección recomendada
+- Para cada elemento, proporciona opciones: A) Corregir como se recomienda, B) Omitir
+- Incluye una RECOMENDACIÓN general
 
-Example format:
+Formato de ejemplo:
 ```
-I auto-fixed 5 issues. 2 need your input:
+Auto-corregí 5 problemas. 2 necesitan tu decisión:
 
-1. [CRITICAL] app/models/post.rb:42 — Race condition in status transition
-   Fix: Add `WHERE status = 'draft'` to the UPDATE
-   → A) Fix  B) Skip
+1. [CRITICAL] app/models/post.rb:42 — Condición de carrera en transición de estado
+   Corrección: Añadir `WHERE status = 'draft'` al UPDATE
+   → A) Corregir  B) Omitir
 
-2. [INFORMATIONAL] app/services/generator.rb:88 — LLM output not type-checked before DB write
-   Fix: Add JSON schema validation
-   → A) Fix  B) Skip
+2. [INFORMATIONAL] app/services/generator.rb:88 — Salida de LLM sin verificación de tipo antes de escritura en BD
+   Corrección: Añadir validación de esquema JSON
+   → A) Corregir  B) Omitir
 
-RECOMMENDATION: Fix both — #1 is a real race condition, #2 prevents silent data corruption.
+RECOMENDACIÓN: Corregir ambos — #1 es una condición de carrera real, #2 previene corrupción silenciosa de datos.
 ```
 
-If 3 or fewer ASK items, you may use individual AskUserQuestion calls instead of batching.
+Si hay 3 o menos elementos ASK, puedes usar llamadas individuales a AskUserQuestion en lugar de agruparlas.
 
-### Step 5d: Apply user-approved fixes
+### Paso 5d: Aplicar las correcciones aprobadas por el usuario
 
-Apply fixes for items where the user chose "Fix." Output what was fixed.
+Aplica las correcciones para los elementos donde el usuario eligió "Corregir". Muestra lo que se corrigió.
 
-If no ASK items exist (everything was AUTO-FIX), skip the question entirely.
+Si no hay elementos ASK (todo fue AUTO-FIX), omite la pregunta por completo.
 
-### Verification of claims
+### Verificación de afirmaciones
 
-Before producing the final review output:
-- If you claim "this pattern is safe" → cite the specific line proving safety
-- If you claim "this is handled elsewhere" → read and cite the handling code
-- If you claim "tests cover this" → name the test file and method
-- Never say "likely handled" or "probably tested" — verify or flag as unknown
+Antes de producir la salida final de la revisión:
+- Si afirmas "este patrón es seguro" → cita la línea específica que lo demuestra
+- Si afirmas "esto se gestiona en otro lugar" → lee y cita el código que lo gestiona
+- Si afirmas "los tests cubren esto" → nombra el archivo y método del test
+- Nunca digas "probablemente gestionado" o "posiblemente testeado" — verifica o marca como desconocido
 
-**Rationalization prevention:** "This looks fine" is not a finding. Either cite evidence it IS fine, or flag it as unverified.
+**Prevención de racionalización:** "Esto se ve bien" no es un hallazgo. O cita evidencia de que ESTÁ bien, o márcalo como no verificado.
 
-### Greptile comment resolution
+### Resolución de comentarios de Greptile
 
-After outputting your own findings, if Greptile comments were classified in Step 2.5:
+Después de mostrar tus propios hallazgos, si se clasificaron comentarios de Greptile en el Paso 2.5:
 
-**Include a Greptile summary in your output header:** `+ N Greptile comments (X valid, Y fixed, Z FP)`
+**Incluye un resumen de Greptile en tu cabecera de salida:** `+ N comentarios de Greptile (X válidos, Y corregidos, Z FP)`
 
-Before replying to any comment, run the **Escalation Detection** algorithm from greptile-triage.md to determine whether to use Tier 1 (friendly) or Tier 2 (firm) reply templates.
+Antes de responder a cualquier comentario, ejecuta el algoritmo de **detección de escalado** de greptile-triage.md para determinar si usar plantillas de respuesta de Nivel 1 (amigable) o Nivel 2 (firme).
 
-1. **VALID & ACTIONABLE comments:** These are included in your findings — they follow the Fix-First flow (auto-fixed if mechanical, batched into ASK if not) (A: Fix it now, B: Acknowledge, C: False positive). If the user chooses A (fix), reply using the **Fix reply template** from greptile-triage.md (include inline diff + explanation). If the user chooses C (false positive), reply using the **False Positive reply template** (include evidence + suggested re-rank), save to both per-project and global greptile-history.
+1. **Comentarios VALID & ACTIONABLE:** Están incluidos en tus hallazgos — siguen el flujo Fix-First (auto-corregidos si son mecánicos, agrupados en ASK si no) (A: Corregir ahora, B: Reconocer, C: Falso positivo). Si el usuario elige A (corregir), responde usando la **plantilla de respuesta Fix** de greptile-triage.md (incluye diff inline + explicación). Si el usuario elige C (falso positivo), responde usando la **plantilla de respuesta False Positive** (incluye evidencia + sugerencia de re-clasificación), guarda en el historial greptile tanto del proyecto como global.
 
-2. **FALSE POSITIVE comments:** Present each one via AskUserQuestion:
-   - Show the Greptile comment: file:line (or [top-level]) + body summary + permalink URL
-   - Explain concisely why it's a false positive
-   - Options:
-     - A) Reply to Greptile explaining why this is incorrect (recommended if clearly wrong)
-     - B) Fix it anyway (if low-effort and harmless)
-     - C) Ignore — don't reply, don't fix
+2. **Comentarios FALSE POSITIVE:** Presenta cada uno mediante AskUserQuestion:
+   - Muestra el comentario de Greptile: archivo:línea (o [top-level]) + resumen del cuerpo + URL de enlace permanente
+   - Explica concisamente por qué es un falso positivo
+   - Opciones:
+     - A) Responder a Greptile explicando por qué es incorrecto (recomendado si es claramente erróneo)
+     - B) Corregirlo de todas formas (si es de bajo esfuerzo e inofensivo)
+     - C) Ignorar — no responder, no corregir
 
-   If the user chooses A, reply using the **False Positive reply template** from greptile-triage.md (include evidence + suggested re-rank), save to both per-project and global greptile-history.
+   Si el usuario elige A, responde usando la **plantilla de respuesta False Positive** de greptile-triage.md (incluye evidencia + sugerencia de re-clasificación), guarda en el historial greptile tanto del proyecto como global.
 
-3. **VALID BUT ALREADY FIXED comments:** Reply using the **Already Fixed reply template** from greptile-triage.md — no AskUserQuestion needed:
-   - Include what was done and the fixing commit SHA
-   - Save to both per-project and global greptile-history
+3. **Comentarios VALID BUT ALREADY FIXED:** Responde usando la **plantilla de respuesta Already Fixed** de greptile-triage.md — no se necesita AskUserQuestion:
+   - Incluye qué se hizo y el SHA del commit que lo corrigió
+   - Guarda en el historial greptile tanto del proyecto como global
 
-4. **SUPPRESSED comments:** Skip silently — these are known false positives from previous triage.
-
----
-
-## Step 5.5: TODOS cross-reference
-
-Read `TODOS.md` in the repository root (if it exists). Cross-reference the PR against open TODOs:
-
-- **Does this PR close any open TODOs?** If yes, note which items in your output: "This PR addresses TODO: <title>"
-- **Does this PR create work that should become a TODO?** If yes, flag it as an informational finding.
-- **Are there related TODOs that provide context for this review?** If yes, reference them when discussing related findings.
-
-If TODOS.md doesn't exist, skip this step silently.
+4. **Comentarios SUPPRESSED:** Omite silenciosamente — son falsos positivos conocidos de triajes anteriores.
 
 ---
 
-## Step 5.6: Documentation staleness check
+## Paso 5.5: Referencia cruzada con TODOS
 
-Cross-reference the diff against documentation files. For each `.md` file in the repo root (README.md, ARCHITECTURE.md, CONTRIBUTING.md, CLAUDE.md, etc.):
+Lee `TODOS.md` en la raíz del repositorio (si existe). Haz referencia cruzada del PR contra los TODOs abiertos:
 
-1. Check if code changes in the diff affect features, components, or workflows described in that doc file.
-2. If the doc file was NOT updated in this branch but the code it describes WAS changed, flag it as an INFORMATIONAL finding:
-   "Documentation may be stale: [file] describes [feature/component] but code changed in this branch. Consider running `/document-release`."
+- **¿Este PR cierra algún TODO abierto?** Si es así, indica qué elementos en tu salida: "Este PR aborda TODO: <título>"
+- **¿Este PR crea trabajo que debería convertirse en un TODO?** Si es así, márcalo como un hallazgo informativo.
+- **¿Hay TODOs relacionados que proporcionen contexto para esta revisión?** Si es así, referéncialos al discutir hallazgos relacionados.
 
-This is informational only — never critical. The fix action is `/document-release`.
+Si TODOS.md no existe, omite este paso silenciosamente.
 
-If no documentation files exist, skip this step silently.
+---
+
+## Paso 5.6: Comprobación de documentación desactualizada
+
+Haz referencia cruzada del diff contra archivos de documentación. Para cada archivo `.md` en la raíz del repositorio (README.md, ARCHITECTURE.md, CONTRIBUTING.md, CLAUDE.md, etc.):
+
+1. Comprueba si los cambios de código en el diff afectan funcionalidades, componentes o flujos de trabajo descritos en ese archivo de documentación.
+2. Si el archivo de documentación NO fue actualizado en esta rama pero el código que describe SÍ fue modificado, márcalo como un hallazgo INFORMATIONAL:
+   "La documentación puede estar desactualizada: [archivo] describe [funcionalidad/componente] pero el código cambió en esta rama. Considera ejecutar `/document-release`."
+
+Esto es solo informativo — nunca crítico. La acción de corrección es `/document-release`.
+
+Si no existen archivos de documentación, omite este paso silenciosamente.
 
 ---
 
@@ -1014,31 +1015,30 @@ High-confidence findings (agreed on by multiple sources) should be prioritized f
 
 ---
 
-## Step 5.8: Persist Eng Review result
+## Paso 5.8: Persistir resultado de revisión de ingeniería
 
-After all review passes complete, persist the final `/review` outcome so `/ship` can
-recognize that Eng Review was run on this branch.
+Después de que todas las pasadas de revisión se completen, persiste el resultado final de `/review` para que `/ship` pueda reconocer que se ejecutó la revisión de ingeniería en esta rama.
 
-Run:
+Ejecuta:
 
 ```bash
 ~/.claude/skills/gstack/bin/gstack-review-log '{"skill":"review","timestamp":"TIMESTAMP","status":"STATUS","issues_found":N,"critical":N,"informational":N,"commit":"COMMIT"}'
 ```
 
-Substitute:
-- `TIMESTAMP` = ISO 8601 datetime
-- `STATUS` = `"clean"` if there are no remaining unresolved findings after Fix-First handling and adversarial review, otherwise `"issues_found"`
-- `issues_found` = total remaining unresolved findings
-- `critical` = remaining unresolved critical findings
-- `informational` = remaining unresolved informational findings
-- `COMMIT` = output of `git rev-parse --short HEAD`
+Sustituye:
+- `TIMESTAMP` = fecha y hora ISO 8601
+- `STATUS` = `"clean"` si no quedan hallazgos no resueltos después del manejo Fix-First y la revisión adversarial, de lo contrario `"issues_found"`
+- `issues_found` = total de hallazgos no resueltos restantes
+- `critical` = hallazgos críticos no resueltos restantes
+- `informational` = hallazgos informativos no resueltos restantes
+- `COMMIT` = salida de `git rev-parse --short HEAD`
 
-If the review exits early before a real review completes (for example, no diff against the base branch), do **not** write this entry.
+Si la revisión termina anticipadamente antes de completar una revisión real (por ejemplo, no hay diff contra la rama base), **no** escribas esta entrada.
 
-## Important Rules
+## Reglas importantes
 
-- **Read the FULL diff before commenting.** Do not flag issues already addressed in the diff.
-- **Fix-first, not read-only.** AUTO-FIX items are applied directly. ASK items are only applied after user approval. Never commit, push, or create PRs — that's /ship's job.
-- **Be terse.** One line problem, one line fix. No preamble.
-- **Only flag real problems.** Skip anything that's fine.
-- **Use Greptile reply templates from greptile-triage.md.** Every reply includes evidence. Never post vague replies.
+- **Lee el diff COMPLETO antes de comentar.** No marques problemas que ya están resueltos en el diff.
+- **Corregir primero, no solo leer.** Los elementos AUTO-FIX se aplican directamente. Los elementos ASK solo se aplican tras la aprobación del usuario. Nunca hagas commit, push ni crees PRs — eso es trabajo de /ship.
+- **Sé conciso.** Una línea para el problema, una línea para la corrección. Sin preámbulos.
+- **Solo marca problemas reales.** Omite todo lo que esté bien.
+- **Usa las plantillas de respuesta de Greptile de greptile-triage.md.** Cada respuesta incluye evidencia. Nunca publiques respuestas vagas.

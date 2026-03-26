@@ -3,14 +3,14 @@ name: qa
 preamble-tier: 4
 version: 2.0.0
 description: |
-  Systematically QA test a web application and fix bugs found. Runs QA testing,
-  then iteratively fixes bugs in source code, committing each fix atomically and
-  re-verifying. Use when asked to "qa", "QA", "test this site", "find bugs",
-  "test and fix", or "fix what's broken".
-  Proactively suggest when the user says a feature is ready for testing
-  or asks "does this work?". Three tiers: Quick (critical/high only),
-  Standard (+ medium), Exhaustive (+ cosmetic). Produces before/after health scores,
-  fix evidence, and a ship-readiness summary. For report-only mode, use /qa-only.
+  Prueba sistemática de QA en una aplicación web y corrección de bugs encontrados. Ejecuta pruebas de QA,
+  luego corrige iterativamente bugs en el código fuente, haciendo commit de cada corrección de forma atómica y
+  re-verificando. Usar cuando se pida "qa", "QA", "probar este sitio", "buscar bugs",
+  "probar y corregir", o "arreglar lo que esté roto".
+  Sugerir proactivamente cuando el usuario diga que una funcionalidad está lista para probar
+  o pregunte "¿esto funciona?". Tres niveles: Rápido (solo crítico/alto),
+  Estándar (+ medio), Exhaustivo (+ cosmético). Produce puntuaciones de salud antes/después,
+  evidencia de correcciones y un resumen de preparación para producción. Para modo solo informe, usar /qa-only.
 allowed-tools:
   - Bash
   - Read
@@ -320,49 +320,49 @@ branch name wherever the instructions say "the base branch."
 
 ---
 
-# /qa: Test → Fix → Verify
+# /qa: Probar → Corregir → Verificar
 
-You are a QA engineer AND a bug-fix engineer. Test web applications like a real user — click everything, fill every form, check every state. When you find bugs, fix them in source code with atomic commits, then re-verify. Produce a structured report with before/after evidence.
+Eres un ingeniero de QA Y un ingeniero de corrección de bugs. Prueba aplicaciones web como un usuario real — haz clic en todo, rellena cada formulario, comprueba cada estado. Cuando encuentres bugs, corrígelos en el código fuente con commits atómicos, luego re-verifica. Produce un informe estructurado con evidencia antes/después.
 
-## Setup
+## Configuración
 
-**Parse the user's request for these parameters:**
+**Analiza la solicitud del usuario para estos parámetros:**
 
-| Parameter | Default | Override example |
+| Parámetro | Por defecto | Ejemplo de sobreescritura |
 |-----------|---------|-----------------:|
-| Target URL | (auto-detect or required) | `https://myapp.com`, `http://localhost:3000` |
-| Tier | Standard | `--quick`, `--exhaustive` |
-| Mode | full | `--regression .gstack/qa-reports/baseline.json` |
-| Output dir | `.gstack/qa-reports/` | `Output to /tmp/qa` |
-| Scope | Full app (or diff-scoped) | `Focus on the billing page` |
-| Auth | None | `Sign in to user@example.com`, `Import cookies from cookies.json` |
+| URL objetivo | (auto-detectar o requerido) | `https://myapp.com`, `http://localhost:3000` |
+| Nivel | Estándar | `--quick`, `--exhaustive` |
+| Modo | completo | `--regression .gstack/qa-reports/baseline.json` |
+| Directorio de salida | `.gstack/qa-reports/` | `Output to /tmp/qa` |
+| Alcance | Aplicación completa (o delimitado por diff) | `Enfócate en la página de facturación` |
+| Autenticación | Ninguna | `Inicia sesión con user@example.com`, `Importa cookies de cookies.json` |
 
-**Tiers determine which issues get fixed:**
-- **Quick:** Fix critical + high severity only
-- **Standard:** + medium severity (default)
-- **Exhaustive:** + low/cosmetic severity
+**Los niveles determinan qué incidencias se corrigen:**
+- **Rápido:** Corregir solo severidad crítica + alta
+- **Estándar:** + severidad media (por defecto)
+- **Exhaustivo:** + severidad baja/cosmética
 
-**If no URL is given and you're on a feature branch:** Automatically enter **diff-aware mode** (see Modes below). This is the most common case — the user just shipped code on a branch and wants to verify it works.
+**Si no se proporciona URL y estás en una rama de funcionalidad:** Entrar automáticamente en **modo consciente de diff** (ver Modos más abajo). Este es el caso más común — el usuario acaba de desplegar código en una rama y quiere verificar que funciona.
 
-**Check for clean working tree:**
+**Comprobar que el árbol de trabajo esté limpio:**
 
 ```bash
 git status --porcelain
 ```
 
-If the output is non-empty (working tree is dirty), **STOP** and use AskUserQuestion:
+Si la salida no está vacía (el árbol de trabajo tiene cambios), **DETENTE** y usa AskUserQuestion:
 
-"Your working tree has uncommitted changes. /qa needs a clean tree so each bug fix gets its own atomic commit."
+"Tu árbol de trabajo tiene cambios sin confirmar. /qa necesita un árbol limpio para que cada corrección de bug tenga su propio commit atómico."
 
-- A) Commit my changes — commit all current changes with a descriptive message, then start QA
-- B) Stash my changes — stash, run QA, pop the stash after
-- C) Abort — I'll clean up manually
+- A) Hacer commit de mis cambios — confirmar todos los cambios actuales con un mensaje descriptivo, luego iniciar QA
+- B) Guardar mis cambios en stash — hacer stash, ejecutar QA, recuperar el stash después
+- C) Abortar — limpiaré manualmente
 
-RECOMMENDATION: Choose A because uncommitted work should be preserved as a commit before QA adds its own fix commits.
+RECOMENDACIÓN: Elige A porque el trabajo sin confirmar debería preservarse como un commit antes de que QA añada sus propios commits de corrección.
 
-After the user chooses, execute their choice (commit or stash), then continue with setup.
+Después de que el usuario elija, ejecuta su elección (commit o stash), luego continúa con la configuración.
 
-**Find the browse binary:**
+**Encontrar el binario de browse:**
 
 ## SETUP (run this check BEFORE any browse command)
 
@@ -383,7 +383,7 @@ If `NEEDS_SETUP`:
 2. Run: `cd <SKILL_DIR> && ./setup`
 3. If `bun` is not installed: `curl -fsSL https://bun.sh/install | bash`
 
-**Check test framework (bootstrap if needed):**
+**Comprobar framework de pruebas (inicializar si es necesario):**
 
 ## Test Framework Bootstrap
 
@@ -538,7 +538,7 @@ Only commit if there are changes. Stage all bootstrap files (config, test direct
 
 ---
 
-**Create output directories:**
+**Crear directorios de salida:**
 
 ```bash
 mkdir -p .gstack/qa-reports/screenshots
@@ -546,21 +546,21 @@ mkdir -p .gstack/qa-reports/screenshots
 
 ---
 
-## Test Plan Context
+## Contexto del Plan de Pruebas
 
-Before falling back to git diff heuristics, check for richer test plan sources:
+Antes de recurrir a heurísticas de git diff, comprueba fuentes más ricas para el plan de pruebas:
 
-1. **Project-scoped test plans:** Check `~/.gstack/projects/` for recent `*-test-plan-*.md` files for this repo
+1. **Planes de pruebas del proyecto:** Comprueba `~/.gstack/projects/` en busca de archivos `*-test-plan-*.md` recientes para este repositorio
    ```bash
    eval "$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)"
    ls -t ~/.gstack/projects/$SLUG/*-test-plan-*.md 2>/dev/null | head -1
    ```
-2. **Conversation context:** Check if a prior `/plan-eng-review` or `/plan-ceo-review` produced test plan output in this conversation
-3. **Use whichever source is richer.** Fall back to git diff analysis only if neither is available.
+2. **Contexto de la conversación:** Comprueba si un `/plan-eng-review` o `/plan-ceo-review` anterior produjo salida de plan de pruebas en esta conversación
+3. **Usa la fuente que sea más rica.** Recurre al análisis de git diff solo si ninguna está disponible.
 
 ---
 
-## Phases 1-6: QA Baseline
+## Fases 1-6: Línea Base de QA
 
 ## Modes
 
@@ -840,60 +840,60 @@ Minimum 0 per category.
 11. **Show screenshots to the user.** After every `$B screenshot`, `$B snapshot -a -o`, or `$B responsive` command, use the Read tool on the output file(s) so the user can see them inline. For `responsive` (3 files), Read all three. This is critical — without it, screenshots are invisible to the user.
 12. **Never refuse to use the browser.** When the user invokes /qa or /qa-only, they are requesting browser-based testing. Never suggest evals, unit tests, or other alternatives as a substitute. Even if the diff appears to have no UI changes, backend changes affect app behavior — always open the browser and test.
 
-Record baseline health score at end of Phase 6.
+Registra la puntuación de salud de la línea base al final de la Fase 6.
 
 ---
 
-## Output Structure
+## Estructura de Salida
 
 ```
 .gstack/qa-reports/
-├── qa-report-{domain}-{YYYY-MM-DD}.md    # Structured report
+├── qa-report-{domain}-{YYYY-MM-DD}.md    # Informe estructurado
 ├── screenshots/
-│   ├── initial.png                        # Landing page annotated screenshot
-│   ├── issue-001-step-1.png               # Per-issue evidence
+│   ├── initial.png                        # Captura anotada de la página de inicio
+│   ├── issue-001-step-1.png               # Evidencia por incidencia
 │   ├── issue-001-result.png
-│   ├── issue-001-before.png               # Before fix (if fixed)
-│   ├── issue-001-after.png                # After fix (if fixed)
+│   ├── issue-001-before.png               # Antes de la corrección (si se corrigió)
+│   ├── issue-001-after.png                # Después de la corrección (si se corrigió)
 │   └── ...
-└── baseline.json                          # For regression mode
+└── baseline.json                          # Para modo regression
 ```
 
-Report filenames use the domain and date: `qa-report-myapp-com-2026-03-12.md`
+Los nombres de los informes usan el dominio y la fecha: `qa-report-myapp-com-2026-03-12.md`
 
 ---
 
-## Phase 7: Triage
+## Fase 7: Triaje
 
-Sort all discovered issues by severity, then decide which to fix based on the selected tier:
+Ordena todas las incidencias descubiertas por severidad, luego decide cuáles corregir según el nivel seleccionado:
 
-- **Quick:** Fix critical + high only. Mark medium/low as "deferred."
-- **Standard:** Fix critical + high + medium. Mark low as "deferred."
-- **Exhaustive:** Fix all, including cosmetic/low severity.
+- **Rápido:** Corregir solo críticas + altas. Marcar medias/bajas como "diferidas."
+- **Estándar:** Corregir críticas + altas + medias. Marcar bajas como "diferidas."
+- **Exhaustivo:** Corregir todas, incluyendo severidad cosmética/baja.
 
-Mark issues that cannot be fixed from source code (e.g., third-party widget bugs, infrastructure issues) as "deferred" regardless of tier.
+Marca las incidencias que no se pueden corregir desde el código fuente (p. ej., bugs de widgets de terceros, problemas de infraestructura) como "diferidas" independientemente del nivel.
 
 ---
 
-## Phase 8: Fix Loop
+## Fase 8: Bucle de Corrección
 
-For each fixable issue, in severity order:
+Para cada incidencia corregible, en orden de severidad:
 
-### 8a. Locate source
+### 8a. Localizar fuente
 
 ```bash
-# Grep for error messages, component names, route definitions
-# Glob for file patterns matching the affected page
+# Grep para mensajes de error, nombres de componentes, definiciones de rutas
+# Glob para patrones de archivos que coincidan con la página afectada
 ```
 
-- Find the source file(s) responsible for the bug
-- ONLY modify files directly related to the issue
+- Encuentra el/los archivo(s) fuente responsables del bug
+- Modifica SOLO archivos directamente relacionados con la incidencia
 
-### 8b. Fix
+### 8b. Corregir
 
-- Read the source code, understand the context
-- Make the **minimal fix** — smallest change that resolves the issue
-- Do NOT refactor surrounding code, add features, or "improve" unrelated things
+- Lee el código fuente, comprende el contexto
+- Haz la **corrección mínima** — el cambio más pequeño que resuelva la incidencia
+- NO refactorices código circundante, añadas funcionalidades ni "mejores" cosas no relacionadas
 
 ### 8c. Commit
 
@@ -902,15 +902,15 @@ git add <only-changed-files>
 git commit -m "fix(qa): ISSUE-NNN — short description"
 ```
 
-- One commit per fix. Never bundle multiple fixes.
-- Message format: `fix(qa): ISSUE-NNN — short description`
+- Un commit por corrección. Nunca agrupes múltiples correcciones.
+- Formato del mensaje: `fix(qa): ISSUE-NNN — short description`
 
-### 8d. Re-test
+### 8d. Re-probar
 
-- Navigate back to the affected page
-- Take **before/after screenshot pair**
-- Check console for errors
-- Use `snapshot -D` to verify the change had the expected effect
+- Navega de vuelta a la página afectada
+- Toma un **par de capturas antes/después**
+- Comprueba la consola en busca de errores
+- Usa `snapshot -D` para verificar que el cambio tuvo el efecto esperado
 
 ```bash
 $B goto <affected-url>
@@ -919,68 +919,68 @@ $B console --errors
 $B snapshot -D
 ```
 
-### 8e. Classify
+### 8e. Clasificar
 
-- **verified**: re-test confirms the fix works, no new errors introduced
-- **best-effort**: fix applied but couldn't fully verify (e.g., needs auth state, external service)
-- **reverted**: regression detected → `git revert HEAD` → mark issue as "deferred"
+- **verified**: la re-prueba confirma que la corrección funciona, no se introdujeron nuevos errores
+- **best-effort**: corrección aplicada pero no se pudo verificar completamente (p. ej., requiere estado de autenticación, servicio externo)
+- **reverted**: regression detectada → `git revert HEAD` → marcar incidencia como "diferida"
 
 ### 8e.5. Regression Test
 
-Skip if: classification is not "verified", OR the fix is purely visual/CSS with no JS behavior, OR no test framework was detected AND user declined bootstrap.
+Omitir si: la clasificación no es "verified", O la corrección es puramente visual/CSS sin comportamiento JS, O no se detectó framework de pruebas Y el usuario rechazó la inicialización.
 
-**1. Study the project's existing test patterns:**
+**1. Estudia los patrones de prueba existentes del proyecto:**
 
-Read 2-3 test files closest to the fix (same directory, same code type). Match exactly:
-- File naming, imports, assertion style, describe/it nesting, setup/teardown patterns
-The regression test must look like it was written by the same developer.
+Lee 2-3 archivos de prueba más cercanos a la corrección (mismo directorio, mismo tipo de código). Replica exactamente:
+- Nomenclatura de archivos, imports, estilo de aserciones, anidamiento describe/it, patrones de setup/teardown
+El regression test debe parecer escrito por el mismo desarrollador.
 
-**2. Trace the bug's codepath, then write a regression test:**
+**2. Traza la ruta del código del bug, luego escribe un regression test:**
 
-Before writing the test, trace the data flow through the code you just fixed:
-- What input/state triggered the bug? (the exact precondition)
-- What codepath did it follow? (which branches, which function calls)
-- Where did it break? (the exact line/condition that failed)
-- What other inputs could hit the same codepath? (edge cases around the fix)
+Antes de escribir la prueba, traza el flujo de datos a través del código que acabas de corregir:
+- ¿Qué entrada/estado provocó el bug? (la precondición exacta)
+- ¿Qué ruta de código siguió? (qué ramas, qué llamadas a funciones)
+- ¿Dónde falló? (la línea/condición exacta que falló)
+- ¿Qué otras entradas podrían recorrer la misma ruta? (casos límite alrededor de la corrección)
 
-The test MUST:
-- Set up the precondition that triggered the bug (the exact state that made it break)
-- Perform the action that exposed the bug
-- Assert the correct behavior (NOT "it renders" or "it doesn't throw")
-- If you found adjacent edge cases while tracing, test those too (e.g., null input, empty array, boundary value)
-- Include full attribution comment:
+La prueba DEBE:
+- Configurar la precondición que provocó el bug (el estado exacto que causó la rotura)
+- Realizar la acción que expuso el bug
+- Asertar el comportamiento correcto (NO "se renderiza" o "no lanza excepción")
+- Si encontraste casos límite adyacentes al trazar, pruébalos también (p. ej., entrada null, array vacío, valor límite)
+- Incluir comentario completo de atribución:
   ```
-  // Regression: ISSUE-NNN — {what broke}
+  // Regression: ISSUE-NNN — {qué falló}
   // Found by /qa on {YYYY-MM-DD}
   // Report: .gstack/qa-reports/qa-report-{domain}-{date}.md
   ```
 
-Test type decision:
-- Console error / JS exception / logic bug → unit or integration test
-- Broken form / API failure / data flow bug → integration test with request/response
-- Visual bug with JS behavior (broken dropdown, animation) → component test
-- Pure CSS → skip (caught by QA reruns)
+Decisión del tipo de prueba:
+- Error de consola / excepción JS / bug de lógica → prueba unitaria o de integración
+- Formulario roto / fallo de API / bug de flujo de datos → prueba de integración con petición/respuesta
+- Bug visual con comportamiento JS (dropdown roto, animación) → prueba de componente
+- CSS puro → omitir (detectado en re-ejecuciones de QA)
 
-Generate unit tests. Mock all external dependencies (DB, API, Redis, file system).
+Genera pruebas unitarias. Simula (mock) todas las dependencias externas (BD, API, Redis, sistema de archivos).
 
-Use auto-incrementing names to avoid collisions: check existing `{name}.regression-*.test.{ext}` files, take max number + 1.
+Usa nombres auto-incrementales para evitar colisiones: comprueba los archivos `{name}.regression-*.test.{ext}` existentes, toma el número máximo + 1.
 
-**3. Run only the new test file:**
+**3. Ejecuta solo el nuevo archivo de prueba:**
 
 ```bash
 {detected test command} {new-test-file}
 ```
 
-**4. Evaluate:**
-- Passes → commit: `git commit -m "test(qa): regression test for ISSUE-NNN — {desc}"`
-- Fails → fix test once. Still failing → delete test, defer.
-- Taking >2 min exploration → skip and defer.
+**4. Evaluar:**
+- Pasa → commit: `git commit -m "test(qa): regression test for ISSUE-NNN — {desc}"`
+- Falla → corrige la prueba una vez. Si sigue fallando → elimina la prueba, diferir.
+- Lleva >2 min de exploración → omitir y diferir.
 
-**5. WTF-likelihood exclusion:** Test commits don't count toward the heuristic.
+**5. Exclusión de probabilidad-WTF:** Los commits de pruebas no cuentan para la heurística.
 
-### 8f. Self-Regulation (STOP AND EVALUATE)
+### 8f. Auto-Regulación (DETENTE Y EVALÚA)
 
-Every 5 fixes (or after any revert), compute the WTF-likelihood:
+Cada 5 correcciones (o después de cualquier revert), calcula la probabilidad-WTF:
 
 ```
 WTF-LIKELIHOOD:
@@ -992,64 +992,64 @@ WTF-LIKELIHOOD:
   Touching unrelated files:   +20%
 ```
 
-**If WTF > 20%:** STOP immediately. Show the user what you've done so far. Ask whether to continue.
+**Si WTF > 20%:** DETENTE inmediatamente. Muestra al usuario lo que has hecho hasta ahora. Pregunta si debe continuar.
 
-**Hard cap: 50 fixes.** After 50 fixes, stop regardless of remaining issues.
-
----
-
-## Phase 9: Final QA
-
-After all fixes are applied:
-
-1. Re-run QA on all affected pages
-2. Compute final health score
-3. **If final score is WORSE than baseline:** WARN prominently — something regressed
+**Límite estricto: 50 correcciones.** Después de 50 correcciones, detente independientemente de las incidencias restantes.
 
 ---
 
-## Phase 10: Report
+## Fase 9: QA Final
 
-Write the report to both local and project-scoped locations:
+Después de aplicar todas las correcciones:
+
+1. Re-ejecuta QA en todas las páginas afectadas
+2. Calcula la puntuación de salud final
+3. **Si la puntuación final es PEOR que la línea base:** ADVIERTE de forma prominente — algo ha regresionado
+
+---
+
+## Fase 10: Informe
+
+Escribe el informe tanto en la ubicación local como en la del proyecto:
 
 **Local:** `.gstack/qa-reports/qa-report-{domain}-{YYYY-MM-DD}.md`
 
-**Project-scoped:** Write test outcome artifact for cross-session context:
+**Ámbito del proyecto:** Escribe el artefacto de resultado de pruebas para contexto entre sesiones:
 ```bash
 eval "$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)" && mkdir -p ~/.gstack/projects/$SLUG
 ```
-Write to `~/.gstack/projects/{slug}/{user}-{branch}-test-outcome-{datetime}.md`
+Escribe en `~/.gstack/projects/{slug}/{user}-{branch}-test-outcome-{datetime}.md`
 
-**Per-issue additions** (beyond standard report template):
-- Fix Status: verified / best-effort / reverted / deferred
-- Commit SHA (if fixed)
-- Files Changed (if fixed)
-- Before/After screenshots (if fixed)
+**Adiciones por incidencia** (más allá de la plantilla de informe estándar):
+- Estado de la corrección: verified / best-effort / reverted / diferida
+- SHA del commit (si se corrigió)
+- Archivos modificados (si se corrigió)
+- Capturas antes/después (si se corrigió)
 
-**Summary section:**
-- Total issues found
-- Fixes applied (verified: X, best-effort: Y, reverted: Z)
-- Deferred issues
-- Health score delta: baseline → final
+**Sección de resumen:**
+- Total de incidencias encontradas
+- Correcciones aplicadas (verified: X, best-effort: Y, reverted: Z)
+- Incidencias diferidas
+- Delta de puntuación de salud: línea base → final
 
-**PR Summary:** Include a one-line summary suitable for PR descriptions:
-> "QA found N issues, fixed M, health score X → Y."
-
----
-
-## Phase 11: TODOS.md Update
-
-If the repo has a `TODOS.md`:
-
-1. **New deferred bugs** → add as TODOs with severity, category, and repro steps
-2. **Fixed bugs that were in TODOS.md** → annotate with "Fixed by /qa on {branch}, {date}"
+**Resumen para PR:** Incluye un resumen de una línea adecuado para descripciones de PR:
+> "QA encontró N incidencias, corrigió M, puntuación de salud X → Y."
 
 ---
 
-## Additional Rules (qa-specific)
+## Fase 11: Actualización de TODOS.md
 
-11. **Clean working tree required.** If dirty, use AskUserQuestion to offer commit/stash/abort before proceeding.
-12. **One commit per fix.** Never bundle multiple fixes into one commit.
-13. **Only modify tests when generating regression tests in Phase 8e.5.** Never modify CI configuration. Never modify existing tests — only create new test files.
-14. **Revert on regression.** If a fix makes things worse, `git revert HEAD` immediately.
-15. **Self-regulate.** Follow the WTF-likelihood heuristic. When in doubt, stop and ask.
+Si el repositorio tiene un `TODOS.md`:
+
+1. **Nuevos bugs diferidos** → añadir como TODOs con severidad, categoría y pasos de reproducción
+2. **Bugs corregidos que estaban en TODOS.md** → anotar con "Corregido por /qa en {rama}, {fecha}"
+
+---
+
+## Reglas Adicionales (específicas de qa)
+
+11. **Se requiere árbol de trabajo limpio.** Si tiene cambios, usa AskUserQuestion para ofrecer commit/stash/abortar antes de proceder.
+12. **Un commit por corrección.** Nunca agrupes múltiples correcciones en un commit.
+13. **Solo modificar pruebas al generar regression tests en la Fase 8e.5.** Nunca modificar configuración de CI. Nunca modificar pruebas existentes — solo crear nuevos archivos de prueba.
+14. **Revertir en caso de regression.** Si una corrección empeora las cosas, `git revert HEAD` inmediatamente.
+15. **Auto-regularse.** Sigue la heurística de probabilidad-WTF. Ante la duda, detente y pregunta.

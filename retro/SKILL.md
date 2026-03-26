@@ -3,11 +3,11 @@ name: retro
 preamble-tier: 2
 version: 2.0.0
 description: |
-  Weekly engineering retrospective. Analyzes commit history, work patterns,
-  and code quality metrics with persistent history and trend tracking.
-  Team-aware: breaks down per-person contributions with praise and growth areas.
-  Use when asked to "weekly retro", "what did we ship", or "engineering retrospective".
-  Proactively suggest at the end of a work week or sprint.
+  Retrospectiva semanal de ingenieria. Analiza el historial de commits, patrones de trabajo
+  y metricas de calidad de codigo con historial persistente y seguimiento de tendencias.
+  Orientado a equipos: desglosa las contribuciones por persona con elogios y areas de mejora.
+  Usar cuando se pida "retro semanal", "que enviamos", o "retrospectiva de ingenieria".
+  Sugerir proactivamente al final de una semana laboral o sprint.
 allowed-tools:
   - Bash
   - Read
@@ -295,40 +295,40 @@ Then write a `## GSTACK REVIEW REPORT` section to the end of the plan file:
 file you are allowed to edit in plan mode. The plan file review report is part of the
 plan's living status.
 
-## Detect default branch
+## Detectar rama por defecto
 
-Before gathering data, detect the repo's default branch name:
+Antes de recopilar datos, detecta el nombre de la rama por defecto del repositorio:
 `gh repo view --json defaultBranchRef -q .defaultBranchRef.name`
 
-If this fails, fall back to `main`. Use the detected name wherever the instructions
-say `origin/<default>` below.
+Si esto falla, usa `main` como alternativa. Usa el nombre detectado donde las instrucciones
+indiquen `origin/<default>` a continuacion.
 
 ---
 
-# /retro — Weekly Engineering Retrospective
+# /retro — Retrospectiva Semanal de Ingenieria
 
-Generates a comprehensive engineering retrospective analyzing commit history, work patterns, and code quality metrics. Team-aware: identifies the user running the command, then analyzes every contributor with per-person praise and growth opportunities. Designed for a senior IC/CTO-level builder using Claude Code as a force multiplier.
+Genera una retrospectiva de ingenieria completa analizando el historial de commits, patrones de trabajo y metricas de calidad de codigo. Orientado a equipos: identifica al usuario que ejecuta el comando, luego analiza a cada contribuidor con elogios y oportunidades de mejora por persona. Disenado para un IC senior/CTO que usa Claude Code como multiplicador de fuerza.
 
-## User-invocable
-When the user types `/retro`, run this skill.
+## Invocable por el usuario
+Cuando el usuario escriba `/retro`, ejecutar esta skill.
 
-## Arguments
-- `/retro` — default: last 7 days
-- `/retro 24h` — last 24 hours
-- `/retro 14d` — last 14 days
-- `/retro 30d` — last 30 days
-- `/retro compare` — compare current window vs prior same-length window
-- `/retro compare 14d` — compare with explicit window
-- `/retro global` — cross-project retro across all AI coding tools (7d default)
-- `/retro global 14d` — cross-project retro with explicit window
+## Argumentos
+- `/retro` — por defecto: ultimos 7 dias
+- `/retro 24h` — ultimas 24 horas
+- `/retro 14d` — ultimos 14 dias
+- `/retro 30d` — ultimos 30 dias
+- `/retro compare` — comparar la ventana actual con la ventana anterior de igual duracion
+- `/retro compare 14d` — comparar con ventana explicita
+- `/retro global` — retro entre proyectos a traves de todas las herramientas de IA (7d por defecto)
+- `/retro global 14d` — retro entre proyectos con ventana explicita
 
-## Instructions
+## Instrucciones
 
-Parse the argument to determine the time window. Default to 7 days if no argument given. All times should be reported in the user's **local timezone** (use the system default — do NOT set `TZ`).
+Analiza el argumento para determinar la ventana temporal. Por defecto 7 dias si no se proporciona argumento. Todos los horarios deben reportarse en la **zona horaria local** del usuario (usar la del sistema — NO establecer `TZ`).
 
-**Midnight-aligned windows:** For day (`d`) and week (`w`) units, compute an absolute start date at local midnight, not a relative string. For example, if today is 2026-03-18 and the window is 7 days: the start date is 2026-03-11. Use `--since="2026-03-11T00:00:00"` for git log queries — the explicit `T00:00:00` suffix ensures git starts from midnight. Without it, git uses the current wall-clock time (e.g., `--since="2026-03-11"` at 11pm means 11pm, not midnight). For week units, multiply by 7 to get days (e.g., `2w` = 14 days back). For hour (`h`) units, use `--since="N hours ago"` since midnight alignment does not apply to sub-day windows.
+**Ventanas alineadas a medianoche:** Para unidades de dia (`d`) y semana (`w`), calcula una fecha de inicio absoluta a medianoche local, no una cadena relativa. Por ejemplo, si hoy es 2026-03-18 y la ventana es de 7 dias: la fecha de inicio es 2026-03-11. Usa `--since="2026-03-11T00:00:00"` para consultas de git log — el sufijo explicito `T00:00:00` asegura que git comience desde medianoche. Sin el, git usa la hora actual del reloj (por ejemplo, `--since="2026-03-11"` a las 11pm significa 11pm, no medianoche). Para unidades de semana, multiplica por 7 para obtener dias (por ejemplo, `2w` = 14 dias atras). Para unidades de hora (`h`), usa `--since="N hours ago"` ya que la alineacion a medianoche no aplica a ventanas sub-diarias.
 
-**Argument validation:** If the argument doesn't match a number followed by `d`, `h`, or `w`, the word `compare` (optionally followed by a window), or the word `global` (optionally followed by a window), show this usage and stop:
+**Validacion de argumentos:** Si el argumento no coincide con un numero seguido de `d`, `h` o `w`, la palabra `compare` (opcionalmente seguida de una ventana), o la palabra `global` (opcionalmente seguida de una ventana), muestra este uso y detente:
 ```
 Usage: /retro [window | compare | global]
   /retro              — last 7 days (default)
@@ -341,11 +341,11 @@ Usage: /retro [window | compare | global]
   /retro global 14d   — cross-project retro with explicit window
 ```
 
-**If the first argument is `global`:** Skip the normal repo-scoped retro (Steps 1-14). Instead, follow the **Global Retrospective** flow at the end of this document. The optional second argument is the time window (default 7d). This mode does NOT require being inside a git repo.
+**Si el primer argumento es `global`:** Omitir la retro normal con alcance de repositorio (Pasos 1-14). En su lugar, seguir el flujo de **Retrospectiva Global** al final de este documento. El segundo argumento opcional es la ventana temporal (por defecto 7d). Este modo NO requiere estar dentro de un repositorio git.
 
-### Step 1: Gather Raw Data
+### Paso 1: Recopilar Datos en Bruto
 
-First, fetch origin and identify the current user:
+Primero, obtener los datos del origin e identificar al usuario actual:
 ```bash
 git fetch origin <default> --quiet
 # Identify who is running the retro
@@ -353,9 +353,9 @@ git config user.name
 git config user.email
 ```
 
-The name returned by `git config user.name` is **"you"** — the person reading this retro. All other authors are teammates. Use this to orient the narrative: "your" commits vs teammate contributions.
+El nombre devuelto por `git config user.name` es **"tu"** — la persona que lee esta retro. Todos los demas autores son companeros de equipo. Usa esto para orientar la narrativa: "tus" commits frente a las contribuciones de companeros.
 
-Run ALL of these git commands in parallel (they are independent):
+Ejecuta TODOS estos comandos de git en paralelo (son independientes):
 
 ```bash
 # 1. All commits in window with timestamps, subject, hash, AUTHOR, files changed, insertions, deletions
@@ -400,28 +400,28 @@ cat ~/.gstack/analytics/skill-usage.jsonl 2>/dev/null || true
 git log origin/<default> --since="<window>" --format="" --name-only | grep -E '\.(test|spec)\.' | sort -u | wc -l
 ```
 
-### Step 2: Compute Metrics
+### Paso 2: Calcular Metricas
 
-Calculate and present these metrics in a summary table:
+Calcula y presenta estas metricas en una tabla resumen:
 
-| Metric | Value |
-|--------|-------|
-| Commits to main | N |
-| Contributors | N |
-| PRs merged | N |
-| Total insertions | N |
-| Total deletions | N |
-| Net LOC added | N |
-| Test LOC (insertions) | N |
-| Test LOC ratio | N% |
-| Version range | vX.Y.Z.W → vX.Y.Z.W |
-| Active days | N |
-| Detected sessions | N |
-| Avg LOC/session-hour | N |
-| Greptile signal | N% (Y catches, Z FPs) |
-| Test Health | N total tests · M added this period · K regression tests |
+| Metrica | Valor |
+|---------|-------|
+| Commits a main | N |
+| Contribuidores | N |
+| PRs fusionados | N |
+| Inserciones totales | N |
+| Eliminaciones totales | N |
+| LOC netas anadidas | N |
+| LOC de tests (inserciones) | N |
+| Ratio de tests | N% |
+| Rango de versiones | vX.Y.Z.W → vX.Y.Z.W |
+| Dias activos | N |
+| Sesiones detectadas | N |
+| LOC promedio/hora-sesion | N |
+| Senal Greptile | N% (Y capturas, Z FPs) |
+| Salud de Tests | N tests totales · M anadidos este periodo · K tests de regresion |
 
-Then show a **per-author leaderboard** immediately below:
+Luego muestra un **ranking por autor** inmediatamente debajo:
 
 ```
 Contributor         Commits   +/-          Top area
@@ -430,50 +430,49 @@ alice                    12   +800/-150    app/services/
 bob                       3   +120/-40     tests/
 ```
 
-Sort by commits descending. The current user (from `git config user.name`) always appears first, labeled "You (name)".
+Ordena por commits en orden descendente. El usuario actual (de `git config user.name`) siempre aparece primero, etiquetado como "You (nombre)".
 
-**Greptile signal (if history exists):** Read `~/.gstack/greptile-history.md` (fetched in Step 1, command 8). Filter entries within the retro time window by date. Count entries by type: `fix`, `fp`, `already-fixed`. Compute signal ratio: `(fix + already-fixed) / (fix + already-fixed + fp)`. If no entries exist in the window or the file doesn't exist, skip the Greptile metric row. Skip unparseable lines silently.
+**Senal Greptile (si existe historial):** Lee `~/.gstack/greptile-history.md` (obtenido en el Paso 1, comando 8). Filtra entradas dentro de la ventana temporal de la retro por fecha. Cuenta entradas por tipo: `fix`, `fp`, `already-fixed`. Calcula el ratio de senal: `(fix + already-fixed) / (fix + already-fixed + fp)`. Si no existen entradas en la ventana o el archivo no existe, omite la fila de la metrica Greptile. Ignora silenciosamente las lineas que no se puedan analizar.
 
-**Backlog Health (if TODOS.md exists):** Read `TODOS.md` (fetched in Step 1, command 9). Compute:
-- Total open TODOs (exclude items in `## Completed` section)
-- P0/P1 count (critical/urgent items)
-- P2 count (important items)
-- Items completed this period (items in Completed section with dates within the retro window)
-- Items added this period (cross-reference git log for commits that modified TODOS.md within the window)
+**Salud del Backlog (si existe TODOS.md):** Lee `TODOS.md` (obtenido en el Paso 1, comando 9). Calcula:
+- Total de TODOs abiertos (excluir elementos en la seccion `## Completed`)
+- Conteo P0/P1 (elementos criticos/urgentes)
+- Conteo P2 (elementos importantes)
+- Elementos completados en este periodo (elementos en la seccion Completed con fechas dentro de la ventana de la retro)
+- Elementos anadidos en este periodo (cruzar con git log para commits que modificaron TODOS.md dentro de la ventana)
 
-Include in the metrics table:
+Incluir en la tabla de metricas:
 ```
 | Backlog Health | N open (X P0/P1, Y P2) · Z completed this period |
 ```
 
-If TODOS.md doesn't exist, skip the Backlog Health row.
+Si TODOS.md no existe, omite la fila de Salud del Backlog.
 
-**Skill Usage (if analytics exist):** Read `~/.gstack/analytics/skill-usage.jsonl` if it exists. Filter entries within the retro time window by `ts` field. Separate skill activations (no `event` field) from hook fires (`event: "hook_fire"`). Aggregate by skill name. Present as:
+**Uso de Skills (si existen analiticas):** Lee `~/.gstack/analytics/skill-usage.jsonl` si existe. Filtra entradas dentro de la ventana temporal de la retro por campo `ts`. Separa activaciones de skills (sin campo `event`) de disparos de hooks (`event: "hook_fire"`). Agrega por nombre de skill. Presenta como:
 
 ```
 | Skill Usage | /ship(12) /qa(8) /review(5) · 3 safety hook fires |
 ```
 
-If the JSONL file doesn't exist or has no entries in the window, skip the Skill Usage row.
+Si el archivo JSONL no existe o no tiene entradas en la ventana, omite la fila de Uso de Skills.
 
-**Eureka Moments (if logged):** Read `~/.gstack/analytics/eureka.jsonl` if it exists. Filter entries within the retro time window by `ts` field. For each eureka moment, show the skill that flagged it, the branch, and a one-line summary of the insight. Present as:
+**Momentos Eureka (si estan registrados):** Lee `~/.gstack/analytics/eureka.jsonl` si existe. Filtra entradas dentro de la ventana temporal de la retro por campo `ts`. Para cada momento eureka, muestra la skill que lo detecto, la rama y un resumen de una linea del hallazgo. Presenta como:
 
 ```
 | Eureka Moments | 2 this period |
 ```
 
-If moments exist, list them:
+Si existen momentos, listalos:
 ```
   EUREKA /office-hours (branch: garrytan/auth-rethink): "Session tokens don't need server storage — browser crypto API makes client-side JWT validation viable"
   EUREKA /plan-eng-review (branch: garrytan/cache-layer): "Redis isn't needed here — Bun's built-in LRU cache handles this workload"
 ```
 
-If the JSONL file doesn't exist or has no entries in the window, skip the Eureka Moments row.
+Si el archivo JSONL no existe o no tiene entradas en la ventana, omite la fila de Momentos Eureka.
 
-### Step 3: Commit Time Distribution
+### Paso 3: Distribucion Temporal de Commits
 
-Show hourly histogram in local time using bar chart:
-
+Muestra un histograma por hora en hora local usando grafico de barras:
 ```
 Hour  Commits  ████████████████
  00:    4      ████
@@ -481,32 +480,32 @@ Hour  Commits  ████████████████
  ...
 ```
 
-Identify and call out:
-- Peak hours
-- Dead zones
-- Whether pattern is bimodal (morning/evening) or continuous
-- Late-night coding clusters (after 10pm)
+Identifica y senala:
+- Horas pico
+- Zonas muertas
+- Si el patron es bimodal (manana/noche) o continuo
+- Grupos de programacion nocturna (despues de las 10pm)
 
-### Step 4: Work Session Detection
+### Paso 4: Deteccion de Sesiones de Trabajo
 
-Detect sessions using **45-minute gap** threshold between consecutive commits. For each session report:
-- Start/end time (Pacific)
-- Number of commits
-- Duration in minutes
+Detecta sesiones usando un umbral de **45 minutos de pausa** entre commits consecutivos. Para cada sesion reporta:
+- Hora de inicio/fin (Pacific)
+- Numero de commits
+- Duracion en minutos
 
-Classify sessions:
-- **Deep sessions** (50+ min)
-- **Medium sessions** (20-50 min)
-- **Micro sessions** (<20 min, typically single-commit fire-and-forget)
+Clasifica las sesiones:
+- **Sesiones profundas** (50+ min)
+- **Sesiones medias** (20-50 min)
+- **Micro sesiones** (<20 min, tipicamente un solo commit rapido)
 
-Calculate:
-- Total active coding time (sum of session durations)
-- Average session length
-- LOC per hour of active time
+Calcula:
+- Tiempo total de codificacion activa (suma de duraciones de sesion)
+- Duracion promedio de sesion
+- LOC por hora de tiempo activo
 
-### Step 5: Commit Type Breakdown
+### Paso 5: Desglose por Tipo de Commit
 
-Categorize by conventional commit prefix (feat/fix/refactor/test/chore/docs). Show as percentage bar:
+Categoriza por prefijo de commit convencional (feat/fix/refactor/test/chore/docs). Muestra como barra de porcentaje:
 
 ```
 feat:     20  (40%)  ████████████████████
@@ -514,66 +513,66 @@ fix:      27  (54%)  ███████████████████�
 refactor:  2  ( 4%)  ██
 ```
 
-Flag if fix ratio exceeds 50% — this signals a "ship fast, fix fast" pattern that may indicate review gaps.
+Marca si el ratio de fix supera el 50% — esto senala un patron de "enviar rapido, arreglar rapido" que puede indicar brechas en las revisiones.
 
-### Step 6: Hotspot Analysis
+### Paso 6: Analisis de Puntos Calientes
 
-Show top 10 most-changed files. Flag:
-- Files changed 5+ times (churn hotspots)
-- Test files vs production files in the hotspot list
-- VERSION/CHANGELOG frequency (version discipline indicator)
+Muestra los 10 archivos mas modificados. Marca:
+- Archivos modificados 5+ veces (puntos calientes de rotacion)
+- Archivos de test vs archivos de produccion en la lista de puntos calientes
+- Frecuencia de VERSION/CHANGELOG (indicador de disciplina de versionado)
 
-### Step 7: PR Size Distribution
+### Paso 7: Distribucion de Tamano de PR
 
-From commit diffs, estimate PR sizes and bucket them:
-- **Small** (<100 LOC)
-- **Medium** (100-500 LOC)
-- **Large** (500-1500 LOC)
+A partir de los diffs de commits, estima los tamanos de PR y clasificalos:
+- **Pequeno** (<100 LOC)
+- **Mediano** (100-500 LOC)
+- **Grande** (500-1500 LOC)
 - **XL** (1500+ LOC)
 
-### Step 8: Focus Score + Ship of the Week
+### Paso 8: Puntuacion de Enfoque + Envio de la Semana
 
-**Focus score:** Calculate the percentage of commits touching the single most-changed top-level directory (e.g., `app/services/`, `app/views/`). Higher score = deeper focused work. Lower score = scattered context-switching. Report as: "Focus score: 62% (app/services/)"
+**Puntuacion de enfoque:** Calcula el porcentaje de commits que tocan el directorio de nivel superior mas modificado (por ejemplo, `app/services/`, `app/views/`). Mayor puntuacion = trabajo mas enfocado y profundo. Menor puntuacion = cambio de contexto disperso. Reporta como: "Puntuacion de enfoque: 62% (app/services/)"
 
-**Ship of the week:** Auto-identify the single highest-LOC PR in the window. Highlight it:
-- PR number and title
-- LOC changed
-- Why it matters (infer from commit messages and files touched)
+**Envio de la semana:** Identifica automaticamente el PR con mayor LOC en la ventana. Destacalo:
+- Numero y titulo del PR
+- LOC modificadas
+- Por que importa (inferir de los mensajes de commit y archivos tocados)
 
-### Step 9: Team Member Analysis
+### Paso 9: Analisis por Miembro del Equipo
 
-For each contributor (including the current user), compute:
+Para cada contribuidor (incluido el usuario actual), calcula:
 
-1. **Commits and LOC** — total commits, insertions, deletions, net LOC
-2. **Areas of focus** — which directories/files they touched most (top 3)
-3. **Commit type mix** — their personal feat/fix/refactor/test breakdown
-4. **Session patterns** — when they code (their peak hours), session count
-5. **Test discipline** — their personal test LOC ratio
-6. **Biggest ship** — their single highest-impact commit or PR in the window
+1. **Commits y LOC** — total de commits, inserciones, eliminaciones, LOC netas
+2. **Areas de enfoque** — que directorios/archivos tocaron mas (top 3)
+3. **Mezcla de tipos de commit** — su desglose personal feat/fix/refactor/test
+4. **Patrones de sesion** — cuando programan (sus horas pico), conteo de sesiones
+5. **Disciplina de tests** — su ratio personal de LOC de tests
+6. **Mayor envio** — su commit o PR de mayor impacto en la ventana
 
-**For the current user ("You"):** This section gets the deepest treatment. Include all the detail from the solo retro — session analysis, time patterns, focus score. Frame it in first person: "Your peak hours...", "Your biggest ship..."
+**Para el usuario actual ("Tu"):** Esta seccion recibe el tratamiento mas detallado. Incluye todo el detalle de la retro individual — analisis de sesiones, patrones temporales, puntuacion de enfoque. Enmarcalo en primera persona: "Tus horas pico...", "Tu mayor envio..."
 
-**For each teammate:** Write 2-3 sentences covering what they worked on and their pattern. Then:
+**Para cada companero de equipo:** Escribe 2-3 oraciones cubriendo en que trabajaron y su patron. Luego:
 
-- **Praise** (1-2 specific things): Anchor in actual commits. Not "great work" — say exactly what was good. Examples: "Shipped the entire auth middleware rewrite in 3 focused sessions with 45% test coverage", "Every PR under 200 LOC — disciplined decomposition."
-- **Opportunity for growth** (1 specific thing): Frame as a leveling-up suggestion, not criticism. Anchor in actual data. Examples: "Test ratio was 12% this week — adding test coverage to the payment module before it gets more complex would pay off", "5 fix commits on the same file suggest the original PR could have used a review pass."
+- **Elogio** (1-2 cosas especificas): Anclar en commits reales. No "buen trabajo" — di exactamente que fue bueno. Ejemplos: "Envio la reescritura completa del middleware de autenticacion en 3 sesiones enfocadas con 45% de cobertura de tests", "Cada PR bajo 200 LOC — descomposicion disciplinada."
+- **Oportunidad de crecimiento** (1 cosa especifica): Enmarca como una sugerencia para subir de nivel, no como critica. Anclar en datos reales. Ejemplos: "El ratio de tests fue 12% esta semana — agregar cobertura de tests al modulo de pagos antes de que se vuelva mas complejo seria rentable", "5 commits de fix en el mismo archivo sugieren que el PR original podria haber necesitado una revision."
 
-**If only one contributor (solo repo):** Skip the team breakdown and proceed as before — the retro is personal.
+**Si solo hay un contribuidor (repositorio individual):** Omite el desglose del equipo y continua como antes — la retro es personal.
 
-**If there are Co-Authored-By trailers:** Parse `Co-Authored-By:` lines in commit messages. Credit those authors for the commit alongside the primary author. Note AI co-authors (e.g., `noreply@anthropic.com`) but do not include them as team members — instead, track "AI-assisted commits" as a separate metric.
+**Si hay trailers Co-Authored-By:** Analiza las lineas `Co-Authored-By:` en los mensajes de commit. Acredita a esos autores por el commit junto con el autor principal. Nota los coautores de IA (por ejemplo, `noreply@anthropic.com`) pero no los incluyas como miembros del equipo — en su lugar, registra "commits asistidos por IA" como una metrica separada.
 
-### Step 10: Week-over-Week Trends (if window >= 14d)
+### Paso 10: Tendencias Semana a Semana (si la ventana >= 14d)
 
-If the time window is 14 days or more, split into weekly buckets and show trends:
-- Commits per week (total and per-author)
-- LOC per week
-- Test ratio per week
-- Fix ratio per week
-- Session count per week
+Si la ventana temporal es de 14 dias o mas, divide en bloques semanales y muestra tendencias:
+- Commits por semana (total y por autor)
+- LOC por semana
+- Ratio de tests por semana
+- Ratio de fix por semana
+- Conteo de sesiones por semana
 
-### Step 11: Streak Tracking
+### Paso 11: Seguimiento de Racha
 
-Count consecutive days with at least 1 commit to origin/<default>, going back from today. Track both team streak and personal streak:
+Cuenta los dias consecutivos con al menos 1 commit a origin/<default>, retrocediendo desde hoy. Registra tanto la racha del equipo como la racha personal:
 
 ```bash
 # Team streak: all unique commit dates (local time) — no hard cutoff
@@ -583,19 +582,19 @@ git log origin/<default> --format="%ad" --date=format:"%Y-%m-%d" | sort -u
 git log origin/<default> --author="<user_name>" --format="%ad" --date=format:"%Y-%m-%d" | sort -u
 ```
 
-Count backward from today — how many consecutive days have at least one commit? This queries the full history so streaks of any length are reported accurately. Display both:
-- "Team shipping streak: 47 consecutive days"
-- "Your shipping streak: 32 consecutive days"
+Cuenta hacia atras desde hoy — cuantos dias consecutivos tienen al menos un commit? Esto consulta el historial completo para que las rachas de cualquier longitud se reporten con precision. Muestra ambas:
+- "Racha de envio del equipo: 47 dias consecutivos"
+- "Tu racha de envio: 32 dias consecutivos"
 
-### Step 12: Load History & Compare
+### Paso 12: Cargar Historial y Comparar
 
-Before saving the new snapshot, check for prior retro history:
+Antes de guardar la nueva instantanea, verifica si hay historial de retros previas:
 
 ```bash
 ls -t .context/retros/*.json 2>/dev/null
 ```
 
-**If prior retros exist:** Load the most recent one using the Read tool. Calculate deltas for key metrics and include a **Trends vs Last Retro** section:
+**Si existen retros previas:** Carga la mas reciente usando la herramienta Read. Calcula deltas para las metricas clave e incluye una seccion **Tendencias vs Ultima Retro**:
 ```
                     Last        Now         Delta
 Test ratio:         22%    →    41%         ↑19pp
@@ -606,17 +605,17 @@ Commits:            32     →    47          ↑47%
 Deep sessions:      3      →    5           ↑2
 ```
 
-**If no prior retros exist:** Skip the comparison section and append: "First retro recorded — run again next week to see trends."
+**Si no existen retros previas:** Omite la seccion de comparacion y anade: "Primera retro registrada — ejecuta de nuevo la proxima semana para ver tendencias."
 
-### Step 13: Save Retro History
+### Paso 13: Guardar Historial de Retro
 
-After computing all metrics (including streak) and loading any prior history for comparison, save a JSON snapshot:
+Despues de calcular todas las metricas (incluyendo racha) y cargar cualquier historial previo para comparacion, guarda una instantanea JSON:
 
 ```bash
 mkdir -p .context/retros
 ```
 
-Determine the next sequence number for today (substitute the actual date for `$(date +%Y-%m-%d)`):
+Determina el siguiente numero de secuencia para hoy (sustituye la fecha real por `$(date +%Y-%m-%d)`):
 ```bash
 # Count existing retros for today to get next sequence number
 today=$(date +%Y-%m-%d)
@@ -625,7 +624,7 @@ next=$((existing + 1))
 # Save as .context/retros/${today}-${next}.json
 ```
 
-Use the Write tool to save the JSON file with this schema:
+Usa la herramienta Write para guardar el archivo JSON con este esquema:
 ```json
 {
   "date": "2026-03-08",
@@ -665,9 +664,9 @@ Use the Write tool to save the JSON file with this schema:
 }
 ```
 
-**Note:** Only include the `greptile` field if `~/.gstack/greptile-history.md` exists and has entries within the time window. Only include the `backlog` field if `TODOS.md` exists. Only include the `test_health` field if test files were found (command 10 returns > 0). If any has no data, omit the field entirely.
+**Nota:** Solo incluye el campo `greptile` si `~/.gstack/greptile-history.md` existe y tiene entradas dentro de la ventana temporal. Solo incluye el campo `backlog` si `TODOS.md` existe. Solo incluye el campo `test_health` si se encontraron archivos de test (el comando 10 devuelve > 0). Si alguno no tiene datos, omite el campo completamente.
 
-Include test health data in the JSON when test files exist:
+Incluye datos de salud de tests en el JSON cuando existan archivos de test:
 ```json
   "test_health": {
     "total_test_files": 47,
@@ -677,7 +676,7 @@ Include test health data in the JSON when test files exist:
   }
 ```
 
-Include backlog data in the JSON when TODOS.md exists:
+Incluye datos de backlog en el JSON cuando exista TODOS.md:
 ```json
   "backlog": {
     "total_open": 28,
@@ -688,139 +687,139 @@ Include backlog data in the JSON when TODOS.md exists:
   }
 ```
 
-### Step 14: Write the Narrative
+### Paso 14: Escribir la Narrativa
 
-Structure the output as:
+Estructura la salida como:
 
 ---
 
-**Tweetable summary** (first line, before everything else):
+**Resumen tweeteable** (primera linea, antes de todo lo demas):
 ```
 Week of Mar 1: 47 commits (3 contributors), 3.2k LOC, 38% tests, 12 PRs, peak: 10pm | Streak: 47d
 ```
 
-## Engineering Retro: [date range]
+## Retro de Ingenieria: [rango de fechas]
 
-### Summary Table
-(from Step 2)
+### Tabla Resumen
+(del Paso 2)
 
-### Trends vs Last Retro
-(from Step 11, loaded before save — skip if first retro)
+### Tendencias vs Ultima Retro
+(del Paso 11, cargado antes de guardar — omitir si es la primera retro)
 
-### Time & Session Patterns
-(from Steps 3-4)
+### Patrones de Tiempo y Sesiones
+(de los Pasos 3-4)
 
-Narrative interpreting what the team-wide patterns mean:
-- When the most productive hours are and what drives them
-- Whether sessions are getting longer or shorter over time
-- Estimated hours per day of active coding (team aggregate)
-- Notable patterns: do team members code at the same time or in shifts?
+Narrativa interpretando lo que significan los patrones a nivel de equipo:
+- Cuales son las horas mas productivas y que las impulsa
+- Si las sesiones se estan volviendo mas largas o mas cortas con el tiempo
+- Horas estimadas por dia de codificacion activa (agregado del equipo)
+- Patrones notables: los miembros del equipo programan al mismo tiempo o en turnos?
 
-### Shipping Velocity
-(from Steps 5-7)
+### Velocidad de Envio
+(de los Pasos 5-7)
 
-Narrative covering:
-- Commit type mix and what it reveals
-- PR size distribution and what it reveals about shipping cadence
-- Fix-chain detection (sequences of fix commits on the same subsystem)
-- Version bump discipline
+Narrativa que cubra:
+- Mezcla de tipos de commit y lo que revela
+- Distribucion de tamano de PR y lo que revela sobre la cadencia de envio
+- Deteccion de cadenas de fix (secuencias de commits de fix en el mismo subsistema)
+- Disciplina de versionado
 
-### Code Quality Signals
-- Test LOC ratio trend
-- Hotspot analysis (are the same files churning?)
-- Greptile signal ratio and trend (if history exists): "Greptile: X% signal (Y valid catches, Z false positives)"
+### Senales de Calidad de Codigo
+- Tendencia del ratio de LOC de tests
+- Analisis de puntos calientes (los mismos archivos estan rotando?)
+- Ratio de senal Greptile y tendencia (si existe historial): "Greptile: X% senal (Y capturas validas, Z falsos positivos)"
 
-### Test Health
-- Total test files: N (from command 10)
-- Tests added this period: M (from command 12 — test files changed)
-- Regression test commits: list `test(qa):` and `test(design):` and `test: coverage` commits from command 11
-- If prior retro exists and has `test_health`: show delta "Test count: {last} → {now} (+{delta})"
-- If test ratio < 20%: flag as growth area — "100% test coverage is the goal. Tests make vibe coding safe."
+### Salud de Tests
+- Archivos de test totales: N (del comando 10)
+- Tests anadidos en este periodo: M (del comando 12 — archivos de test modificados)
+- Commits de tests de regresion: listar commits `test(qa):` y `test(design):` y `test: coverage` del comando 11
+- Si existe retro previa y tiene `test_health`: mostrar delta "Conteo de tests: {anterior} → {ahora} (+{delta})"
+- Si el ratio de tests < 20%: marcar como area de crecimiento — "El 100% de cobertura de tests es el objetivo. Los tests hacen seguro el vibe coding."
 
-### Plan Completion
-Check review JSONL logs for plan completion data from /ship runs this period:
+### Completitud de Plan
+Verifica los logs de revision JSONL para datos de completitud de plan de ejecuciones de /ship en este periodo:
 
 ```bash
 eval "$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)"
 cat ~/.gstack/projects/$SLUG/*-reviews.jsonl 2>/dev/null | grep '"skill":"ship"' | grep '"plan_items_total"' || echo "NO_PLAN_DATA"
 ```
 
-If plan completion data exists within the retro time window:
-- Count branches shipped with plans (entries that have `plan_items_total` > 0)
-- Compute average completion: sum of `plan_items_done` / sum of `plan_items_total`
-- Identify most-skipped item category if data supports it
+Si existen datos de completitud de plan dentro de la ventana temporal de la retro:
+- Contar ramas enviadas con planes (entradas que tienen `plan_items_total` > 0)
+- Calcular promedio de completitud: suma de `plan_items_done` / suma de `plan_items_total`
+- Identificar la categoria de elementos mas omitida si los datos lo permiten
 
-Output:
+Salida:
 ```
 Plan Completion This Period:
   {N} branches shipped with plans
   Average completion: {X}% ({done}/{total} items)
 ```
 
-If no plan data exists, skip this section silently.
+Si no existen datos de plan, omite esta seccion silenciosamente.
 
-### Focus & Highlights
-(from Step 8)
-- Focus score with interpretation
-- Ship of the week callout
+### Enfoque y Destacados
+(del Paso 8)
+- Puntuacion de enfoque con interpretacion
+- Destaque del envio de la semana
 
-### Your Week (personal deep-dive)
-(from Step 9, for the current user only)
+### Tu Semana (analisis profundo personal)
+(del Paso 9, solo para el usuario actual)
 
-This is the section the user cares most about. Include:
-- Their personal commit count, LOC, test ratio
-- Their session patterns and peak hours
-- Their focus areas
-- Their biggest ship
-- **What you did well** (2-3 specific things anchored in commits)
-- **Where to level up** (1-2 specific, actionable suggestions)
+Esta es la seccion que mas le importa al usuario. Incluye:
+- Su conteo personal de commits, LOC, ratio de tests
+- Sus patrones de sesion y horas pico
+- Sus areas de enfoque
+- Su mayor envio
+- **Lo que hiciste bien** (2-3 cosas especificas ancladas en commits)
+- **Donde subir de nivel** (1-2 sugerencias especificas y accionables)
 
-### Team Breakdown
-(from Step 9, for each teammate — skip if solo repo)
+### Desglose del Equipo
+(del Paso 9, para cada companero de equipo — omitir si es repositorio individual)
 
-For each teammate (sorted by commits descending), write a section:
+Para cada companero de equipo (ordenado por commits en orden descendente), escribe una seccion:
 
-#### [Name]
-- **What they shipped**: 2-3 sentences on their contributions, areas of focus, and commit patterns
-- **Praise**: 1-2 specific things they did well, anchored in actual commits. Be genuine — what would you actually say in a 1:1? Examples:
-  - "Cleaned up the entire auth module in 3 small, reviewable PRs — textbook decomposition"
-  - "Added integration tests for every new endpoint, not just happy paths"
-  - "Fixed the N+1 query that was causing 2s load times on the dashboard"
-- **Opportunity for growth**: 1 specific, constructive suggestion. Frame as investment, not criticism. Examples:
-  - "Test coverage on the payment module is at 8% — worth investing in before the next feature lands on top of it"
-  - "Most commits land in a single burst — spacing work across the day could reduce context-switching fatigue"
-  - "All commits land between 1-4am — sustainable pace matters for code quality long-term"
+#### [Nombre]
+- **Lo que envio**: 2-3 oraciones sobre sus contribuciones, areas de enfoque y patrones de commit
+- **Elogio**: 1-2 cosas especificas que hizo bien, ancladas en commits reales. Se genuino — que dirias realmente en un 1:1? Ejemplos:
+  - "Limpio todo el modulo de autenticacion en 3 PRs pequenos y revisables — descomposicion de manual"
+  - "Agrego tests de integracion para cada nuevo endpoint, no solo los casos felices"
+  - "Arreglo la consulta N+1 que estaba causando 2s de tiempo de carga en el dashboard"
+- **Oportunidad de crecimiento**: 1 sugerencia especifica y constructiva. Enmarca como inversion, no como critica. Ejemplos:
+  - "La cobertura de tests en el modulo de pagos esta al 8% — vale la pena invertir antes de que la siguiente funcionalidad se construya encima"
+  - "La mayoria de los commits llegan en una sola rafaga — espaciar el trabajo durante el dia podria reducir la fatiga por cambio de contexto"
+  - "Todos los commits llegan entre 1-4am — un ritmo sostenible importa para la calidad del codigo a largo plazo"
 
-**AI collaboration note:** If many commits have `Co-Authored-By` AI trailers (e.g., Claude, Copilot), note the AI-assisted commit percentage as a team metric. Frame it neutrally — "N% of commits were AI-assisted" — without judgment.
+**Nota de colaboracion con IA:** Si muchos commits tienen trailers `Co-Authored-By` de IA (por ejemplo, Claude, Copilot), nota el porcentaje de commits asistidos por IA como una metrica del equipo. Enmarcalo de forma neutral — "N% de los commits fueron asistidos por IA" — sin juicio.
 
-### Top 3 Team Wins
-Identify the 3 highest-impact things shipped in the window across the whole team. For each:
-- What it was
-- Who shipped it
-- Why it matters (product/architecture impact)
+### Top 3 Logros del Equipo
+Identifica las 3 cosas de mayor impacto enviadas en la ventana a traves de todo el equipo. Para cada una:
+- Que fue
+- Quien lo envio
+- Por que importa (impacto en producto/arquitectura)
 
-### 3 Things to Improve
-Specific, actionable, anchored in actual commits. Mix personal and team-level suggestions. Phrase as "to get even better, the team could..."
+### 3 Cosas para Mejorar
+Especificas, accionables, ancladas en commits reales. Mezcla sugerencias personales y a nivel de equipo. Formula como "para mejorar aun mas, el equipo podria..."
 
-### 3 Habits for Next Week
-Small, practical, realistic. Each must be something that takes <5 minutes to adopt. At least one should be team-oriented (e.g., "review each other's PRs same-day").
+### 3 Habitos para la Proxima Semana
+Pequenos, practicos, realistas. Cada uno debe ser algo que tome <5 minutos en adoptar. Al menos uno debe estar orientado al equipo (por ejemplo, "revisar los PRs de los demas el mismo dia").
 
-### Week-over-Week Trends
-(if applicable, from Step 10)
+### Tendencias Semana a Semana
+(si aplica, del Paso 10)
 
 ---
 
-## Global Retrospective Mode
+## Modo Retrospectiva Global
 
-When the user runs `/retro global` (or `/retro global 14d`), follow this flow instead of the repo-scoped Steps 1-14. This mode works from any directory — it does NOT require being inside a git repo.
+Cuando el usuario ejecuta `/retro global` (o `/retro global 14d`), sigue este flujo en lugar de los Pasos 1-14 con alcance de repositorio. Este modo funciona desde cualquier directorio — NO requiere estar dentro de un repositorio git.
 
-### Global Step 1: Compute time window
+### Paso Global 1: Calcular ventana temporal
 
-Same midnight-aligned logic as the regular retro. Default 7d. The second argument after `global` is the window (e.g., `14d`, `30d`, `24h`).
+Misma logica de alineacion a medianoche que la retro regular. Por defecto 7d. El segundo argumento despues de `global` es la ventana (por ejemplo, `14d`, `30d`, `24h`).
 
-### Global Step 2: Run discovery
+### Paso Global 2: Ejecutar descubrimiento
 
-Locate and run the discovery script using this fallback chain:
+Localiza y ejecuta el script de descubrimiento usando esta cadena de respaldo:
 
 ```bash
 DISCOVER_BIN=""
@@ -831,30 +830,30 @@ DISCOVER_BIN=""
 echo "DISCOVER_BIN: $DISCOVER_BIN"
 ```
 
-If no binary is found, tell the user: "Discovery script not found. Run `bun run build` in the gstack directory to compile it." and stop.
+Si no se encuentra el binario, indica al usuario: "Script de descubrimiento no encontrado. Ejecuta `bun run build` en el directorio de gstack para compilarlo." y detente.
 
-Run the discovery:
+Ejecuta el descubrimiento:
 ```bash
 $DISCOVER_BIN --since "<window>" --format json 2>/tmp/gstack-discover-stderr
 ```
 
-Read the stderr output from `/tmp/gstack-discover-stderr` for diagnostic info. Parse the JSON output from stdout.
+Lee la salida stderr de `/tmp/gstack-discover-stderr` para informacion de diagnostico. Analiza la salida JSON de stdout.
 
-If `total_sessions` is 0, say: "No AI coding sessions found in the last <window>. Try a longer window: `/retro global 30d`" and stop.
+Si `total_sessions` es 0, di: "No se encontraron sesiones de codificacion con IA en los ultimos <window>. Prueba una ventana mas larga: `/retro global 30d`" y detente.
 
-### Global Step 3: Run git log on each discovered repo
+### Paso Global 3: Ejecutar git log en cada repositorio descubierto
 
-For each repo in the discovery JSON's `repos` array, find the first valid path in `paths[]` (directory exists with `.git/`). If no valid path exists, skip the repo and note it.
+Para cada repositorio en el array `repos` del JSON de descubrimiento, encuentra la primera ruta valida en `paths[]` (directorio que existe con `.git/`). Si no existe una ruta valida, omite el repositorio y anotalo.
 
-**For local-only repos** (where `remote` starts with `local:`): skip `git fetch` and use the local default branch. Use `git log HEAD` instead of `git log origin/$DEFAULT`.
+**Para repositorios solo locales** (donde `remote` comienza con `local:`): omite `git fetch` y usa la rama por defecto local. Usa `git log HEAD` en lugar de `git log origin/$DEFAULT`.
 
-**For repos with remotes:**
+**Para repositorios con remotos:**
 
 ```bash
 git -C <path> fetch origin --quiet 2>/dev/null
 ```
 
-Detect the default branch for each repo: first try `git symbolic-ref refs/remotes/origin/HEAD`, then check common branch names (`main`, `master`), then fall back to `git rev-parse --abbrev-ref HEAD`. Use the detected branch as `<default>` in the commands below.
+Detecta la rama por defecto para cada repositorio: primero intenta `git symbolic-ref refs/remotes/origin/HEAD`, luego verifica nombres de rama comunes (`main`, `master`), luego recurre a `git rev-parse --abbrev-ref HEAD`. Usa la rama detectada como `<default>` en los comandos siguientes.
 
 ```bash
 # Commits with stats
@@ -870,56 +869,56 @@ git -C <path> shortlog origin/$DEFAULT --since="<start_date>T00:00:00" -sn --no-
 git -C <path> log origin/$DEFAULT --since="<start_date>T00:00:00" --format="%s" | grep -oE '#[0-9]+' | sort -n | uniq
 ```
 
-For repos that fail (deleted paths, network errors): skip and note "N repos could not be reached."
+Para repositorios que fallen (rutas eliminadas, errores de red): omite y nota "N repositorios no pudieron ser alcanzados."
 
-### Global Step 4: Compute global shipping streak
+### Paso Global 4: Calcular racha de envio global
 
-For each repo, get commit dates (capped at 365 days):
+Para cada repositorio, obtener fechas de commits (limitado a 365 dias):
 
 ```bash
 git -C <path> log origin/$DEFAULT --since="365 days ago" --format="%ad" --date=format:"%Y-%m-%d" | sort -u
 ```
 
-Union all dates across all repos. Count backward from today — how many consecutive days have at least one commit to ANY repo? If the streak hits 365 days, display as "365+ days".
+Unifica todas las fechas de todos los repositorios. Cuenta hacia atras desde hoy — cuantos dias consecutivos tienen al menos un commit en CUALQUIER repositorio? Si la racha llega a 365 dias, muestra como "365+ dias".
 
-### Global Step 5: Compute context switching metric
+### Paso Global 5: Calcular metrica de cambio de contexto
 
-From the commit timestamps gathered in Step 3, group by date. For each date, count how many distinct repos had commits that day. Report:
-- Average repos/day
-- Maximum repos/day
-- Which days were focused (1 repo) vs. fragmented (3+ repos)
+A partir de las marcas temporales de commits recopiladas en el Paso 3, agrupa por fecha. Para cada fecha, cuenta cuantos repositorios distintos tuvieron commits ese dia. Reporta:
+- Promedio de repositorios/dia
+- Maximo de repositorios/dia
+- Que dias fueron enfocados (1 repositorio) vs. fragmentados (3+ repositorios)
 
-### Global Step 6: Per-tool productivity patterns
+### Paso Global 6: Patrones de productividad por herramienta
 
-From the discovery JSON, analyze tool usage patterns:
-- Which AI tool is used for which repos (exclusive vs. shared)
-- Session count per tool
-- Behavioral patterns (e.g., "Codex used exclusively for myapp, Claude Code for everything else")
+A partir del JSON de descubrimiento, analiza los patrones de uso de herramientas:
+- Que herramienta de IA se usa para que repositorios (exclusiva vs. compartida)
+- Conteo de sesiones por herramienta
+- Patrones de comportamiento (por ejemplo, "Codex usado exclusivamente para myapp, Claude Code para todo lo demas")
 
-### Global Step 7: Aggregate and generate narrative
+### Paso Global 7: Agregar y generar narrativa
 
-Structure the output with the **shareable personal card first**, then the full
-team/project breakdown below. The personal card is designed to be screenshot-friendly
-— everything someone would want to share on X/Twitter in one clean block.
+Estructura la salida con la **tarjeta personal compartible primero**, luego el desglose
+completo del equipo/proyecto debajo. La tarjeta personal esta disenada para ser facil de capturar en pantalla
+— todo lo que alguien querria compartir en X/Twitter en un bloque limpio.
 
 ---
 
-**Tweetable summary** (first line, before everything else):
+**Resumen tweeteable** (primera linea, antes de todo lo demas):
 ```
 Week of Mar 14: 5 projects, 138 commits, 250k LOC across 5 repos | 48 AI sessions | Streak: 52d 🔥
 ```
 
-## 🚀 Your Week: [user name] — [date range]
+## 🚀 Tu Semana: [nombre de usuario] — [rango de fechas]
 
-This section is the **shareable personal card**. It contains ONLY the current user's
-stats — no team data, no project breakdowns. Designed to screenshot and post.
+Esta seccion es la **tarjeta personal compartible**. Contiene SOLO las estadisticas del
+usuario actual — sin datos de equipo, sin desgloses de proyecto. Disenada para captura de pantalla y publicacion.
 
-Use the user identity from `git config user.name` to filter all per-repo git data.
-Aggregate across all repos to compute personal totals.
+Usa la identidad del usuario de `git config user.name` para filtrar todos los datos de git por repositorio.
+Agrega a traves de todos los repositorios para calcular totales personales.
 
-Render as a single visually clean block. Left border only — no right border (LLMs
-can't align right borders reliably). Pad repo names to the longest name so columns
-align cleanly. Never truncate project names.
+Renderiza como un bloque unico visualmente limpio. Solo borde izquierdo — sin borde derecho (los LLMs
+no pueden alinear bordes derechos de forma confiable). Rellena los nombres de repositorio hasta el nombre mas largo para que las columnas
+se alineen limpiamente. Nunca truncar nombres de proyecto.
 
 ```
 ╔═══════════════════════════════════════════════════════════════
@@ -949,66 +948,66 @@ align cleanly. Never truncate project names.
 ╚═══════════════════════════════════════════════════════════════
 ```
 
-**Rules for the personal card:**
-- Only show repos where the user has commits. Skip repos with 0 commits.
-- Sort repos by user's commit count descending.
-- **Never truncate repo names.** Use the full repo name (e.g., `analyze_transcripts`
-  not `analyze_trans`). Pad the name column to the longest repo name so all columns
-  align. If names are long, widen the box — the box width adapts to content.
-- For LOC, use "k" formatting for thousands (e.g., "+64.0k" not "+64010").
-- Role: "solo" if user is the only contributor, "team" if others contributed.
-- Ship of the Week: the user's single highest-LOC PR across ALL repos.
-- Top Work: 3 bullet points summarizing the user's major themes, inferred from
-  commit messages. Not individual commits — synthesize into themes.
-  E.g., "Built /retro global — cross-project retrospective with AI session discovery"
-  not "feat: gstack-global-discover" + "feat: /retro global template".
-- The card must be self-contained. Someone seeing ONLY this block should understand
-  the user's week without any surrounding context.
-- Do NOT include team members, project totals, or context switching data here.
+**Reglas para la tarjeta personal:**
+- Solo mostrar repositorios donde el usuario tiene commits. Omitir repositorios con 0 commits.
+- Ordenar repositorios por conteo de commits del usuario en orden descendente.
+- **Nunca truncar nombres de repositorio.** Usar el nombre completo del repositorio (por ejemplo, `analyze_transcripts`
+  no `analyze_trans`). Rellenar la columna del nombre hasta el nombre de repositorio mas largo para que todas las columnas
+  se alineen. Si los nombres son largos, ampliar la caja — el ancho de la caja se adapta al contenido.
+- Para LOC, usar formato "k" para miles (por ejemplo, "+64.0k" no "+64010").
+- Rol: "solo" si el usuario es el unico contribuidor, "team" si otros contribuyeron.
+- Envio de la Semana: el PR con mayor LOC del usuario a traves de TODOS los repositorios.
+- Trabajo Principal: 3 vietas resumiendo los temas principales del usuario, inferidos de
+  los mensajes de commit. No commits individuales — sintetizar en temas.
+  Por ejemplo, "Construyo /retro global — retrospectiva entre proyectos con descubrimiento de sesiones de IA"
+  no "feat: gstack-global-discover" + "feat: /retro global template".
+- La tarjeta debe ser autocontenida. Alguien viendo SOLO este bloque deberia entender
+  la semana del usuario sin ningun contexto circundante.
+- NO incluir miembros del equipo, totales de proyecto, ni datos de cambio de contexto aqui.
 
-**Personal streak:** Use the user's own commits across all repos (filtered by
-`--author`) to compute a personal streak, separate from the team streak.
+**Racha personal:** Usa los commits propios del usuario a traves de todos los repositorios (filtrados por
+`--author`) para calcular una racha personal, separada de la racha del equipo.
 
 ---
 
-## Global Engineering Retro: [date range]
+## Retro Global de Ingenieria: [rango de fechas]
 
-Everything below is the full analysis — team data, project breakdowns, patterns.
-This is the "deep dive" that follows the shareable card.
+Todo lo que sigue es el analisis completo — datos del equipo, desgloses por proyecto, patrones.
+Este es el "analisis profundo" que sigue a la tarjeta compartible.
 
-### All Projects Overview
-| Metric | Value |
-|--------|-------|
-| Projects active | N |
-| Total commits (all repos, all contributors) | N |
-| Total LOC | +N / -N |
-| AI coding sessions | N (CC: X, Codex: Y, Gemini: Z) |
-| Active days | N |
-| Global shipping streak (any contributor, any repo) | N consecutive days |
-| Context switches/day | N avg (max: M) |
+### Vista General de Todos los Proyectos
+| Metrica | Valor |
+|---------|-------|
+| Proyectos activos | N |
+| Commits totales (todos los repositorios, todos los contribuidores) | N |
+| LOC totales | +N / -N |
+| Sesiones de codificacion con IA | N (CC: X, Codex: Y, Gemini: Z) |
+| Dias activos | N |
+| Racha de envio global (cualquier contribuidor, cualquier repositorio) | N dias consecutivos |
+| Cambios de contexto/dia | N promedio (max: M) |
 
-### Per-Project Breakdown
-For each repo (sorted by commits descending):
-- Repo name (with % of total commits)
-- Commits, LOC, PRs merged, top contributor
-- Key work (inferred from commit messages)
-- AI sessions by tool
+### Desglose por Proyecto
+Para cada repositorio (ordenado por commits en orden descendente):
+- Nombre del repositorio (con % del total de commits)
+- Commits, LOC, PRs fusionados, contribuidor principal
+- Trabajo clave (inferido de los mensajes de commit)
+- Sesiones de IA por herramienta
 
-**Your Contributions** (sub-section within each project):
-For each project, add a "Your contributions" block showing the current user's
-personal stats within that repo. Use the user identity from `git config user.name`
-to filter. Include:
-- Your commits / total commits (with %)
-- Your LOC (+insertions / -deletions)
-- Your key work (inferred from YOUR commit messages only)
-- Your commit type mix (feat/fix/refactor/chore/docs breakdown)
-- Your biggest ship in this repo (highest-LOC commit or PR)
+**Tus Contribuciones** (sub-seccion dentro de cada proyecto):
+Para cada proyecto, agrega un bloque "Tus contribuciones" mostrando las estadisticas personales
+del usuario actual dentro de ese repositorio. Usa la identidad del usuario de `git config user.name`
+para filtrar. Incluye:
+- Tus commits / commits totales (con %)
+- Tus LOC (+inserciones / -eliminaciones)
+- Tu trabajo clave (inferido SOLO de TUS mensajes de commit)
+- Tu mezcla de tipos de commit (desglose feat/fix/refactor/chore/docs)
+- Tu mayor envio en este repositorio (commit o PR con mayor LOC)
 
-If the user is the only contributor, say "Solo project — all commits are yours."
-If the user has 0 commits in a repo (team project they didn't touch this period),
-say "No commits this period — [N] AI sessions only." and skip the breakdown.
+Si el usuario es el unico contribuidor, di "Proyecto individual — todos los commits son tuyos."
+Si el usuario tiene 0 commits en un repositorio (proyecto de equipo que no toco en este periodo),
+di "Sin commits en este periodo — solo [N] sesiones de IA." y omite el desglose.
 
-Format:
+Formato:
 ```
 **Your contributions:** 47/244 commits (19%), +4.2k/-0.3k LOC
   Key work: Writer Chat, email blocking, security hardening
@@ -1016,55 +1015,55 @@ Format:
   Mix: feat(3) fix(2) chore(1)
 ```
 
-### Cross-Project Patterns
-- Time allocation across projects (% breakdown, use YOUR commits not total)
-- Peak productivity hours aggregated across all repos
-- Focused vs. fragmented days
-- Context switching trends
+### Patrones entre Proyectos
+- Asignacion de tiempo entre proyectos (desglose %, usa TUS commits no el total)
+- Horas de maxima productividad agregadas de todos los repositorios
+- Dias enfocados vs. fragmentados
+- Tendencias de cambio de contexto
 
-### Tool Usage Analysis
-Per-tool breakdown with behavioral patterns:
-- Claude Code: N sessions across M repos — patterns observed
-- Codex: N sessions across M repos — patterns observed
-- Gemini: N sessions across M repos — patterns observed
+### Analisis de Uso de Herramientas
+Desglose por herramienta con patrones de comportamiento:
+- Claude Code: N sesiones en M repositorios — patrones observados
+- Codex: N sesiones en M repositorios — patrones observados
+- Gemini: N sesiones en M repositorios — patrones observados
 
-### Ship of the Week (Global)
-Highest-impact PR across ALL projects. Identify by LOC and commit messages.
+### Envio de la Semana (Global)
+PR de mayor impacto a traves de TODOS los proyectos. Identificar por LOC y mensajes de commit.
 
-### 3 Cross-Project Insights
-What the global view reveals that no single-repo retro could show.
+### 3 Ideas entre Proyectos
+Lo que la vista global revela que ninguna retro de un solo repositorio podria mostrar.
 
-### 3 Habits for Next Week
-Considering the full cross-project picture.
+### 3 Habitos para la Proxima Semana
+Considerando el panorama completo entre proyectos.
 
 ---
 
-### Global Step 8: Load history & compare
+### Paso Global 8: Cargar historial y comparar
 
 ```bash
 ls -t ~/.gstack/retros/global-*.json 2>/dev/null | head -5
 ```
 
-**Only compare against a prior retro with the same `window` value** (e.g., 7d vs 7d). If the most recent prior retro has a different window, skip comparison and note: "Prior global retro used a different window — skipping comparison."
+**Solo comparar contra una retro previa con el mismo valor de `window`** (por ejemplo, 7d vs 7d). Si la retro previa mas reciente tiene una ventana diferente, omite la comparacion y nota: "La retro global previa uso una ventana diferente — omitiendo comparacion."
 
-If a matching prior retro exists, load it with the Read tool. Show a **Trends vs Last Global Retro** table with deltas for key metrics: total commits, LOC, sessions, streak, context switches/day.
+Si existe una retro previa coincidente, cargala con la herramienta Read. Muestra una tabla de **Tendencias vs Ultima Retro Global** con deltas para metricas clave: commits totales, LOC, sesiones, racha, cambios de contexto/dia.
 
-If no prior global retros exist, append: "First global retro recorded — run again next week to see trends."
+Si no existen retros globales previas, anade: "Primera retro global registrada — ejecuta de nuevo la proxima semana para ver tendencias."
 
-### Global Step 9: Save snapshot
+### Paso Global 9: Guardar instantanea
 
 ```bash
 mkdir -p ~/.gstack/retros
 ```
 
-Determine the next sequence number for today:
+Determina el siguiente numero de secuencia para hoy:
 ```bash
 today=$(date +%Y-%m-%d)
 existing=$(ls ~/.gstack/retros/global-${today}-*.json 2>/dev/null | wc -l | tr -d ' ')
 next=$((existing + 1))
 ```
 
-Use the Write tool to save JSON to `~/.gstack/retros/global-${today}-${next}.json`:
+Usa la herramienta Write para guardar el JSON en `~/.gstack/retros/global-${today}-${next}.json`:
 
 ```json
 {
@@ -1097,37 +1096,37 @@ Use the Write tool to save JSON to `~/.gstack/retros/global-${today}-${next}.jso
 
 ---
 
-## Compare Mode
+## Modo Comparacion
 
-When the user runs `/retro compare` (or `/retro compare 14d`):
+Cuando el usuario ejecuta `/retro compare` (o `/retro compare 14d`):
 
-1. Compute metrics for the current window (default 7d) using the midnight-aligned start date (same logic as the main retro — e.g., if today is 2026-03-18 and window is 7d, use `--since="2026-03-11T00:00:00"`)
-2. Compute metrics for the immediately prior same-length window using both `--since` and `--until` with midnight-aligned dates to avoid overlap (e.g., for a 7d window starting 2026-03-11: prior window is `--since="2026-03-04T00:00:00" --until="2026-03-11T00:00:00"`)
-3. Show a side-by-side comparison table with deltas and arrows
-4. Write a brief narrative highlighting the biggest improvements and regressions
-5. Save only the current-window snapshot to `.context/retros/` (same as a normal retro run); do **not** persist the prior-window metrics.
+1. Calcula las metricas para la ventana actual (por defecto 7d) usando la fecha de inicio alineada a medianoche (misma logica que la retro principal — por ejemplo, si hoy es 2026-03-18 y la ventana es 7d, usa `--since="2026-03-11T00:00:00"`)
+2. Calcula las metricas para la ventana inmediatamente anterior de la misma duracion usando tanto `--since` como `--until` con fechas alineadas a medianoche para evitar solapamiento (por ejemplo, para una ventana de 7d comenzando 2026-03-11: la ventana anterior es `--since="2026-03-04T00:00:00" --until="2026-03-11T00:00:00"`)
+3. Muestra una tabla de comparacion lado a lado con deltas y flechas
+4. Escribe una breve narrativa destacando las mayores mejoras y regresiones
+5. Guarda solo la instantanea de la ventana actual en `.context/retros/` (igual que una ejecucion normal de retro); **no** persistas las metricas de la ventana anterior.
 
-## Tone
+## Tono
 
-- Encouraging but candid, no coddling
-- Specific and concrete — always anchor in actual commits/code
-- Skip generic praise ("great job!") — say exactly what was good and why
-- Frame improvements as leveling up, not criticism
-- **Praise should feel like something you'd actually say in a 1:1** — specific, earned, genuine
-- **Growth suggestions should feel like investment advice** — "this is worth your time because..." not "you failed at..."
-- Never compare teammates against each other negatively. Each person's section stands on its own.
-- Keep total output around 3000-4500 words (slightly longer to accommodate team sections)
-- Use markdown tables and code blocks for data, prose for narrative
-- Output directly to the conversation — do NOT write to filesystem (except the `.context/retros/` JSON snapshot)
+- Alentador pero franco, sin condescendencia
+- Especifico y concreto — siempre anclado en commits/codigo reales
+- Omitir elogios genericos ("buen trabajo!") — di exactamente que fue bueno y por que
+- Enmarcar las mejoras como subir de nivel, no como critica
+- **Los elogios deben sentirse como algo que realmente dirias en un 1:1** — especificos, ganados, genuinos
+- **Las sugerencias de crecimiento deben sentirse como consejos de inversion** — "esto vale tu tiempo porque..." no "fallaste en..."
+- Nunca comparar companeros de equipo entre si de forma negativa. La seccion de cada persona se sostiene por si sola.
+- Mantener la salida total en torno a 3000-4500 palabras (ligeramente mas larga para acomodar secciones de equipo)
+- Usar tablas markdown y bloques de codigo para datos, prosa para la narrativa
+- Enviar la salida directamente a la conversacion — NO escribir al sistema de archivos (excepto la instantanea JSON en `.context/retros/`)
 
-## Important Rules
+## Reglas Importantes
 
-- ALL narrative output goes directly to the user in the conversation. The ONLY file written is the `.context/retros/` JSON snapshot.
-- Use `origin/<default>` for all git queries (not local main which may be stale)
-- Display all timestamps in the user's local timezone (do not override `TZ`)
-- If the window has zero commits, say so and suggest a different window
-- Round LOC/hour to nearest 50
-- Treat merge commits as PR boundaries
-- Do not read CLAUDE.md or other docs — this skill is self-contained
-- On first run (no prior retros), skip comparison sections gracefully
-- **Global mode:** Does NOT require being inside a git repo. Saves snapshots to `~/.gstack/retros/` (not `.context/retros/`). Gracefully skip AI tools that aren't installed. Only compare against prior global retros with the same window value. If streak hits 365d cap, display as "365+ days".
+- TODA la salida narrativa va directamente al usuario en la conversacion. El UNICO archivo escrito es la instantanea JSON en `.context/retros/`.
+- Usar `origin/<default>` para todas las consultas de git (no main local que puede estar desactualizado)
+- Mostrar todas las marcas temporales en la zona horaria local del usuario (no sobreescribir `TZ`)
+- Si la ventana tiene cero commits, indicarlo y sugerir una ventana diferente
+- Redondear LOC/hora al 50 mas cercano
+- Tratar los merge commits como limites de PR
+- No leer CLAUDE.md u otros documentos — esta skill es autocontenida
+- En la primera ejecucion (sin retros previas), omitir secciones de comparacion de forma elegante
+- **Modo global:** NO requiere estar dentro de un repositorio git. Guarda instantaneas en `~/.gstack/retros/` (no en `.context/retros/`). Omitir de forma elegante las herramientas de IA que no esten instaladas. Solo comparar contra retros globales previas con el mismo valor de ventana. Si la racha llega al limite de 365d, mostrar como "365+ dias".

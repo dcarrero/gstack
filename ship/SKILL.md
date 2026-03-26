@@ -3,8 +3,8 @@ name: ship
 preamble-tier: 4
 version: 1.0.0
 description: |
-  Ship workflow: detect + merge base branch, run tests, review diff, bump VERSION, update CHANGELOG, commit, push, create PR. Use when asked to "ship", "deploy", "push to main", "create a PR", or "merge and push".
-  Proactively suggest when the user says code is ready or asks about deploying.
+  Flujo de envío: detectar + fusionar rama base, ejecutar tests, revisar diff, incrementar VERSION, actualizar CHANGELOG, hacer commit, push, crear PR. Usar cuando se pida "enviar", "desplegar", "push a main", "crear un PR" o "fusionar y subir".
+  Sugerir proactivamente cuando el usuario diga que el código está listo o pregunte sobre desplegar.
 allowed-tools:
   - Bash
   - Read
@@ -315,44 +315,44 @@ branch name wherever the instructions say "the base branch."
 
 ---
 
-# Ship: Fully Automated Ship Workflow
+# Ship: Flujo de envío completamente automatizado
 
-You are running the `/ship` workflow. This is a **non-interactive, fully automated** workflow. Do NOT ask for confirmation at any step. The user said `/ship` which means DO IT. Run straight through and output the PR URL at the end.
+Estás ejecutando el flujo `/ship`. Este es un flujo **no interactivo, completamente automatizado**. NO pidas confirmación en ningún paso. El usuario dijo `/ship`, lo que significa HAZLO. Ejecuta todo de corrido y muestra la URL del PR al final.
 
-**Only stop for:**
-- On the base branch (abort)
-- Merge conflicts that can't be auto-resolved (stop, show conflicts)
-- In-branch test failures (pre-existing failures are triaged, not auto-blocking)
-- Pre-landing review finds ASK items that need user judgment
-- MINOR or MAJOR version bump needed (ask — see Step 4)
-- Greptile review comments that need user decision (complex fixes, false positives)
-- AI-assessed coverage below minimum threshold (hard gate with user override — see Step 3.4)
-- Plan items NOT DONE with no user override (see Step 3.45)
-- Plan verification failures (see Step 3.47)
-- TODOS.md missing and user wants to create one (ask — see Step 5.5)
-- TODOS.md disorganized and user wants to reorganize (ask — see Step 5.5)
+**Solo detenerse por:**
+- Estar en la rama base (abortar)
+- Conflictos de fusión que no se pueden resolver automáticamente (detenerse, mostrar conflictos)
+- Fallos de tests en la rama (los fallos preexistentes se clasifican, no bloquean automáticamente)
+- La revisión pre-landing encuentra elementos ASK que requieren juicio del usuario
+- Se necesita incremento de versión MINOR o MAJOR (preguntar — ver Paso 4)
+- Comentarios de revisión de Greptile que necesitan decisión del usuario (correcciones complejas, falsos positivos)
+- Cobertura evaluada por IA por debajo del umbral mínimo (puerta obligatoria con opción de anulación del usuario — ver Paso 3.4)
+- Elementos del plan NO DONE sin anulación del usuario (ver Paso 3.45)
+- Fallos en la verificación del plan (ver Paso 3.47)
+- TODOS.md no existe y el usuario quiere crear uno (preguntar — ver Paso 5.5)
+- TODOS.md desorganizado y el usuario quiere reorganizarlo (preguntar — ver Paso 5.5)
 
-**Never stop for:**
-- Uncommitted changes (always include them)
-- Version bump choice (auto-pick MICRO or PATCH — see Step 4)
-- CHANGELOG content (auto-generate from diff)
-- Commit message approval (auto-commit)
-- Multi-file changesets (auto-split into bisectable commits)
-- TODOS.md completed-item detection (auto-mark)
-- Auto-fixable review findings (dead code, N+1, stale comments — fixed automatically)
-- Test coverage gaps within target threshold (auto-generate and commit, or flag in PR body)
+**Nunca detenerse por:**
+- Cambios sin commit (siempre incluirlos)
+- Elección de incremento de versión (auto-elegir MICRO o PATCH — ver Paso 4)
+- Contenido del CHANGELOG (auto-generar desde el diff)
+- Aprobación del mensaje de commit (auto-commit)
+- Conjuntos de cambios multi-archivo (auto-dividir en commits bisectables)
+- Detección de elementos completados en TODOS.md (auto-marcar)
+- Hallazgos de revisión auto-corregibles (código muerto, N+1, comentarios obsoletos — se corrigen automáticamente)
+- Brechas de cobertura de tests dentro del umbral objetivo (auto-generar y hacer commit, o marcar en el cuerpo del PR)
 
 ---
 
-## Step 1: Pre-flight
+## Paso 1: Pre-vuelo
 
-1. Check the current branch. If on the base branch or the repo's default branch, **abort**: "You're on the base branch. Ship from a feature branch."
+1. Verificar la rama actual. Si estás en la rama base o la rama predeterminada del repositorio, **abortar**: "Estás en la rama base. Envía desde una rama de funcionalidad."
 
-2. Run `git status` (never use `-uall`). Uncommitted changes are always included — no need to ask.
+2. Ejecutar `git status` (nunca usar `-uall`). Los cambios sin commit siempre se incluyen — no es necesario preguntar.
 
-3. Run `git diff <base>...HEAD --stat` and `git log <base>..HEAD --oneline` to understand what's being shipped.
+3. Ejecutar `git diff <base>...HEAD --stat` y `git log <base>..HEAD --oneline` para entender qué se está enviando.
 
-4. Check review readiness:
+4. Verificar preparación para revisión:
 
 ## Review Readiness Dashboard
 
@@ -399,73 +399,72 @@ Parse the output. Find the most recent entry for each skill (plan-ceo-review, pl
 - For entries without a \`commit\` field (legacy entries): display "Note: {skill} review from {date} has no commit tracking — consider re-running for accurate staleness detection"
 - If all reviews match the current HEAD, do not display any staleness notes
 
-If the Eng Review is NOT "CLEAR":
+Si la Revisión de Ingeniería NO es "CLEAR":
 
-1. **Check for a prior override on this branch:**
+1. **Verificar si existe una anulación previa en esta rama:**
    ```bash
    eval "$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)"
    grep '"skill":"ship-review-override"' ~/.gstack/projects/$SLUG/$BRANCH-reviews.jsonl 2>/dev/null || echo "NO_OVERRIDE"
    ```
-   If an override exists, display the dashboard and note "Review gate previously accepted — continuing." Do NOT ask again.
+   Si existe una anulación, mostrar el panel y anotar "Puerta de revisión previamente aceptada — continuando." NO preguntar de nuevo.
 
-2. **If no override exists,** use AskUserQuestion:
-   - Show that Eng Review is missing or has open issues
-   - RECOMMENDATION: Choose C if the change is obviously trivial (< 20 lines, typo fix, config-only); Choose B for larger changes
-   - Options: A) Ship anyway  B) Abort — run /review or /plan-eng-review first  C) Change is too small to need eng review
-   - If CEO Review is missing, mention as informational ("CEO Review not run — recommended for product changes") but do NOT block
-   - For Design Review: run `source <(~/.claude/skills/gstack/bin/gstack-diff-scope <base> 2>/dev/null)`. If `SCOPE_FRONTEND=true` and no design review (plan-design-review or design-review-lite) exists in the dashboard, mention: "Design Review not run — this PR changes frontend code. The lite design check will run automatically in Step 3.5, but consider running /design-review for a full visual audit post-implementation." Still never block.
+2. **Si no existe anulación,** usar AskUserQuestion:
+   - Mostrar que la Revisión de Ingeniería falta o tiene problemas abiertos
+   - RECOMMENDATION: Elegir C si el cambio es obviamente trivial (< 20 líneas, corrección de erratas, solo configuración); Elegir B para cambios más grandes
+   - Opciones: A) Enviar de todos modos  B) Abortar — ejecutar /review o /plan-eng-review primero  C) El cambio es demasiado pequeño para necesitar revisión de ingeniería
+   - Si falta la Revisión del CEO, mencionar como informativo ("Revisión del CEO no ejecutada — recomendada para cambios de producto") pero NO bloquear
+   - Para Revisión de Diseño: ejecutar `source <(~/.claude/skills/gstack/bin/gstack-diff-scope <base> 2>/dev/null)`. Si `SCOPE_FRONTEND=true` y no existe revisión de diseño (plan-design-review o design-review-lite) en el panel, mencionar: "Revisión de Diseño no ejecutada — este PR cambia código frontend. La verificación de diseño lite se ejecutará automáticamente en el Paso 3.5, pero considere ejecutar /design-review para una auditoría visual completa post-implementación." Nunca bloquear de todos modos.
 
-3. **If the user chooses A or C,** persist the decision so future `/ship` runs on this branch skip the gate:
+3. **Si el usuario elige A o C,** persistir la decisión para que futuras ejecuciones de `/ship` en esta rama omitan la puerta:
    ```bash
    eval "$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)"
    echo '{"skill":"ship-review-override","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","decision":"USER_CHOICE"}' >> ~/.gstack/projects/$SLUG/$BRANCH-reviews.jsonl
    ```
-   Substitute USER_CHOICE with "ship_anyway" or "not_relevant".
+   Sustituir USER_CHOICE con "ship_anyway" o "not_relevant".
 
 ---
 
-## Step 1.5: Distribution Pipeline Check
+## Paso 1.5: Verificación del pipeline de distribución
 
-If the diff introduces a new standalone artifact (CLI binary, library package, tool) — not a web
-service with existing deployment — verify that a distribution pipeline exists.
+Si el diff introduce un nuevo artefacto independiente (binario CLI, paquete de biblioteca, herramienta) — no un servicio web con despliegue existente — verificar que existe un pipeline de distribución.
 
-1. Check if the diff adds a new `cmd/` directory, `main.go`, or `bin/` entry point:
+1. Verificar si el diff añade un nuevo directorio `cmd/`, `main.go`, o punto de entrada `bin/`:
    ```bash
    git diff origin/<base> --name-only | grep -E '(cmd/.*/main\.go|bin/|Cargo\.toml|setup\.py|package\.json)' | head -5
    ```
 
-2. If new artifact detected, check for a release workflow:
+2. Si se detecta un nuevo artefacto, verificar si existe un flujo de release:
    ```bash
    ls .github/workflows/ 2>/dev/null | grep -iE 'release|publish|dist'
    ```
 
-3. **If no release pipeline exists and a new artifact was added:** Use AskUserQuestion:
-   - "This PR adds a new binary/tool but there's no CI/CD pipeline to build and publish it.
-     Users won't be able to download the artifact after merge."
-   - A) Add a release workflow now (GitHub Actions cross-platform build + GitHub Releases)
-   - B) Defer — add to TODOS.md
-   - C) Not needed — this is internal/web-only, existing deployment covers it
+3. **Si no existe pipeline de release y se añadió un nuevo artefacto:** Usar AskUserQuestion:
+   - "Este PR añade un nuevo binario/herramienta pero no hay pipeline de CI/CD para compilarlo y publicarlo.
+     Los usuarios no podrán descargar el artefacto después del merge."
+   - A) Añadir un flujo de release ahora (GitHub Actions compilación multiplataforma + GitHub Releases)
+   - B) Diferir — añadir a TODOS.md
+   - C) No es necesario — esto es interno/solo web, el despliegue existente lo cubre
 
-4. **If release pipeline exists:** Continue silently.
-5. **If no new artifact detected:** Skip silently.
+4. **Si existe pipeline de release:** Continuar silenciosamente.
+5. **Si no se detectó nuevo artefacto:** Omitir silenciosamente.
 
 ---
 
-## Step 2: Merge the base branch (BEFORE tests)
+## Paso 2: Fusionar la rama base (ANTES de los tests)
 
-Fetch and merge the base branch into the feature branch so tests run against the merged state:
+Obtener y fusionar la rama base en la rama de funcionalidad para que los tests se ejecuten contra el estado fusionado:
 
 ```bash
 git fetch origin <base> && git merge origin/<base> --no-edit
 ```
 
-**If there are merge conflicts:** Try to auto-resolve if they are simple (VERSION, schema.rb, CHANGELOG ordering). If conflicts are complex or ambiguous, **STOP** and show them.
+**Si hay conflictos de fusión:** Intentar resolver automáticamente si son simples (VERSION, schema.rb, ordenamiento de CHANGELOG). Si los conflictos son complejos o ambiguos, **DETENERSE** y mostrarlos.
 
-**If already up to date:** Continue silently.
+**Si ya está actualizado:** Continuar silenciosamente.
 
 ---
 
-## Step 2.5: Test Framework Bootstrap
+## Paso 2.5: Inicialización del framework de tests
 
 ## Test Framework Bootstrap
 
@@ -622,13 +621,13 @@ Only commit if there are changes. Stage all bootstrap files (config, test direct
 
 ---
 
-## Step 3: Run tests (on merged code)
+## Paso 3: Ejecutar tests (sobre el código fusionado)
 
-**Do NOT run `RAILS_ENV=test bin/rails db:migrate`** — `bin/test-lane` already calls
-`db:test:prepare` internally, which loads the schema into the correct lane database.
-Running bare test migrations without INSTANCE hits an orphan DB and corrupts structure.sql.
+**NO ejecutar `RAILS_ENV=test bin/rails db:migrate`** — `bin/test-lane` ya llama a
+`db:test:prepare` internamente, que carga el schema en la base de datos del lane correcto.
+Ejecutar migraciones de test sin INSTANCE toca una BD huérfana y corrompe structure.sql.
 
-Run both test suites in parallel:
+Ejecutar ambas suites de tests en paralelo:
 
 ```bash
 bin/test-lane 2>&1 | tee /tmp/ship_tests.txt &
@@ -636,9 +635,9 @@ npm run test 2>&1 | tee /tmp/ship_vitest.txt &
 wait
 ```
 
-After both complete, read the output files and check pass/fail.
+Una vez que ambas terminen, leer los archivos de salida y verificar éxito/fallo.
 
-**If any test fails:** Do NOT immediately stop. Apply the Test Failure Ownership Triage:
+**Si algún test falla:** NO detenerse inmediatamente. Aplicar la Clasificación de Propiedad de Fallos de Test:
 
 ## Test Failure Ownership Triage
 
@@ -736,75 +735,75 @@ Use AskUserQuestion:
 - Continue with the workflow.
 - Note in output: "Pre-existing test failure skipped: <test-name>"
 
-**After triage:** If any in-branch failures remain unfixed, **STOP**. Do not proceed. If all failures were pre-existing and handled (fixed, TODOed, assigned, or skipped), continue to Step 3.25.
+**Después de la clasificación:** Si quedan fallos de la rama sin corregir, **DETENERSE**. No continuar. Si todos los fallos eran preexistentes y se gestionaron (corregidos, marcados como TODO, asignados u omitidos), continuar al Paso 3.25.
 
-**If all pass:** Continue silently — just note the counts briefly.
+**Si todos pasan:** Continuar silenciosamente — solo anotar los conteos brevemente.
 
 ---
 
-## Step 3.25: Eval Suites (conditional)
+## Paso 3.25: Suites de evaluación (condicional)
 
-Evals are mandatory when prompt-related files change. Skip this step entirely if no prompt files are in the diff.
+Las evaluaciones son obligatorias cuando cambian archivos relacionados con prompts. Omitir este paso por completo si no hay archivos de prompts en el diff.
 
-**1. Check if the diff touches prompt-related files:**
+**1. Verificar si el diff toca archivos relacionados con prompts:**
 
 ```bash
 git diff origin/<base> --name-only
 ```
 
-Match against these patterns (from CLAUDE.md):
+Comparar contra estos patrones (de CLAUDE.md):
 - `app/services/*_prompt_builder.rb`
 - `app/services/*_generation_service.rb`, `*_writer_service.rb`, `*_designer_service.rb`
 - `app/services/*_evaluator.rb`, `*_scorer.rb`, `*_classifier_service.rb`, `*_analyzer.rb`
 - `app/services/concerns/*voice*.rb`, `*writing*.rb`, `*prompt*.rb`, `*token*.rb`
 - `app/services/chat_tools/*.rb`, `app/services/x_thread_tools/*.rb`
 - `config/system_prompts/*.txt`
-- `test/evals/**/*` (eval infrastructure changes affect all suites)
+- `test/evals/**/*` (cambios en la infraestructura de evaluación afectan a todas las suites)
 
-**If no matches:** Print "No prompt-related files changed — skipping evals." and continue to Step 3.5.
+**Si no hay coincidencias:** Imprimir "No se modificaron archivos relacionados con prompts — omitiendo evaluaciones." y continuar al Paso 3.5.
 
-**2. Identify affected eval suites:**
+**2. Identificar suites de evaluación afectadas:**
 
-Each eval runner (`test/evals/*_eval_runner.rb`) declares `PROMPT_SOURCE_FILES` listing which source files affect it. Grep these to find which suites match the changed files:
+Cada ejecutor de evaluación (`test/evals/*_eval_runner.rb`) declara `PROMPT_SOURCE_FILES` listando qué archivos fuente le afectan. Buscar con grep para encontrar qué suites coinciden con los archivos modificados:
 
 ```bash
 grep -l "changed_file_basename" test/evals/*_eval_runner.rb
 ```
 
-Map runner → test file: `post_generation_eval_runner.rb` → `post_generation_eval_test.rb`.
+Mapear ejecutor → archivo de test: `post_generation_eval_runner.rb` → `post_generation_eval_test.rb`.
 
-**Special cases:**
-- Changes to `test/evals/judges/*.rb`, `test/evals/support/*.rb`, or `test/evals/fixtures/` affect ALL suites that use those judges/support files. Check imports in the eval test files to determine which.
-- Changes to `config/system_prompts/*.txt` — grep eval runners for the prompt filename to find affected suites.
-- If unsure which suites are affected, run ALL suites that could plausibly be impacted. Over-testing is better than missing a regression.
+**Casos especiales:**
+- Cambios en `test/evals/judges/*.rb`, `test/evals/support/*.rb`, o `test/evals/fixtures/` afectan a TODAS las suites que usan esos judges/archivos de soporte. Verificar las importaciones en los archivos de test de evaluación para determinar cuáles.
+- Cambios en `config/system_prompts/*.txt` — buscar con grep en los ejecutores de evaluación el nombre del archivo de prompt para encontrar suites afectadas.
+- Si no está claro qué suites se ven afectadas, ejecutar TODAS las suites que puedan verse plausiblemente impactadas. Sobre-testear es mejor que perder una regresión.
 
-**3. Run affected suites at `EVAL_JUDGE_TIER=full`:**
+**3. Ejecutar suites afectadas con `EVAL_JUDGE_TIER=full`:**
 
-`/ship` is a pre-merge gate, so always use full tier (Sonnet structural + Opus persona judges).
+`/ship` es una puerta pre-merge, así que siempre usar tier completo (jueces estructurales Sonnet + jueces de persona Opus).
 
 ```bash
 EVAL_JUDGE_TIER=full EVAL_VERBOSE=1 bin/test-lane --eval test/evals/<suite>_eval_test.rb 2>&1 | tee /tmp/ship_evals.txt
 ```
 
-If multiple suites need to run, run them sequentially (each needs a test lane). If the first suite fails, stop immediately — don't burn API cost on remaining suites.
+Si se necesitan ejecutar múltiples suites, ejecutarlas secuencialmente (cada una necesita un test lane). Si la primera suite falla, detenerse inmediatamente — no gastar coste de API en las suites restantes.
 
-**4. Check results:**
+**4. Verificar resultados:**
 
-- **If any eval fails:** Show the failures, the cost dashboard, and **STOP**. Do not proceed.
-- **If all pass:** Note pass counts and cost. Continue to Step 3.5.
+- **Si alguna evaluación falla:** Mostrar los fallos, el panel de costes, y **DETENERSE**. No continuar.
+- **Si todas pasan:** Anotar conteos de éxito y coste. Continuar al Paso 3.5.
 
-**5. Save eval output** — include eval results and cost dashboard in the PR body (Step 8).
+**5. Guardar salida de evaluación** — incluir resultados de evaluación y panel de costes en el cuerpo del PR (Paso 8).
 
-**Tier reference (for context — /ship always uses `full`):**
-| Tier | When | Speed (cached) | Cost |
-|------|------|----------------|------|
-| `fast` (Haiku) | Dev iteration, smoke tests | ~5s (14x faster) | ~$0.07/run |
-| `standard` (Sonnet) | Default dev, `bin/test-lane --eval` | ~17s (4x faster) | ~$0.37/run |
-| `full` (Opus persona) | **`/ship` and pre-merge** | ~72s (baseline) | ~$1.27/run |
+**Referencia de tiers (para contexto — /ship siempre usa `full`):**
+| Tier | Cuándo | Velocidad (en caché) | Coste |
+|------|--------|---------------------|-------|
+| `fast` (Haiku) | Iteración de desarrollo, pruebas de humo | ~5s (14x más rápido) | ~$0.07/ejecución |
+| `standard` (Sonnet) | Desarrollo por defecto, `bin/test-lane --eval` | ~17s (4x más rápido) | ~$0.37/ejecución |
+| `full` (Opus persona) | **`/ship` y pre-merge** | ~72s (referencia) | ~$1.27/ejecución |
 
 ---
 
-## Step 3.4: Test Coverage Audit
+## Paso 3.4: Auditoría de cobertura de tests
 
 100% coverage is the goal — every untested path is a path where bugs hide and vibe coding becomes yolo coding. Evaluate what was ACTUALLY coded (from the diff), not what was planned.
 
@@ -1032,135 +1031,135 @@ Repo: {owner/repo}
 
 ---
 
-## Step 3.45: Plan Completion Audit
+## Paso 3.45: Auditoría de finalización del plan
 
-### Plan File Discovery
+### Descubrimiento del Archivo de Plan
 
-1. **Conversation context (primary):** Check if there is an active plan file in this conversation — Claude Code system messages include plan file paths when in plan mode. Look for references like `~/.claude/plans/*.md` in system messages. If found, use it directly — this is the most reliable signal.
+1. **Contexto de la conversación (primario):** Comprueba si hay un archivo de plan activo en esta conversación — los mensajes del sistema de Claude Code incluyen rutas de archivos de plan cuando está en modo plan. Busca referencias como `~/.claude/plans/*.md` en los mensajes del sistema. Si se encuentra, úsalo directamente — esta es la señal más fiable.
 
-2. **Content-based search (fallback):** If no plan file is referenced in conversation context, search by content:
+2. **Búsqueda por contenido (respaldo):** Si no se hace referencia a un archivo de plan en el contexto de la conversación, busca por contenido:
 
 ```bash
 BRANCH=$(git branch --show-current 2>/dev/null | tr '/' '-')
 REPO=$(basename "$(git rev-parse --show-toplevel 2>/dev/null)")
-# Try branch name match first (most specific)
+# Intentar primero coincidencia por nombre de rama (más específico)
 PLAN=$(ls -t ~/.claude/plans/*.md 2>/dev/null | xargs grep -l "$BRANCH" 2>/dev/null | head -1)
-# Fall back to repo name match
+# Recurrir a coincidencia por nombre de repo
 [ -z "$PLAN" ] && PLAN=$(ls -t ~/.claude/plans/*.md 2>/dev/null | xargs grep -l "$REPO" 2>/dev/null | head -1)
-# Last resort: most recent plan modified in the last 24 hours
+# Último recurso: plan más reciente modificado en las últimas 24 horas
 [ -z "$PLAN" ] && PLAN=$(find ~/.claude/plans -name '*.md' -mmin -1440 -maxdepth 1 2>/dev/null | xargs ls -t 2>/dev/null | head -1)
 [ -n "$PLAN" ] && echo "PLAN_FILE: $PLAN" || echo "NO_PLAN_FILE"
 ```
 
-3. **Validation:** If a plan file was found via content-based search (not conversation context), read the first 20 lines and verify it is relevant to the current branch's work. If it appears to be from a different project or feature, treat as "no plan file found."
+3. **Validación:** Si se encontró un archivo de plan mediante búsqueda por contenido (no por contexto de conversación), lee las primeras 20 líneas y verifica que es relevante para el trabajo de la rama actual. Si parece ser de un proyecto o funcionalidad diferente, trata como "archivo de plan no encontrado."
 
-**Error handling:**
-- No plan file found → skip with "No plan file detected — skipping."
-- Plan file found but unreadable (permissions, encoding) → skip with "Plan file found but unreadable — skipping."
+**Manejo de errores:**
+- Archivo de plan no encontrado → omite con "Archivo de plan no detectado — omitiendo."
+- Archivo de plan encontrado pero ilegible (permisos, codificación) → omite con "Archivo de plan encontrado pero ilegible — omitiendo."
 
-### Actionable Item Extraction
+### Extracción de Elementos Accionables
 
-Read the plan file. Extract every actionable item — anything that describes work to be done. Look for:
+Lee el archivo de plan. Extrae cada elemento accionable — cualquier cosa que describa trabajo por hacer. Busca:
 
-- **Checkbox items:** `- [ ] ...` or `- [x] ...`
-- **Numbered steps** under implementation headings: "1. Create ...", "2. Add ...", "3. Modify ..."
-- **Imperative statements:** "Add X to Y", "Create a Z service", "Modify the W controller"
-- **File-level specifications:** "New file: path/to/file.ts", "Modify path/to/existing.rb"
-- **Test requirements:** "Test that X", "Add test for Y", "Verify Z"
-- **Data model changes:** "Add column X to table Y", "Create migration for Z"
+- **Elementos checkbox:** `- [ ] ...` o `- [x] ...`
+- **Pasos numerados** bajo encabezados de implementación: "1. Crear ...", "2. Agregar ...", "3. Modificar ..."
+- **Declaraciones imperativas:** "Agregar X a Y", "Crear un servicio Z", "Modificar el controlador W"
+- **Especificaciones a nivel de archivo:** "Nuevo archivo: ruta/al/archivo.ts", "Modificar ruta/al/existente.rb"
+- **Requisitos de tests:** "Probar que X", "Agregar test para Y", "Verificar Z"
+- **Cambios de modelo de datos:** "Agregar columna X a tabla Y", "Crear migración para Z"
 
-**Ignore:**
-- Context/Background sections (`## Context`, `## Background`, `## Problem`)
-- Questions and open items (marked with ?, "TBD", "TODO: decide")
-- Review report sections (`## GSTACK REVIEW REPORT`)
-- Explicitly deferred items ("Future:", "Out of scope:", "NOT in scope:", "P2:", "P3:", "P4:")
-- CEO Review Decisions sections (these record choices, not work items)
+**Ignorar:**
+- Secciones de contexto/antecedentes (`## Contexto`, `## Antecedentes`, `## Problema`)
+- Preguntas y elementos abiertos (marcados con ?, "TBD", "TODO: decidir")
+- Secciones de informe de revisión (`## INFORME DE REVISIÓN GSTACK`)
+- Elementos explícitamente diferidos ("Futuro:", "Fuera de alcance:", "NO en alcance:", "P2:", "P3:", "P4:")
+- Secciones de Decisiones de Revisión CEO (registran decisiones, no elementos de trabajo)
 
-**Cap:** Extract at most 50 items. If the plan has more, note: "Showing top 50 of N plan items — full list in plan file."
+**Límite:** Extrae como máximo 50 elementos. Si el plan tiene más, indica: "Mostrando los 50 principales de N elementos del plan — lista completa en el archivo de plan."
 
-**No items found:** If the plan contains no extractable actionable items, skip with: "Plan file contains no actionable items — skipping completion audit."
+**Sin elementos encontrados:** Si el plan no contiene elementos accionables extraíbles, omite con: "El archivo de plan no contiene elementos accionables — omitiendo auditoría de completitud."
 
-For each item, note:
-- The item text (verbatim or concise summary)
-- Its category: CODE | TEST | MIGRATION | CONFIG | DOCS
+Para cada elemento, anota:
+- El texto del elemento (textual o resumen conciso)
+- Su categoría: CODE | TEST | MIGRATION | CONFIG | DOCS
 
-### Cross-Reference Against Diff
+### Cruce con el Diff
 
-Run `git diff origin/<base>...HEAD` and `git log origin/<base>..HEAD --oneline` to understand what was implemented.
+Ejecuta `git diff origin/<base>...HEAD` y `git log origin/<base>..HEAD --oneline` para entender qué se implementó.
 
-For each extracted plan item, check the diff and classify:
+Para cada elemento del plan extraído, revisa el diff y clasifica:
 
-- **DONE** — Clear evidence in the diff that this item was implemented. Cite the specific file(s) changed.
-- **PARTIAL** — Some work toward this item exists in the diff but it's incomplete (e.g., model created but controller missing, function exists but edge cases not handled).
-- **NOT DONE** — No evidence in the diff that this item was addressed.
-- **CHANGED** — The item was implemented using a different approach than the plan described, but the same goal is achieved. Note the difference.
+- **DONE** — Evidencia clara en el diff de que este elemento fue implementado. Cita los archivos específicos cambiados.
+- **PARTIAL** — Existe algo de trabajo hacia este elemento en el diff pero está incompleto (ej.: modelo creado pero falta el controlador, función existe pero no se manejan casos extremos).
+- **NOT DONE** — Sin evidencia en el diff de que este elemento fue abordado.
+- **CHANGED** — El elemento fue implementado usando un enfoque diferente al descrito en el plan, pero se logra el mismo objetivo. Anota la diferencia.
 
-**Be conservative with DONE** — require clear evidence in the diff. A file being touched is not enough; the specific functionality described must be present.
-**Be generous with CHANGED** — if the goal is met by different means, that counts as addressed.
+**Sé conservador con DONE** — requiere evidencia clara en el diff. Que un archivo se haya tocado no es suficiente; la funcionalidad específica descrita debe estar presente.
+**Sé generoso con CHANGED** — si el objetivo se cumple por medios diferentes, cuenta como abordado.
 
-### Output Format
+### Formato de Salida
 
 ```
-PLAN COMPLETION AUDIT
+AUDITORÍA DE COMPLETITUD DEL PLAN
 ═══════════════════════════════
-Plan: {plan file path}
+Plan: {ruta del archivo de plan}
 
-## Implementation Items
-  [DONE]      Create UserService — src/services/user_service.rb (+142 lines)
-  [PARTIAL]   Add validation — model validates but missing controller checks
-  [NOT DONE]  Add caching layer — no cache-related changes in diff
-  [CHANGED]   "Redis queue" → implemented with Sidekiq instead
+## Elementos de Implementación
+  [DONE]      Crear UserService — src/services/user_service.rb (+142 líneas)
+  [PARTIAL]   Agregar validación — el modelo valida pero faltan verificaciones del controlador
+  [NOT DONE]  Agregar capa de caché — sin cambios relacionados con caché en el diff
+  [CHANGED]   "Cola Redis" → implementado con Sidekiq en su lugar
 
-## Test Items
-  [DONE]      Unit tests for UserService — test/services/user_service_test.rb
-  [NOT DONE]  E2E test for signup flow
+## Elementos de Test
+  [DONE]      Tests unitarios para UserService — test/services/user_service_test.rb
+  [NOT DONE]  Test E2E del flujo de registro
 
-## Migration Items
-  [DONE]      Create users table — db/migrate/20240315_create_users.rb
+## Elementos de Migración
+  [DONE]      Crear tabla users — db/migrate/20240315_create_users.rb
 
 ─────────────────────────────────
-COMPLETION: 4/7 DONE, 1 PARTIAL, 1 NOT DONE, 1 CHANGED
+COMPLETITUD: 4/7 DONE, 1 PARTIAL, 1 NOT DONE, 1 CHANGED
 ─────────────────────────────────
 ```
 
-### Gate Logic
+### Lógica del Gate
 
-After producing the completion checklist:
+Después de producir la checklist de completitud:
 
-- **All DONE or CHANGED:** Pass. "Plan completion: PASS — all items addressed." Continue.
-- **Only PARTIAL items (no NOT DONE):** Continue with a note in the PR body. Not blocking.
-- **Any NOT DONE items:** Use AskUserQuestion:
-  - Show the completion checklist above
-  - "{N} items from the plan are NOT DONE. These were part of the original plan but are missing from the implementation."
-  - RECOMMENDATION: depends on item count and severity. If 1-2 minor items (docs, config), recommend B. If core functionality is missing, recommend A.
-  - Options:
-    A) Stop — implement the missing items before shipping
-    B) Ship anyway — defer these to a follow-up (will create P1 TODOs in Step 5.5)
-    C) These items were intentionally dropped — remove from scope
-  - If A: STOP. List the missing items for the user to implement.
-  - If B: Continue. For each NOT DONE item, create a P1 TODO in Step 5.5 with "Deferred from plan: {plan file path}".
-  - If C: Continue. Note in PR body: "Plan items intentionally dropped: {list}."
+- **Todos DONE o CHANGED:** Aprobado. "Completitud del plan: APROBADO — todos los elementos abordados." Continúa.
+- **Solo elementos PARTIAL (sin NOT DONE):** Continúa con una nota en el cuerpo del PR. No es bloqueante.
+- **Algún elemento NOT DONE:** Usa AskUserQuestion:
+  - Muestra la checklist de completitud anterior
+  - "{N} elementos del plan están NOT DONE. Estos eran parte del plan original pero faltan en la implementación."
+  - RECOMMENDATION: depende de la cantidad y gravedad de elementos. Si son 1-2 elementos menores (docs, config), recomienda B. Si falta funcionalidad principal, recomienda A.
+  - Opciones:
+    A) Detener — implementar los elementos faltantes antes de enviar
+    B) Enviar de todos modos — diferir estos a un seguimiento (se crearán TODOs P1 en el Paso 5.5)
+    C) Estos elementos fueron eliminados intencionalmente — remover del alcance
+  - Si A: DETENER. Lista los elementos faltantes para que el usuario los implemente.
+  - Si B: Continúa. Para cada elemento NOT DONE, crea un TODO P1 en el Paso 5.5 con "Diferido del plan: {ruta del archivo de plan}".
+  - Si C: Continúa. Indica en el cuerpo del PR: "Elementos del plan eliminados intencionalmente: {lista}."
 
-**No plan file found:** Skip entirely. "No plan file detected — skipping plan completion audit."
+**Archivo de plan no encontrado:** Omite por completo. "Archivo de plan no detectado — omitiendo auditoría de completitud del plan."
 
-**Include in PR body (Step 8):** Add a `## Plan Completion` section with the checklist summary.
+**Incluir en el cuerpo del PR (Paso 8):** Agrega una sección `## Completitud del Plan` con el resumen de la checklist.
 
 ---
 
-## Step 3.47: Plan Verification
+## Paso 3.47: Verificación del Plan
 
-Automatically verify the plan's testing/verification steps using the `/qa-only` skill.
+Verifica automáticamente los pasos de testing/verificación del plan usando el skill `/qa-only`.
 
-### 1. Check for verification section
+### 1. Verificar si existe sección de verificación
 
-Using the plan file already discovered in Step 3.45, look for a verification section. Match any of these headings: `## Verification`, `## Test plan`, `## Testing`, `## How to test`, `## Manual testing`, or any section with verification-flavored items (URLs to visit, things to check visually, interactions to test).
+Usando el archivo de plan ya descubierto en el Paso 3.45, busca una sección de verificación. Coincide con cualquiera de estos encabezados: `## Verificación`, `## Plan de tests`, `## Testing`, `## Cómo probar`, `## Testing manual`, o cualquier sección con elementos con sabor a verificación (URLs a visitar, cosas a verificar visualmente, interacciones a probar).
 
-**If no verification section found:** Skip with "No verification steps found in plan — skipping auto-verification."
-**If no plan file was found in Step 3.45:** Skip (already handled).
+**Si no se encuentra sección de verificación:** Omite con "No se encontraron pasos de verificación en el plan — omitiendo auto-verificación."
+**Si no se encontró archivo de plan en el Paso 3.45:** Omite (ya manejado).
 
-### 2. Check for running dev server
+### 2. Verificar si hay servidor de desarrollo ejecutándose
 
-Before invoking browse-based verification, check if a dev server is reachable:
+Antes de invocar verificación basada en navegador, comprueba si un servidor de desarrollo es accesible:
 
 ```bash
 curl -s -o /dev/null -w '%{http_code}' http://localhost:3000 2>/dev/null || \
@@ -1169,55 +1168,55 @@ curl -s -o /dev/null -w '%{http_code}' http://localhost:5173 2>/dev/null || \
 curl -s -o /dev/null -w '%{http_code}' http://localhost:4000 2>/dev/null || echo "NO_SERVER"
 ```
 
-**If NO_SERVER:** Skip with "No dev server detected — skipping plan verification. Run /qa separately after deploying."
+**Si NO_SERVER:** Omite con "No se detectó servidor de desarrollo — omitiendo verificación del plan. Ejecuta /qa por separado después de desplegar."
 
-### 3. Invoke /qa-only inline
+### 3. Invocar /qa-only en línea
 
-Read the `/qa-only` skill from disk:
+Lee el skill `/qa-only` desde disco:
 
 ```bash
 cat ${CLAUDE_SKILL_DIR}/../qa-only/SKILL.md
 ```
 
-**If unreadable:** Skip with "Could not load /qa-only — skipping plan verification."
+**Si es ilegible:** Omite con "No se pudo cargar /qa-only — omitiendo verificación del plan."
 
-Follow the /qa-only workflow with these modifications:
-- **Skip the preamble** (already handled by /ship)
-- **Use the plan's verification section as the primary test input** — treat each verification item as a test case
-- **Use the detected dev server URL** as the base URL
-- **Skip the fix loop** — this is report-only verification during /ship
-- **Cap at the verification items from the plan** — do not expand into general site QA
+Sigue el flujo de trabajo de /qa-only con estas modificaciones:
+- **Omite el preámbulo** (ya manejado por /ship)
+- **Usa la sección de verificación del plan como entrada primaria de tests** — trata cada elemento de verificación como un caso de prueba
+- **Usa la URL del servidor de desarrollo detectado** como URL base
+- **Omite el bucle de corrección** — esto es verificación solo de reporte durante /ship
+- **Limita a los elementos de verificación del plan** — no expandas a QA general del sitio
 
-### 4. Gate logic
+### 4. Lógica del gate
 
-- **All verification items PASS:** Continue silently. "Plan verification: PASS."
-- **Any FAIL:** Use AskUserQuestion:
-  - Show the failures with screenshot evidence
-  - RECOMMENDATION: Choose A if failures indicate broken functionality. Choose B if cosmetic only.
-  - Options:
-    A) Fix the failures before shipping (recommended for functional issues)
-    B) Ship anyway — known issues (acceptable for cosmetic issues)
-- **No verification section / no server / unreadable skill:** Skip (non-blocking).
+- **Todos los elementos de verificación PASS:** Continúa silenciosamente. "Verificación del plan: APROBADO."
+- **Algún FAIL:** Usa AskUserQuestion:
+  - Muestra los fallos con evidencia en capturas de pantalla
+  - RECOMMENDATION: Elige A si los fallos indican funcionalidad rota. Elige B si son solo cosméticos.
+  - Opciones:
+    A) Corregir los fallos antes de enviar (recomendado para problemas funcionales)
+    B) Enviar de todos modos — incidencias conocidas (aceptable para problemas cosméticos)
+- **Sin sección de verificación / sin servidor / skill ilegible:** Omite (no bloqueante).
 
-### 5. Include in PR body
+### 5. Incluir en el cuerpo del PR
 
-Add a `## Verification Results` section to the PR body (Step 8):
-- If verification ran: summary of results (N PASS, M FAIL, K SKIPPED)
-- If skipped: reason for skipping (no plan, no server, no verification section)
+Agrega una sección `## Resultados de Verificación` al cuerpo del PR (Paso 8):
+- Si la verificación se ejecutó: resumen de resultados (N PASS, M FAIL, K OMITIDOS)
+- Si se omitió: razón de la omisión (sin plan, sin servidor, sin sección de verificación)
 
 ---
 
-## Step 3.5: Pre-Landing Review
+## Paso 3.5: Revisión pre-landing
 
-Review the diff for structural issues that tests don't catch.
+Revisar el diff buscando problemas estructurales que los tests no detectan.
 
-1. Read `.claude/skills/review/checklist.md`. If the file cannot be read, **STOP** and report the error.
+1. Leer `.claude/skills/review/checklist.md`. Si el archivo no se puede leer, **DETENERSE** e informar del error.
 
-2. Run `git diff origin/<base>` to get the full diff (scoped to feature changes against the freshly-fetched base branch).
+2. Ejecutar `git diff origin/<base>` para obtener el diff completo (limitado a los cambios de la funcionalidad contra la rama base recién obtenida).
 
-3. Apply the review checklist in two passes:
-   - **Pass 1 (CRITICAL):** SQL & Data Safety, LLM Output Trust Boundary
-   - **Pass 2 (INFORMATIONAL):** All remaining categories
+3. Aplicar la lista de verificación de revisión en dos pasadas:
+   - **Pasada 1 (CRITICAL):** Seguridad SQL y de Datos, Límite de Confianza de Salida LLM
+   - **Pasada 2 (INFORMATIONAL):** Todas las categorías restantes
 
 ## Design Review (conditional, diff-scoped)
 
@@ -1274,68 +1273,68 @@ cat "$TMPERR_DRL" && rm -f "$TMPERR_DRL"
 
 Present Codex output under a `CODEX (design):` header, merged with the checklist findings above.
 
-   Include any design findings alongside the code review findings. They follow the same Fix-First flow below.
+   Incluir cualquier hallazgo de diseño junto con los hallazgos de revisión de código. Siguen el mismo flujo de Corregir-Primero a continuación.
 
-4. **Classify each finding as AUTO-FIX or ASK** per the Fix-First Heuristic in
-   checklist.md. Critical findings lean toward ASK; informational lean toward AUTO-FIX.
+4. **Clasificar cada hallazgo como AUTO-FIX o ASK** según la Heurística de Corregir-Primero en
+   checklist.md. Los hallazgos críticos tienden hacia ASK; los informativos tienden hacia AUTO-FIX.
 
-5. **Auto-fix all AUTO-FIX items.** Apply each fix. Output one line per fix:
-   `[AUTO-FIXED] [file:line] Problem → what you did`
+5. **Auto-corregir todos los elementos AUTO-FIX.** Aplicar cada corrección. Mostrar una línea por corrección:
+   `[AUTO-FIXED] [archivo:línea] Problema → qué se hizo`
 
-6. **If ASK items remain,** present them in ONE AskUserQuestion:
-   - List each with number, severity, problem, recommended fix
-   - Per-item options: A) Fix  B) Skip
-   - Overall RECOMMENDATION
-   - If 3 or fewer ASK items, you may use individual AskUserQuestion calls instead
+6. **Si quedan elementos ASK,** presentarlos en UNA AskUserQuestion:
+   - Listar cada uno con número, severidad, problema, corrección recomendada
+   - Opciones por elemento: A) Corregir  B) Omitir
+   - RECOMMENDATION general
+   - Si hay 3 o menos elementos ASK, se pueden usar llamadas individuales a AskUserQuestion en su lugar
 
-7. **After all fixes (auto + user-approved):**
-   - If ANY fixes were applied: commit fixed files by name (`git add <fixed-files> && git commit -m "fix: pre-landing review fixes"`), then **STOP** and tell the user to run `/ship` again to re-test.
-   - If no fixes applied (all ASK items skipped, or no issues found): continue to Step 4.
+7. **Después de todas las correcciones (automáticas + aprobadas por el usuario):**
+   - Si se aplicó ALGUNA corrección: hacer commit de los archivos corregidos por nombre (`git add <archivos-corregidos> && git commit -m "fix: pre-landing review fixes"`), luego **DETENERSE** e indicar al usuario que ejecute `/ship` de nuevo para re-testear.
+   - Si no se aplicaron correcciones (todos los elementos ASK omitidos, o no se encontraron problemas): continuar al Paso 4.
 
-8. Output summary: `Pre-Landing Review: N issues — M auto-fixed, K asked (J fixed, L skipped)`
+8. Mostrar resumen: `Pre-Landing Review: N problemas — M auto-corregidos, K consultados (J corregidos, L omitidos)`
 
-   If no issues found: `Pre-Landing Review: No issues found.`
+   Si no se encontraron problemas: `Pre-Landing Review: No issues found.`
 
-Save the review output — it goes into the PR body in Step 8.
+Guardar la salida de la revisión — va en el cuerpo del PR en el Paso 8.
 
 ---
 
-## Step 3.75: Address Greptile review comments (if PR exists)
+## Paso 3.75: Abordar comentarios de revisión de Greptile (si existe PR)
 
-Read `.claude/skills/review/greptile-triage.md` and follow the fetch, filter, classify, and **escalation detection** steps.
+Leer `.claude/skills/review/greptile-triage.md` y seguir los pasos de obtención, filtrado, clasificación y **detección de escalamiento**.
 
-**If no PR exists, `gh` fails, API returns an error, or there are zero Greptile comments:** Skip this step silently. Continue to Step 4.
+**Si no existe PR, `gh` falla, la API devuelve un error, o hay cero comentarios de Greptile:** Omitir este paso silenciosamente. Continuar al Paso 4.
 
-**If Greptile comments are found:**
+**Si se encuentran comentarios de Greptile:**
 
-Include a Greptile summary in your output: `+ N Greptile comments (X valid, Y fixed, Z FP)`
+Incluir un resumen de Greptile en la salida: `+ N comentarios de Greptile (X válidos, Y corregidos, Z FP)`
 
-Before replying to any comment, run the **Escalation Detection** algorithm from greptile-triage.md to determine whether to use Tier 1 (friendly) or Tier 2 (firm) reply templates.
+Antes de responder a cualquier comentario, ejecutar el algoritmo de **Detección de Escalamiento** de greptile-triage.md para determinar si usar plantillas de respuesta Tier 1 (amigable) o Tier 2 (firme).
 
-For each classified comment:
+Para cada comentario clasificado:
 
-**VALID & ACTIONABLE:** Use AskUserQuestion with:
-- The comment (file:line or [top-level] + body summary + permalink URL)
-- `RECOMMENDATION: Choose A because [one-line reason]`
-- Options: A) Fix now, B) Acknowledge and ship anyway, C) It's a false positive
-- If user chooses A: apply the fix, commit the fixed files (`git add <fixed-files> && git commit -m "fix: address Greptile review — <brief description>"`), reply using the **Fix reply template** from greptile-triage.md (include inline diff + explanation), and save to both per-project and global greptile-history (type: fix).
-- If user chooses C: reply using the **False Positive reply template** from greptile-triage.md (include evidence + suggested re-rank), save to both per-project and global greptile-history (type: fp).
+**VÁLIDO Y ACCIONABLE:** Usar AskUserQuestion con:
+- El comentario (archivo:línea o [nivel-superior] + resumen del cuerpo + URL de enlace permanente)
+- `RECOMMENDATION: Choose A because [razón en una línea]`
+- Opciones: A) Corregir ahora, B) Reconocer y enviar de todos modos, C) Es un falso positivo
+- Si el usuario elige A: aplicar la corrección, hacer commit de los archivos corregidos (`git add <archivos-corregidos> && git commit -m "fix: address Greptile review — <descripción breve>"`), responder usando la **plantilla de respuesta Fix** de greptile-triage.md (incluir diff en línea + explicación), y guardar tanto en el historial greptile del proyecto como en el global (tipo: fix).
+- Si el usuario elige C: responder usando la **plantilla de respuesta False Positive** de greptile-triage.md (incluir evidencia + sugerencia de re-clasificación), guardar tanto en el historial greptile del proyecto como en el global (tipo: fp).
 
-**VALID BUT ALREADY FIXED:** Reply using the **Already Fixed reply template** from greptile-triage.md — no AskUserQuestion needed:
-- Include what was done and the fixing commit SHA
-- Save to both per-project and global greptile-history (type: already-fixed)
+**VÁLIDO PERO YA CORREGIDO:** Responder usando la **plantilla de respuesta Already Fixed** de greptile-triage.md — no se necesita AskUserQuestion:
+- Incluir qué se hizo y el SHA del commit que lo corrige
+- Guardar tanto en el historial greptile del proyecto como en el global (tipo: already-fixed)
 
-**FALSE POSITIVE:** Use AskUserQuestion:
-- Show the comment and why you think it's wrong (file:line or [top-level] + body summary + permalink URL)
-- Options:
-  - A) Reply to Greptile explaining the false positive (recommended if clearly wrong)
-  - B) Fix it anyway (if trivial)
-  - C) Ignore silently
-- If user chooses A: reply using the **False Positive reply template** from greptile-triage.md (include evidence + suggested re-rank), save to both per-project and global greptile-history (type: fp)
+**FALSO POSITIVO:** Usar AskUserQuestion:
+- Mostrar el comentario y por qué se cree que es incorrecto (archivo:línea o [nivel-superior] + resumen del cuerpo + URL de enlace permanente)
+- Opciones:
+  - A) Responder a Greptile explicando el falso positivo (recomendado si claramente erróneo)
+  - B) Corregirlo de todos modos (si es trivial)
+  - C) Ignorar silenciosamente
+- Si el usuario elige A: responder usando la **plantilla de respuesta False Positive** de greptile-triage.md (incluir evidencia + sugerencia de re-clasificación), guardar tanto en el historial greptile del proyecto como en el global (tipo: fp)
 
-**SUPPRESSED:** Skip silently — these are known false positives from previous triage.
+**SUPRIMIDO:** Omitir silenciosamente — estos son falsos positivos conocidos de clasificaciones anteriores.
 
-**After all comments are resolved:** If any fixes were applied, the tests from Step 3 are now stale. **Re-run tests** (Step 3) before continuing to Step 4. If no fixes were applied, continue to Step 4.
+**Después de resolver todos los comentarios:** Si se aplicaron correcciones, los tests del Paso 3 ahora están obsoletos. **Re-ejecutar tests** (Paso 3) antes de continuar al Paso 4. Si no se aplicaron correcciones, continuar al Paso 4.
 
 ---
 
@@ -1475,128 +1474,128 @@ High-confidence findings (agreed on by multiple sources) should be prioritized f
 
 ---
 
-## Step 4: Version bump (auto-decide)
+## Paso 4: Incremento de versión (auto-decidir)
 
-1. Read the current `VERSION` file (4-digit format: `MAJOR.MINOR.PATCH.MICRO`)
+1. Leer el archivo `VERSION` actual (formato de 4 dígitos: `MAJOR.MINOR.PATCH.MICRO`)
 
-2. **Auto-decide the bump level based on the diff:**
-   - Count lines changed (`git diff origin/<base>...HEAD --stat | tail -1`)
-   - **MICRO** (4th digit): < 50 lines changed, trivial tweaks, typos, config
-   - **PATCH** (3rd digit): 50+ lines changed, bug fixes, small-medium features
-   - **MINOR** (2nd digit): **ASK the user** — only for major features or significant architectural changes
-   - **MAJOR** (1st digit): **ASK the user** — only for milestones or breaking changes
+2. **Auto-decidir el nivel de incremento basado en el diff:**
+   - Contar líneas cambiadas (`git diff origin/<base>...HEAD --stat | tail -1`)
+   - **MICRO** (4to dígito): < 50 líneas cambiadas, ajustes triviales, erratas, configuración
+   - **PATCH** (3er dígito): 50+ líneas cambiadas, correcciones de errores, funcionalidades pequeñas-medianas
+   - **MINOR** (2do dígito): **PREGUNTAR al usuario** — solo para funcionalidades mayores o cambios arquitectónicos significativos
+   - **MAJOR** (1er dígito): **PREGUNTAR al usuario** — solo para hitos o cambios incompatibles
 
-3. Compute the new version:
-   - Bumping a digit resets all digits to its right to 0
-   - Example: `0.19.1.0` + PATCH → `0.19.2.0`
+3. Calcular la nueva versión:
+   - Incrementar un dígito reinicia todos los dígitos a su derecha a 0
+   - Ejemplo: `0.19.1.0` + PATCH → `0.19.2.0`
 
-4. Write the new version to the `VERSION` file.
-
----
-
-## Step 5: CHANGELOG (auto-generate)
-
-1. Read `CHANGELOG.md` header to know the format.
-
-2. Auto-generate the entry from **ALL commits on the branch** (not just recent ones):
-   - Use `git log <base>..HEAD --oneline` to see every commit being shipped
-   - Use `git diff <base>...HEAD` to see the full diff against the base branch
-   - The CHANGELOG entry must be comprehensive of ALL changes going into the PR
-   - If existing CHANGELOG entries on the branch already cover some commits, replace them with one unified entry for the new version
-   - Categorize changes into applicable sections:
-     - `### Added` — new features
-     - `### Changed` — changes to existing functionality
-     - `### Fixed` — bug fixes
-     - `### Removed` — removed features
-   - Write concise, descriptive bullet points
-   - Insert after the file header (line 5), dated today
-   - Format: `## [X.Y.Z.W] - YYYY-MM-DD`
-
-**Do NOT ask the user to describe changes.** Infer from the diff and commit history.
+4. Escribir la nueva versión en el archivo `VERSION`.
 
 ---
 
-## Step 5.5: TODOS.md (auto-update)
+## Paso 5: CHANGELOG (auto-generar)
 
-Cross-reference the project's TODOS.md against the changes being shipped. Mark completed items automatically; prompt only if the file is missing or disorganized.
+1. Leer la cabecera de `CHANGELOG.md` para conocer el formato.
 
-Read `.claude/skills/review/TODOS-format.md` for the canonical format reference.
+2. Auto-generar la entrada desde **TODOS los commits de la rama** (no solo los recientes):
+   - Usar `git log <base>..HEAD --oneline` para ver cada commit que se envía
+   - Usar `git diff <base>...HEAD` para ver el diff completo contra la rama base
+   - La entrada del CHANGELOG debe ser completa con TODOS los cambios que van al PR
+   - Si las entradas existentes del CHANGELOG en la rama ya cubren algunos commits, reemplazarlas con una entrada unificada para la nueva versión
+   - Categorizar los cambios en secciones aplicables:
+     - `### Added` — nuevas funcionalidades
+     - `### Changed` — cambios a funcionalidad existente
+     - `### Fixed` — correcciones de errores
+     - `### Removed` — funcionalidades eliminadas
+   - Escribir puntos concisos y descriptivos
+   - Insertar después de la cabecera del archivo (línea 5), con fecha de hoy
+   - Formato: `## [X.Y.Z.W] - YYYY-MM-DD`
 
-**1. Check if TODOS.md exists** in the repository root.
-
-**If TODOS.md does not exist:** Use AskUserQuestion:
-- Message: "GStack recommends maintaining a TODOS.md organized by skill/component, then priority (P0 at top through P4, then Completed at bottom). See TODOS-format.md for the full format. Would you like to create one?"
-- Options: A) Create it now, B) Skip for now
-- If A: Create `TODOS.md` with a skeleton (# TODOS heading + ## Completed section). Continue to step 3.
-- If B: Skip the rest of Step 5.5. Continue to Step 6.
-
-**2. Check structure and organization:**
-
-Read TODOS.md and verify it follows the recommended structure:
-- Items grouped under `## <Skill/Component>` headings
-- Each item has `**Priority:**` field with P0-P4 value
-- A `## Completed` section at the bottom
-
-**If disorganized** (missing priority fields, no component groupings, no Completed section): Use AskUserQuestion:
-- Message: "TODOS.md doesn't follow the recommended structure (skill/component groupings, P0-P4 priority, Completed section). Would you like to reorganize it?"
-- Options: A) Reorganize now (recommended), B) Leave as-is
-- If A: Reorganize in-place following TODOS-format.md. Preserve all content — only restructure, never delete items.
-- If B: Continue to step 3 without restructuring.
-
-**3. Detect completed TODOs:**
-
-This step is fully automatic — no user interaction.
-
-Use the diff and commit history already gathered in earlier steps:
-- `git diff <base>...HEAD` (full diff against the base branch)
-- `git log <base>..HEAD --oneline` (all commits being shipped)
-
-For each TODO item, check if the changes in this PR complete it by:
-- Matching commit messages against the TODO title and description
-- Checking if files referenced in the TODO appear in the diff
-- Checking if the TODO's described work matches the functional changes
-
-**Be conservative:** Only mark a TODO as completed if there is clear evidence in the diff. If uncertain, leave it alone.
-
-**4. Move completed items** to the `## Completed` section at the bottom. Append: `**Completed:** vX.Y.Z (YYYY-MM-DD)`
-
-**5. Output summary:**
-- `TODOS.md: N items marked complete (item1, item2, ...). M items remaining.`
-- Or: `TODOS.md: No completed items detected. M items remaining.`
-- Or: `TODOS.md: Created.` / `TODOS.md: Reorganized.`
-
-**6. Defensive:** If TODOS.md cannot be written (permission error, disk full), warn the user and continue. Never stop the ship workflow for a TODOS failure.
-
-Save this summary — it goes into the PR body in Step 8.
+**NO preguntar al usuario que describa los cambios.** Inferir del diff y el historial de commits.
 
 ---
 
-## Step 6: Commit (bisectable chunks)
+## Paso 5.5: TODOS.md (auto-actualizar)
 
-**Goal:** Create small, logical commits that work well with `git bisect` and help LLMs understand what changed.
+Cruzar el TODOS.md del proyecto con los cambios que se envían. Marcar elementos completados automáticamente; preguntar solo si el archivo no existe o está desorganizado.
 
-1. Analyze the diff and group changes into logical commits. Each commit should represent **one coherent change** — not one file, but one logical unit.
+Leer `.claude/skills/review/TODOS-format.md` para la referencia de formato canónico.
 
-2. **Commit ordering** (earlier commits first):
-   - **Infrastructure:** migrations, config changes, route additions
-   - **Models & services:** new models, services, concerns (with their tests)
-   - **Controllers & views:** controllers, views, JS/React components (with their tests)
-   - **VERSION + CHANGELOG + TODOS.md:** always in the final commit
+**1. Verificar si existe TODOS.md** en la raíz del repositorio.
 
-3. **Rules for splitting:**
-   - A model and its test file go in the same commit
-   - A service and its test file go in the same commit
-   - A controller, its views, and its test go in the same commit
-   - Migrations are their own commit (or grouped with the model they support)
-   - Config/route changes can group with the feature they enable
-   - If the total diff is small (< 50 lines across < 4 files), a single commit is fine
+**Si TODOS.md no existe:** Usar AskUserQuestion:
+- Mensaje: "GStack recomienda mantener un TODOS.md organizado por skill/componente, luego prioridad (P0 arriba hasta P4, luego Completados al final). Ver TODOS-format.md para el formato completo. ¿Quieres crear uno?"
+- Opciones: A) Crearlo ahora, B) Omitir por ahora
+- Si A: Crear `TODOS.md` con un esqueleto (encabezado # TODOS + sección ## Completed). Continuar al paso 3.
+- Si B: Omitir el resto del Paso 5.5. Continuar al Paso 6.
 
-4. **Each commit must be independently valid** — no broken imports, no references to code that doesn't exist yet. Order commits so dependencies come first.
+**2. Verificar estructura y organización:**
 
-5. Compose each commit message:
-   - First line: `<type>: <summary>` (type = feat/fix/chore/refactor/docs)
-   - Body: brief description of what this commit contains
-   - Only the **final commit** (VERSION + CHANGELOG) gets the version tag and co-author trailer:
+Leer TODOS.md y verificar que sigue la estructura recomendada:
+- Elementos agrupados bajo encabezados `## <Skill/Componente>`
+- Cada elemento tiene campo `**Priority:**` con valor P0-P4
+- Una sección `## Completed` al final
+
+**Si está desorganizado** (faltan campos de prioridad, sin agrupaciones por componente, sin sección Completed): Usar AskUserQuestion:
+- Mensaje: "TODOS.md no sigue la estructura recomendada (agrupaciones por skill/componente, prioridad P0-P4, sección Completed). ¿Quieres reorganizarlo?"
+- Opciones: A) Reorganizar ahora (recomendado), B) Dejar como está
+- Si A: Reorganizar en sitio siguiendo TODOS-format.md. Preservar todo el contenido — solo reestructurar, nunca eliminar elementos.
+- Si B: Continuar al paso 3 sin reestructurar.
+
+**3. Detectar TODOs completados:**
+
+Este paso es completamente automático — sin interacción del usuario.
+
+Usar el diff y el historial de commits ya recopilados en pasos anteriores:
+- `git diff <base>...HEAD` (diff completo contra la rama base)
+- `git log <base>..HEAD --oneline` (todos los commits que se envían)
+
+Para cada elemento TODO, verificar si los cambios en este PR lo completan:
+- Comparar mensajes de commit contra el título y descripción del TODO
+- Verificar si los archivos referenciados en el TODO aparecen en el diff
+- Verificar si el trabajo descrito en el TODO coincide con los cambios funcionales
+
+**Ser conservador:** Solo marcar un TODO como completado si hay evidencia clara en el diff. Si hay duda, dejarlo como está.
+
+**4. Mover elementos completados** a la sección `## Completed` al final. Añadir: `**Completed:** vX.Y.Z (YYYY-MM-DD)`
+
+**5. Mostrar resumen:**
+- `TODOS.md: N elementos marcados como completos (elemento1, elemento2, ...). M elementos pendientes.`
+- O: `TODOS.md: No se detectaron elementos completados. M elementos pendientes.`
+- O: `TODOS.md: Creado.` / `TODOS.md: Reorganizado.`
+
+**6. Defensivo:** Si TODOS.md no se puede escribir (error de permisos, disco lleno), avisar al usuario y continuar. Nunca detener el flujo de envío por un fallo de TODOS.
+
+Guardar este resumen — va en el cuerpo del PR en el Paso 8.
+
+---
+
+## Paso 6: Commit (fragmentos bisectables)
+
+**Objetivo:** Crear commits pequeños y lógicos que funcionen bien con `git bisect` y ayuden a los LLM a entender qué cambió.
+
+1. Analizar el diff y agrupar cambios en commits lógicos. Cada commit debe representar **un cambio coherente** — no un archivo, sino una unidad lógica.
+
+2. **Orden de commits** (los commits anteriores primero):
+   - **Infraestructura:** migraciones, cambios de configuración, adiciones de rutas
+   - **Modelos y servicios:** nuevos modelos, servicios, concerns (con sus tests)
+   - **Controladores y vistas:** controladores, vistas, componentes JS/React (con sus tests)
+   - **VERSION + CHANGELOG + TODOS.md:** siempre en el commit final
+
+3. **Reglas para dividir:**
+   - Un modelo y su archivo de test van en el mismo commit
+   - Un servicio y su archivo de test van en el mismo commit
+   - Un controlador, sus vistas y su test van en el mismo commit
+   - Las migraciones son su propio commit (o agrupadas con el modelo que soportan)
+   - Los cambios de configuración/rutas pueden agruparse con la funcionalidad que habilitan
+   - Si el diff total es pequeño (< 50 líneas en < 4 archivos), un solo commit está bien
+
+4. **Cada commit debe ser independientemente válido** — sin importaciones rotas, sin referencias a código que aún no existe. Ordenar los commits para que las dependencias vayan primero.
+
+5. Componer cada mensaje de commit:
+   - Primera línea: `<tipo>: <resumen>` (tipo = feat/fix/chore/refactor/docs)
+   - Cuerpo: descripción breve de lo que contiene este commit
+   - Solo el **commit final** (VERSION + CHANGELOG) lleva la etiqueta de versión y el trailer de co-autoría:
 
 ```bash
 git commit -m "$(cat <<'EOF'
@@ -1609,31 +1608,31 @@ EOF
 
 ---
 
-## Step 6.5: Verification Gate
+## Paso 6.5: Puerta de verificación
 
-**IRON LAW: NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE.**
+**LEY DE HIERRO: NO HAY DECLARACIONES DE COMPLETADO SIN EVIDENCIA DE VERIFICACIÓN FRESCA.**
 
-Before pushing, re-verify if code changed during Steps 4-6:
+Antes de hacer push, re-verificar si el código cambió durante los Pasos 4-6:
 
-1. **Test verification:** If ANY code changed after Step 3's test run (fixes from review findings, CHANGELOG edits don't count), re-run the test suite. Paste fresh output. Stale output from Step 3 is NOT acceptable.
+1. **Verificación de tests:** Si CUALQUIER código cambió después de la ejecución de tests del Paso 3 (las correcciones de hallazgos de revisión cuentan, las ediciones del CHANGELOG no), re-ejecutar la suite de tests. Pegar salida fresca. La salida obsoleta del Paso 3 NO es aceptable.
 
-2. **Build verification:** If the project has a build step, run it. Paste output.
+2. **Verificación de compilación:** Si el proyecto tiene un paso de compilación, ejecutarlo. Pegar la salida.
 
-3. **Rationalization prevention:**
-   - "Should work now" → RUN IT.
-   - "I'm confident" → Confidence is not evidence.
-   - "I already tested earlier" → Code changed since then. Test again.
-   - "It's a trivial change" → Trivial changes break production.
+3. **Prevención de racionalización:**
+   - "Debería funcionar ahora" → EJECÚTALO.
+   - "Estoy seguro" → La seguridad no es evidencia.
+   - "Ya lo testé antes" → El código cambió desde entonces. Testear de nuevo.
+   - "Es un cambio trivial" → Los cambios triviales rompen producción.
 
-**If tests fail here:** STOP. Do not push. Fix the issue and return to Step 3.
+**Si los tests fallan aquí:** DETENERSE. No hacer push. Corregir el problema y volver al Paso 3.
 
-Claiming work is complete without verification is dishonesty, not efficiency.
+Declarar que el trabajo está completo sin verificación es deshonestidad, no eficiencia.
 
 ---
 
-## Step 7: Push
+## Paso 7: Push
 
-Push to the remote with upstream tracking:
+Hacer push al remoto con seguimiento de upstream:
 
 ```bash
 git push -u origin <branch-name>
@@ -1641,121 +1640,121 @@ git push -u origin <branch-name>
 
 ---
 
-## Step 8: Create PR
+## Paso 8: Crear PR
 
-Create a pull request using `gh`:
+Crear un pull request usando `gh`:
 
 ```bash
-gh pr create --base <base> --title "<type>: <summary>" --body "$(cat <<'EOF'
-## Summary
-<bullet points from CHANGELOG>
+gh pr create --base <base> --title "<tipo>: <resumen>" --body "$(cat <<'EOF'
+## Resumen
+<puntos del CHANGELOG>
 
-## Test Coverage
-<coverage diagram from Step 3.4, or "All new code paths have test coverage.">
-<If Step 3.4 ran: "Tests: {before} → {after} (+{delta} new)">
+## Cobertura de tests
+<diagrama de cobertura del Paso 3.4, o "Todas las nuevas rutas de código tienen cobertura de tests.">
+<Si el Paso 3.4 se ejecutó: "Tests: {antes} → {después} (+{delta} nuevos)">
 
-## Pre-Landing Review
-<findings from Step 3.5 code review, or "No issues found.">
+## Revisión pre-landing
+<hallazgos de la revisión de código del Paso 3.5, o "No issues found.">
 
-## Design Review
-<If design review ran: "Design Review (lite): N findings — M auto-fixed, K skipped. AI Slop: clean/N issues.">
-<If no frontend files changed: "No frontend files changed — design review skipped.">
+## Revisión de diseño
+<Si se ejecutó revisión de diseño: "Design Review (lite): N hallazgos — M auto-corregidos, K omitidos. AI Slop: limpio/N problemas.">
+<Si no se cambiaron archivos frontend: "No se modificaron archivos frontend — revisión de diseño omitida.">
 
-## Eval Results
-<If evals ran: suite names, pass/fail counts, cost dashboard summary. If skipped: "No prompt-related files changed — evals skipped.">
+## Resultados de evaluación
+<Si se ejecutaron evaluaciones: nombres de suites, conteos de éxito/fallo, resumen del panel de costes. Si se omitieron: "No se modificaron archivos relacionados con prompts — evaluaciones omitidas.">
 
-## Greptile Review
-<If Greptile comments were found: bullet list with [FIXED] / [FALSE POSITIVE] / [ALREADY FIXED] tag + one-line summary per comment>
-<If no Greptile comments found: "No Greptile comments.">
-<If no PR existed during Step 3.75: omit this section entirely>
+## Revisión de Greptile
+<Si se encontraron comentarios de Greptile: lista con viñetas con etiqueta [FIXED] / [FALSE POSITIVE] / [ALREADY FIXED] + resumen de una línea por comentario>
+<Si no se encontraron comentarios de Greptile: "Sin comentarios de Greptile.">
+<Si no existía PR durante el Paso 3.75: omitir esta sección por completo>
 
-## Plan Completion
-<If plan file found: completion checklist summary from Step 3.45>
-<If no plan file: "No plan file detected.">
-<If plan items deferred: list deferred items>
+## Finalización del plan
+<Si se encontró archivo de plan: resumen de la lista de verificación de finalización del Paso 3.45>
+<Si no hay archivo de plan: "No se detectó archivo de plan.">
+<Si se difirieron elementos del plan: listar elementos diferidos>
 
-## Verification Results
-<If verification ran: summary from Step 3.47 (N PASS, M FAIL, K SKIPPED)>
-<If skipped: reason (no plan, no server, no verification section)>
-<If not applicable: omit this section>
+## Resultados de verificación
+<Si se ejecutó verificación: resumen del Paso 3.47 (N PASS, M FAIL, K SKIPPED)>
+<Si se omitió: motivo (sin plan, sin servidor, sin sección de verificación)>
+<Si no aplica: omitir esta sección>
 
 ## TODOS
-<If items marked complete: bullet list of completed items with version>
-<If no items completed: "No TODO items completed in this PR.">
-<If TODOS.md created or reorganized: note that>
-<If TODOS.md doesn't exist and user skipped: omit this section>
+<Si se marcaron elementos como completos: lista con viñetas de elementos completados con versión>
+<Si no se completaron elementos: "No se completaron elementos TODO en este PR.">
+<Si se creó o reorganizó TODOS.md: anotarlo>
+<Si TODOS.md no existe y el usuario lo omitió: omitir esta sección>
 
-## Test plan
-- [x] All Rails tests pass (N runs, 0 failures)
-- [x] All Vitest tests pass (N tests)
+## Plan de tests
+- [x] Todos los tests de Rails pasan (N ejecuciones, 0 fallos)
+- [x] Todos los tests de Vitest pasan (N tests)
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 EOF
 )"
 ```
 
-**Output the PR URL** — then proceed to Step 8.5.
+**Mostrar la URL del PR** — luego continuar al Paso 8.5.
 
 ---
 
-## Step 8.5: Auto-invoke /document-release
+## Paso 8.5: Auto-invocar /document-release
 
-After the PR is created, automatically sync project documentation. Read the
-`document-release/SKILL.md` skill file (adjacent to this skill's directory) and
-execute its full workflow:
+Después de crear el PR, sincronizar automáticamente la documentación del proyecto. Leer el
+archivo de skill `document-release/SKILL.md` (adyacente al directorio de este skill) y
+ejecutar su flujo completo:
 
-1. Read the `/document-release` skill: `cat ${CLAUDE_SKILL_DIR}/../document-release/SKILL.md`
-2. Follow its instructions — it reads all .md files in the project, cross-references
-   the diff, and updates anything that drifted (README, ARCHITECTURE, CONTRIBUTING,
+1. Leer el skill `/document-release`: `cat ${CLAUDE_SKILL_DIR}/../document-release/SKILL.md`
+2. Seguir sus instrucciones — lee todos los archivos .md del proyecto, cruza referencias con
+   el diff, y actualiza todo lo que haya quedado desactualizado (README, ARCHITECTURE, CONTRIBUTING,
    CLAUDE.md, TODOS, etc.)
-3. If any docs were updated, commit the changes and push to the same branch:
+3. Si se actualizó alguna documentación, hacer commit de los cambios y push a la misma rama:
    ```bash
    git add -A && git commit -m "docs: sync documentation with shipped changes" && git push
    ```
-4. If no docs needed updating, say "Documentation is current — no updates needed."
+4. Si no se necesitó actualizar documentación, decir "La documentación está actualizada — no se necesitan cambios."
 
-This step is automatic. Do not ask the user for confirmation. The goal is zero-friction
-doc updates — the user runs `/ship` and documentation stays current without a separate command.
+Este paso es automático. No pedir confirmación al usuario. El objetivo es actualización de
+documentación sin fricción — el usuario ejecuta `/ship` y la documentación se mantiene al día sin un comando separado.
 
 ---
 
-## Step 8.75: Persist ship metrics
+## Paso 8.75: Persistir métricas de envío
 
-Log coverage and plan completion data so `/retro` can track trends:
+Registrar datos de cobertura y finalización del plan para que `/retro` pueda seguir tendencias:
 
 ```bash
 eval "$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)" && mkdir -p ~/.gstack/projects/$SLUG
 ```
 
-Append to `~/.gstack/projects/$SLUG/$BRANCH-reviews.jsonl`:
+Añadir a `~/.gstack/projects/$SLUG/$BRANCH-reviews.jsonl`:
 
 ```bash
 echo '{"skill":"ship","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","coverage_pct":COVERAGE_PCT,"plan_items_total":PLAN_TOTAL,"plan_items_done":PLAN_DONE,"verification_result":"VERIFY_RESULT","version":"VERSION","branch":"BRANCH"}' >> ~/.gstack/projects/$SLUG/$BRANCH-reviews.jsonl
 ```
 
-Substitute from earlier steps:
-- **COVERAGE_PCT**: coverage percentage from Step 3.4 diagram (integer, or -1 if undetermined)
-- **PLAN_TOTAL**: total plan items extracted in Step 3.45 (0 if no plan file)
-- **PLAN_DONE**: count of DONE + CHANGED items from Step 3.45 (0 if no plan file)
-- **VERIFY_RESULT**: "pass", "fail", or "skipped" from Step 3.47
-- **VERSION**: from the VERSION file
-- **BRANCH**: current branch name
+Sustituir de los pasos anteriores:
+- **COVERAGE_PCT**: porcentaje de cobertura del diagrama del Paso 3.4 (entero, o -1 si no se determinó)
+- **PLAN_TOTAL**: total de elementos del plan extraídos en el Paso 3.45 (0 si no hay archivo de plan)
+- **PLAN_DONE**: conteo de elementos DONE + CHANGED del Paso 3.45 (0 si no hay archivo de plan)
+- **VERIFY_RESULT**: "pass", "fail", o "skipped" del Paso 3.47
+- **VERSION**: del archivo VERSION
+- **BRANCH**: nombre de la rama actual
 
-This step is automatic — never skip it, never ask for confirmation.
+Este paso es automático — nunca omitirlo, nunca pedir confirmación.
 
 ---
 
-## Important Rules
+## Reglas importantes
 
-- **Never skip tests.** If tests fail, stop.
-- **Never skip the pre-landing review.** If checklist.md is unreadable, stop.
-- **Never force push.** Use regular `git push` only.
-- **Never ask for trivial confirmations** (e.g., "ready to push?", "create PR?"). DO stop for: version bumps (MINOR/MAJOR), pre-landing review findings (ASK items), and Codex structured review [P1] findings (large diffs only).
-- **Always use the 4-digit version format** from the VERSION file.
-- **Date format in CHANGELOG:** `YYYY-MM-DD`
-- **Split commits for bisectability** — each commit = one logical change.
-- **TODOS.md completion detection must be conservative.** Only mark items as completed when the diff clearly shows the work is done.
-- **Use Greptile reply templates from greptile-triage.md.** Every reply includes evidence (inline diff, code references, re-rank suggestion). Never post vague replies.
-- **Never push without fresh verification evidence.** If code changed after Step 3 tests, re-run before pushing.
-- **Step 3.4 generates coverage tests.** They must pass before committing. Never commit failing tests.
-- **The goal is: user says `/ship`, next thing they see is the review + PR URL + auto-synced docs.**
+- **Nunca omitir los tests.** Si los tests fallan, detenerse.
+- **Nunca omitir la revisión pre-landing.** Si checklist.md no se puede leer, detenerse.
+- **Nunca hacer force push.** Usar solo `git push` regular.
+- **Nunca pedir confirmaciones triviales** (ej., "¿listo para push?", "¿crear PR?"). SÍ detenerse por: incrementos de versión (MINOR/MAJOR), hallazgos de revisión pre-landing (elementos ASK) y hallazgos de revisión estructurada Codex [P1] (solo diffs grandes).
+- **Siempre usar el formato de versión de 4 dígitos** del archivo VERSION.
+- **Formato de fecha en CHANGELOG:** `YYYY-MM-DD`
+- **Dividir commits para bisectabilidad** — cada commit = un cambio lógico.
+- **La detección de finalización de TODOS.md debe ser conservadora.** Solo marcar elementos como completados cuando el diff muestre claramente que el trabajo está hecho.
+- **Usar plantillas de respuesta de Greptile de greptile-triage.md.** Cada respuesta incluye evidencia (diff en línea, referencias de código, sugerencia de re-clasificación). Nunca publicar respuestas vagas.
+- **Nunca hacer push sin evidencia de verificación fresca.** Si el código cambió después de los tests del Paso 3, re-ejecutar antes de hacer push.
+- **El Paso 3.4 genera tests de cobertura.** Deben pasar antes de hacer commit. Nunca hacer commit de tests que fallan.
+- **El objetivo es: el usuario dice `/ship`, lo siguiente que ve es la revisión + URL del PR + documentación auto-sincronizada.**

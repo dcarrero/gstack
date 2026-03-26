@@ -3,11 +3,12 @@ name: document-release
 preamble-tier: 2
 version: 1.0.0
 description: |
-  Post-ship documentation update. Reads all project docs, cross-references the
-  diff, updates README/ARCHITECTURE/CONTRIBUTING/CLAUDE.md to match what shipped,
-  polishes CHANGELOG voice, cleans up TODOS, and optionally bumps VERSION. Use when
-  asked to "update the docs", "sync documentation", or "post-ship docs".
-  Proactively suggest after a PR is merged or code is shipped.
+  Actualización de documentación post-publicación. Lee todos los documentos del proyecto,
+  los cruza con el diff, actualiza README/ARCHITECTURE/CONTRIBUTING/CLAUDE.md para que
+  coincidan con lo publicado, pule el tono del CHANGELOG, limpia los TODOS, y opcionalmente
+  incrementa VERSION. Usar cuando se pida "actualizar los docs", "sincronizar documentación"
+  o "docs post-publicación". Sugerir proactivamente después de que se fusione un PR o se
+  publique código.
 allowed-tools:
   - Bash
   - Read
@@ -316,42 +317,42 @@ branch name wherever the instructions say "the base branch."
 
 ---
 
-# Document Release: Post-Ship Documentation Update
+# Document Release: Actualización de Documentación Post-Publicación
 
-You are running the `/document-release` workflow. This runs **after `/ship`** (code committed, PR
-exists or about to exist) but **before the PR merges**. Your job: ensure every documentation file
-in the project is accurate, up to date, and written in a friendly, user-forward voice.
+Estás ejecutando el flujo de trabajo `/document-release`. Esto se ejecuta **después de `/ship`** (código confirmado, el PR
+existe o está a punto de existir) pero **antes de que se fusione el PR**. Tu trabajo: asegurar que cada archivo de
+documentación del proyecto sea preciso, esté actualizado y escrito con un tono amigable y orientado al usuario.
 
-You are mostly automated. Make obvious factual updates directly. Stop and ask only for risky or
-subjective decisions.
+Eres mayormente automático. Realiza las actualizaciones factuales obvias directamente. Detente y pregunta solo ante
+decisiones arriesgadas o subjetivas.
 
-**Only stop for:**
-- Risky/questionable doc changes (narrative, philosophy, security, removals, large rewrites)
-- VERSION bump decision (if not already bumped)
-- New TODOS items to add
-- Cross-doc contradictions that are narrative (not factual)
+**Solo detenerse para:**
+- Cambios de documentación arriesgados/cuestionables (narrativa, filosofía, seguridad, eliminaciones, reescrituras grandes)
+- Decisión sobre incremento de VERSION (si no se ha incrementado ya)
+- Nuevos elementos de TODOS a agregar
+- Contradicciones entre documentos que sean narrativas (no factuales)
 
-**Never stop for:**
-- Factual corrections clearly from the diff
-- Adding items to tables/lists
-- Updating paths, counts, version numbers
-- Fixing stale cross-references
-- CHANGELOG voice polish (minor wording adjustments)
-- Marking TODOS complete
-- Cross-doc factual inconsistencies (e.g., version number mismatch)
+**Nunca detenerse para:**
+- Correcciones factuales claramente derivadas del diff
+- Agregar elementos a tablas/listas
+- Actualizar rutas, conteos, números de versión
+- Corregir referencias cruzadas obsoletas
+- Pulir el tono del CHANGELOG (ajustes menores de redacción)
+- Marcar TODOS como completados
+- Inconsistencias factuales entre documentos (ej. discrepancia en número de versión)
 
-**NEVER do:**
-- Overwrite, replace, or regenerate CHANGELOG entries — polish wording only, preserve all content
-- Bump VERSION without asking — always use AskUserQuestion for version changes
-- Use `Write` tool on CHANGELOG.md — always use `Edit` with exact `old_string` matches
+**NUNCA hacer:**
+- Sobrescribir, reemplazar ni regenerar entradas del CHANGELOG — solo pulir la redacción, preservar todo el contenido
+- Incrementar VERSION sin preguntar — siempre usar AskUserQuestion para cambios de versión
+- Usar la herramienta `Write` en CHANGELOG.md — siempre usar `Edit` con coincidencias exactas de `old_string`
 
 ---
 
-## Step 1: Pre-flight & Diff Analysis
+## Paso 1: Verificación Previa y Análisis del Diff
 
-1. Check the current branch. If on the base branch, **abort**: "You're on the base branch. Run from a feature branch."
+1. Comprobar la rama actual. Si estás en la rama base, **abortar**: "Estás en la rama base. Ejecuta desde una rama de funcionalidad."
 
-2. Gather context about what changed:
+2. Recopilar contexto sobre lo que cambió:
 
 ```bash
 git diff <base>...HEAD --stat
@@ -365,210 +366,210 @@ git log <base>..HEAD --oneline
 git diff <base>...HEAD --name-only
 ```
 
-3. Discover all documentation files in the repo:
+3. Descubrir todos los archivos de documentación en el repositorio:
 
 ```bash
 find . -maxdepth 2 -name "*.md" -not -path "./.git/*" -not -path "./node_modules/*" -not -path "./.gstack/*" -not -path "./.context/*" | sort
 ```
 
-4. Classify the changes into categories relevant to documentation:
-   - **New features** — new files, new commands, new skills, new capabilities
-   - **Changed behavior** — modified services, updated APIs, config changes
-   - **Removed functionality** — deleted files, removed commands
-   - **Infrastructure** — build system, test infrastructure, CI
+4. Clasificar los cambios en categorías relevantes para la documentación:
+   - **Nuevas funcionalidades** — archivos nuevos, comandos nuevos, skills nuevos, nuevas capacidades
+   - **Comportamiento modificado** — servicios modificados, APIs actualizadas, cambios de configuración
+   - **Funcionalidad eliminada** — archivos eliminados, comandos eliminados
+   - **Infraestructura** — sistema de build, infraestructura de tests, CI
 
-5. Output a brief summary: "Analyzing N files changed across M commits. Found K documentation files to review."
+5. Mostrar un breve resumen: "Analizando N archivos modificados a lo largo de M commits. Se encontraron K archivos de documentación para revisar."
 
 ---
 
-## Step 2: Per-File Documentation Audit
+## Paso 2: Auditoría de Documentación por Archivo
 
-Read each documentation file and cross-reference it against the diff. Use these generic heuristics
-(adapt to whatever project you're in — these are not gstack-specific):
+Leer cada archivo de documentación y cruzarlo con el diff. Usar estas heurísticas genéricas
+(adaptar al proyecto en el que estés — no son específicas de gstack):
 
 **README.md:**
-- Does it describe all features and capabilities visible in the diff?
-- Are install/setup instructions consistent with the changes?
-- Are examples, demos, and usage descriptions still valid?
-- Are troubleshooting steps still accurate?
+- ¿Describe todas las funcionalidades y capacidades visibles en el diff?
+- ¿Las instrucciones de instalación/configuración son consistentes con los cambios?
+- ¿Los ejemplos, demos y descripciones de uso siguen siendo válidos?
+- ¿Los pasos de resolución de problemas siguen siendo precisos?
 
 **ARCHITECTURE.md:**
-- Do ASCII diagrams and component descriptions match the current code?
-- Are design decisions and "why" explanations still accurate?
-- Be conservative — only update things clearly contradicted by the diff. Architecture docs
-  describe things unlikely to change frequently.
+- ¿Los diagramas ASCII y las descripciones de componentes coinciden con el código actual?
+- ¿Las decisiones de diseño y las explicaciones del "porqué" siguen siendo precisas?
+- Ser conservador — solo actualizar cosas claramente contradichas por el diff. Los documentos de arquitectura
+  describen cosas que es poco probable que cambien frecuentemente.
 
-**CONTRIBUTING.md — New contributor smoke test:**
-- Walk through the setup instructions as if you are a brand new contributor.
-- Are the listed commands accurate? Would each step succeed?
-- Do test tier descriptions match the current test infrastructure?
-- Are workflow descriptions (dev setup, contributor mode, etc.) current?
-- Flag anything that would fail or confuse a first-time contributor.
+**CONTRIBUTING.md — Prueba de humo para nuevos contribuidores:**
+- Recorrer las instrucciones de configuración como si fueras un contribuidor completamente nuevo.
+- ¿Los comandos listados son precisos? ¿Cada paso tendría éxito?
+- ¿Las descripciones de niveles de test coinciden con la infraestructura de tests actual?
+- ¿Las descripciones de flujos de trabajo (configuración de desarrollo, modo de contribuidor, etc.) están actualizadas?
+- Señalar cualquier cosa que fallaría o confundiría a un contribuidor primerizo.
 
-**CLAUDE.md / project instructions:**
-- Does the project structure section match the actual file tree?
-- Are listed commands and scripts accurate?
-- Do build/test instructions match what's in package.json (or equivalent)?
+**CLAUDE.md / instrucciones del proyecto:**
+- ¿La sección de estructura del proyecto coincide con el árbol real de archivos?
+- ¿Los comandos y scripts listados son precisos?
+- ¿Las instrucciones de build/test coinciden con lo que hay en package.json (o equivalente)?
 
-**Any other .md files:**
-- Read the file, determine its purpose and audience.
-- Cross-reference against the diff to check if it contradicts anything the file says.
+**Cualquier otro archivo .md:**
+- Leer el archivo, determinar su propósito y audiencia.
+- Cruzar con el diff para verificar si contradice algo de lo que dice el archivo.
 
-For each file, classify needed updates as:
+Para cada archivo, clasificar las actualizaciones necesarias como:
 
-- **Auto-update** — Factual corrections clearly warranted by the diff: adding an item to a
-  table, updating a file path, fixing a count, updating a project structure tree.
-- **Ask user** — Narrative changes, section removal, security model changes, large rewrites
-  (more than ~10 lines in one section), ambiguous relevance, adding entirely new sections.
-
----
-
-## Step 3: Apply Auto-Updates
-
-Make all clear, factual updates directly using the Edit tool.
-
-For each file modified, output a one-line summary describing **what specifically changed** — not
-just "Updated README.md" but "README.md: added /new-skill to skills table, updated skill count
-from 9 to 10."
-
-**Never auto-update:**
-- README introduction or project positioning
-- ARCHITECTURE philosophy or design rationale
-- Security model descriptions
-- Do not remove entire sections from any document
+- **Auto-actualización** — Correcciones factuales claramente justificadas por el diff: agregar un elemento a una
+  tabla, actualizar una ruta de archivo, corregir un conteo, actualizar un árbol de estructura del proyecto.
+- **Preguntar al usuario** — Cambios narrativos, eliminación de secciones, cambios en el modelo de seguridad, reescrituras grandes
+  (más de ~10 líneas en una sección), relevancia ambigua, agregar secciones completamente nuevas.
 
 ---
 
-## Step 4: Ask About Risky/Questionable Changes
+## Paso 3: Aplicar Auto-Actualizaciones
 
-For each risky or questionable update identified in Step 2, use AskUserQuestion with:
-- Context: project name, branch, which doc file, what we're reviewing
-- The specific documentation decision
-- `RECOMMENDATION: Choose [X] because [one-line reason]`
-- Options including C) Skip — leave as-is
+Realizar todas las actualizaciones claras y factuales directamente usando la herramienta Edit.
 
-Apply approved changes immediately after each answer.
+Para cada archivo modificado, mostrar un resumen de una línea describiendo **qué cambió específicamente** — no
+solo "Se actualizó README.md" sino "README.md: se agregó /new-skill a la tabla de skills, se actualizó el conteo de skills
+de 9 a 10."
 
----
-
-## Step 5: CHANGELOG Voice Polish
-
-**CRITICAL — NEVER CLOBBER CHANGELOG ENTRIES.**
-
-This step polishes voice. It does NOT rewrite, replace, or regenerate CHANGELOG content.
-
-A real incident occurred where an agent replaced existing CHANGELOG entries when it should have
-preserved them. This skill must NEVER do that.
-
-**Rules:**
-1. Read the entire CHANGELOG.md first. Understand what is already there.
-2. Only modify wording within existing entries. Never delete, reorder, or replace entries.
-3. Never regenerate a CHANGELOG entry from scratch. The entry was written by `/ship` from the
-   actual diff and commit history. It is the source of truth. You are polishing prose, not
-   rewriting history.
-4. If an entry looks wrong or incomplete, use AskUserQuestion — do NOT silently fix it.
-5. Use Edit tool with exact `old_string` matches — never use Write to overwrite CHANGELOG.md.
-
-**If CHANGELOG was not modified in this branch:** skip this step.
-
-**If CHANGELOG was modified in this branch**, review the entry for voice:
-
-- **Sell test:** Would a user reading each bullet think "oh nice, I want to try that"? If not,
-  rewrite the wording (not the content).
-- Lead with what the user can now **do** — not implementation details.
-- "You can now..." not "Refactored the..."
-- Flag and rewrite any entry that reads like a commit message.
-- Internal/contributor changes belong in a separate "### For contributors" subsection.
-- Auto-fix minor voice adjustments. Use AskUserQuestion if a rewrite would alter meaning.
+**Nunca auto-actualizar:**
+- Introducción del README o posicionamiento del proyecto
+- Filosofía o justificación de diseño del ARCHITECTURE
+- Descripciones del modelo de seguridad
+- No eliminar secciones completas de ningún documento
 
 ---
 
-## Step 6: Cross-Doc Consistency & Discoverability Check
+## Paso 4: Preguntar Sobre Cambios Arriesgados/Cuestionables
 
-After auditing each file individually, do a cross-doc consistency pass:
+Para cada actualización arriesgada o cuestionable identificada en el Paso 2, usar AskUserQuestion con:
+- Contexto: nombre del proyecto, rama, qué archivo de documentación, qué estamos revisando
+- La decisión específica de documentación
+- `RECOMENDACIÓN: Elegir [X] porque [razón en una línea]`
+- Opciones incluyendo C) Omitir — dejar como está
 
-1. Does the README's feature/capability list match what CLAUDE.md (or project instructions) describes?
-2. Does ARCHITECTURE's component list match CONTRIBUTING's project structure description?
-3. Does CHANGELOG's latest version match the VERSION file?
-4. **Discoverability:** Is every documentation file reachable from README.md or CLAUDE.md? If
-   ARCHITECTURE.md exists but neither README nor CLAUDE.md links to it, flag it. Every doc
-   should be discoverable from one of the two entry-point files.
-5. Flag any contradictions between documents. Auto-fix clear factual inconsistencies (e.g., a
-   version mismatch). Use AskUserQuestion for narrative contradictions.
+Aplicar los cambios aprobados inmediatamente después de cada respuesta.
 
 ---
 
-## Step 7: TODOS.md Cleanup
+## Paso 5: Pulido de Tono del CHANGELOG
 
-This is a second pass that complements `/ship`'s Step 5.5. Read `review/TODOS-format.md` (if
-available) for the canonical TODO item format.
+**CRÍTICO — NUNCA DESTRUIR ENTRADAS DEL CHANGELOG.**
 
-If TODOS.md does not exist, skip this step.
+Este paso pule el tono. NO reescribe, reemplaza ni regenera contenido del CHANGELOG.
 
-1. **Completed items not yet marked:** Cross-reference the diff against open TODO items. If a
-   TODO is clearly completed by the changes in this branch, move it to the Completed section
-   with `**Completed:** vX.Y.Z.W (YYYY-MM-DD)`. Be conservative — only mark items with clear
-   evidence in the diff.
+Hubo un incidente real donde un agente reemplazó entradas existentes del CHANGELOG cuando debería haberlas
+preservado. Este skill NUNCA debe hacer eso.
 
-2. **Items needing description updates:** If a TODO references files or components that were
-   significantly changed, its description may be stale. Use AskUserQuestion to confirm whether
-   the TODO should be updated, completed, or left as-is.
+**Reglas:**
+1. Leer todo el CHANGELOG.md primero. Entender lo que ya existe.
+2. Solo modificar la redacción dentro de las entradas existentes. Nunca eliminar, reordenar ni reemplazar entradas.
+3. Nunca regenerar una entrada del CHANGELOG desde cero. La entrada fue escrita por `/ship` a partir del
+   diff real y el historial de commits. Es la fuente de verdad. Estás puliendo la prosa, no
+   reescribiendo la historia.
+4. Si una entrada parece incorrecta o incompleta, usar AskUserQuestion — NO corregirla silenciosamente.
+5. Usar la herramienta Edit con coincidencias exactas de `old_string` — nunca usar Write para sobrescribir CHANGELOG.md.
 
-3. **New deferred work:** Check the diff for `TODO`, `FIXME`, `HACK`, and `XXX` comments. For
-   each one that represents meaningful deferred work (not a trivial inline note), use
-   AskUserQuestion to ask whether it should be captured in TODOS.md.
+**Si el CHANGELOG no fue modificado en esta rama:** omitir este paso.
+
+**Si el CHANGELOG fue modificado en esta rama**, revisar la entrada por tono:
+
+- **Prueba de venta:** ¿Un usuario leyendo cada viñeta pensaría "oh genial, quiero probar eso"? Si no,
+  reescribir la redacción (no el contenido).
+- Empezar con lo que el usuario ahora puede **hacer** — no con detalles de implementación.
+- "Ahora puedes..." no "Se refactorizó el..."
+- Señalar y reescribir cualquier entrada que se lea como un mensaje de commit.
+- Los cambios internos/para contribuidores pertenecen a una subsección separada "### Para contribuidores".
+- Auto-corregir ajustes menores de tono. Usar AskUserQuestion si una reescritura alteraría el significado.
 
 ---
 
-## Step 8: VERSION Bump Question
+## Paso 6: Verificación de Consistencia y Descubribilidad Entre Documentos
 
-**CRITICAL — NEVER BUMP VERSION WITHOUT ASKING.**
+Después de auditar cada archivo individualmente, hacer un pase de consistencia entre documentos:
 
-1. **If VERSION does not exist:** Skip silently.
+1. ¿La lista de funcionalidades/capacidades del README coincide con lo que describe CLAUDE.md (o las instrucciones del proyecto)?
+2. ¿La lista de componentes del ARCHITECTURE coincide con la descripción de estructura del proyecto en CONTRIBUTING?
+3. ¿La última versión del CHANGELOG coincide con el archivo VERSION?
+4. **Descubribilidad:** ¿Cada archivo de documentación es accesible desde README.md o CLAUDE.md? Si
+   ARCHITECTURE.md existe pero ni README ni CLAUDE.md enlazan a él, señalarlo. Cada documento
+   debería ser descubrible desde uno de los dos archivos de punto de entrada.
+5. Señalar cualquier contradicción entre documentos. Auto-corregir inconsistencias factuales claras (ej. una
+   discrepancia de versión). Usar AskUserQuestion para contradicciones narrativas.
 
-2. Check if VERSION was already modified on this branch:
+---
+
+## Paso 7: Limpieza de TODOS.md
+
+Este es un segundo pase que complementa el Paso 5.5 de `/ship`. Leer `review/TODOS-format.md` (si
+está disponible) para el formato canónico de elementos TODO.
+
+Si TODOS.md no existe, omitir este paso.
+
+1. **Elementos completados no marcados aún:** Cruzar el diff con los elementos TODO abiertos. Si un
+   TODO fue claramente completado por los cambios en esta rama, moverlo a la sección Completados
+   con `**Completado:** vX.Y.Z.W (YYYY-MM-DD)`. Ser conservador — solo marcar elementos con evidencia
+   clara en el diff.
+
+2. **Elementos que necesitan actualización de descripción:** Si un TODO hace referencia a archivos o componentes que fueron
+   significativamente modificados, su descripción puede estar obsoleta. Usar AskUserQuestion para confirmar si
+   el TODO debería actualizarse, completarse o dejarse como está.
+
+3. **Nuevo trabajo diferido:** Revisar el diff buscando comentarios `TODO`, `FIXME`, `HACK` y `XXX`. Para
+   cada uno que represente trabajo diferido significativo (no una nota trivial en línea), usar
+   AskUserQuestion para preguntar si debería capturarse en TODOS.md.
+
+---
+
+## Paso 8: Pregunta sobre Incremento de VERSION
+
+**CRÍTICO — NUNCA INCREMENTAR VERSION SIN PREGUNTAR.**
+
+1. **Si VERSION no existe:** Omitir silenciosamente.
+
+2. Verificar si VERSION ya fue modificado en esta rama:
 
 ```bash
 git diff <base>...HEAD -- VERSION
 ```
 
-3. **If VERSION was NOT bumped:** Use AskUserQuestion:
-   - RECOMMENDATION: Choose C (Skip) because docs-only changes rarely warrant a version bump
-   - A) Bump PATCH (X.Y.Z+1) — if doc changes ship alongside code changes
-   - B) Bump MINOR (X.Y+1.0) — if this is a significant standalone release
-   - C) Skip — no version bump needed
+3. **Si VERSION NO fue incrementado:** Usar AskUserQuestion:
+   - RECOMENDACIÓN: Elegir C (Omitir) porque los cambios solo de documentación raramente justifican un incremento de versión
+   - A) Incrementar PATCH (X.Y.Z+1) — si los cambios de documentación se publican junto con cambios de código
+   - B) Incrementar MINOR (X.Y+1.0) — si esta es una publicación independiente significativa
+   - C) Omitir — no se necesita incremento de versión
 
-4. **If VERSION was already bumped:** Do NOT skip silently. Instead, check whether the bump
-   still covers the full scope of changes on this branch:
+4. **Si VERSION ya fue incrementado:** NO omitir silenciosamente. En su lugar, verificar si el incremento
+   aún cubre el alcance completo de los cambios en esta rama:
 
-   a. Read the CHANGELOG entry for the current VERSION. What features does it describe?
-   b. Read the full diff (`git diff <base>...HEAD --stat` and `git diff <base>...HEAD --name-only`).
-      Are there significant changes (new features, new skills, new commands, major refactors)
-      that are NOT mentioned in the CHANGELOG entry for the current version?
-   c. **If the CHANGELOG entry covers everything:** Skip — output "VERSION: Already bumped to
-      vX.Y.Z, covers all changes."
-   d. **If there are significant uncovered changes:** Use AskUserQuestion explaining what the
-      current version covers vs what's new, and ask:
-      - RECOMMENDATION: Choose A because the new changes warrant their own version
-      - A) Bump to next patch (X.Y.Z+1) — give the new changes their own version
-      - B) Keep current version — add new changes to the existing CHANGELOG entry
-      - C) Skip — leave version as-is, handle later
+   a. Leer la entrada del CHANGELOG para la VERSION actual. ¿Qué funcionalidades describe?
+   b. Leer el diff completo (`git diff <base>...HEAD --stat` y `git diff <base>...HEAD --name-only`).
+      ¿Hay cambios significativos (nuevas funcionalidades, nuevos skills, nuevos comandos, refactorizaciones grandes)
+      que NO están mencionados en la entrada del CHANGELOG para la versión actual?
+   c. **Si la entrada del CHANGELOG cubre todo:** Omitir — mostrar "VERSION: Ya incrementado a
+      vX.Y.Z, cubre todos los cambios."
+   d. **Si hay cambios significativos no cubiertos:** Usar AskUserQuestion explicando lo que cubre la
+      versión actual vs lo que es nuevo, y preguntar:
+      - RECOMENDACIÓN: Elegir A porque los nuevos cambios justifican su propia versión
+      - A) Incrementar al siguiente patch (X.Y.Z+1) — dar a los nuevos cambios su propia versión
+      - B) Mantener la versión actual — agregar los nuevos cambios a la entrada existente del CHANGELOG
+      - C) Omitir — dejar la versión como está, manejar después
 
-   The key insight: a VERSION bump set for "feature A" should not silently absorb "feature B"
-   if feature B is substantial enough to deserve its own version entry.
+   La idea clave: un incremento de VERSION establecido para la "funcionalidad A" no debería absorber silenciosamente
+   la "funcionalidad B" si la funcionalidad B es lo suficientemente importante como para merecer su propia entrada de versión.
 
 ---
 
-## Step 9: Commit & Output
+## Paso 9: Commit y Resultado
 
-**Empty check first:** Run `git status` (never use `-uall`). If no documentation files were
-modified by any previous step, output "All documentation is up to date." and exit without
-committing.
+**Verificación de vacío primero:** Ejecutar `git status` (nunca usar `-uall`). Si ningún archivo de documentación fue
+modificado por algún paso anterior, mostrar "Toda la documentación está actualizada." y salir sin
+hacer commit.
 
 **Commit:**
 
-1. Stage modified documentation files by name (never `git add -A` or `git add .`).
-2. Create a single commit:
+1. Agregar al staging los archivos de documentación modificados por nombre (nunca `git add -A` ni `git add .`).
+2. Crear un solo commit:
 
 ```bash
 git commit -m "$(cat <<'EOF'
@@ -579,74 +580,74 @@ EOF
 )"
 ```
 
-3. Push to the current branch:
+3. Hacer push a la rama actual:
 
 ```bash
 git push
 ```
 
-**PR body update (idempotent, race-safe):**
+**Actualización del cuerpo del PR (idempotente, segura ante concurrencia):**
 
-1. Read the existing PR body into a PID-unique tempfile:
+1. Leer el cuerpo existente del PR en un archivo temporal con PID único:
 
 ```bash
 gh pr view --json body -q .body > /tmp/gstack-pr-body-$$.md
 ```
 
-2. If the tempfile already contains a `## Documentation` section, replace that section with the
-   updated content. If it does not contain one, append a `## Documentation` section at the end.
+2. Si el archivo temporal ya contiene una sección `## Documentation`, reemplazar esa sección con el
+   contenido actualizado. Si no contiene una, agregar una sección `## Documentation` al final.
 
-3. The Documentation section should include a **doc diff preview** — for each file modified,
-   describe what specifically changed (e.g., "README.md: added /document-release to skills
-   table, updated skill count from 9 to 10").
+3. La sección Documentation debe incluir una **vista previa del diff de documentación** — para cada archivo modificado,
+   describir qué cambió específicamente (ej. "README.md: se agregó /document-release a la tabla de skills,
+   se actualizó el conteo de skills de 9 a 10").
 
-4. Write the updated body back:
+4. Escribir el cuerpo actualizado de vuelta:
 
 ```bash
 gh pr edit --body-file /tmp/gstack-pr-body-$$.md
 ```
 
-5. Clean up the tempfile:
+5. Limpiar el archivo temporal:
 
 ```bash
 rm -f /tmp/gstack-pr-body-$$.md
 ```
 
-6. If `gh pr view` fails (no PR exists): skip with message "No PR found — skipping body update."
-7. If `gh pr edit` fails: warn "Could not update PR body — documentation changes are in the
-   commit." and continue.
+6. Si `gh pr view` falla (no existe PR): omitir con el mensaje "No se encontró PR — se omite la actualización del cuerpo."
+7. Si `gh pr edit` falla: advertir "No se pudo actualizar el cuerpo del PR — los cambios de documentación están en el
+   commit." y continuar.
 
-**Structured doc health summary (final output):**
+**Resumen estructurado de salud de documentación (resultado final):**
 
-Output a scannable summary showing every documentation file's status:
+Mostrar un resumen escaneable indicando el estado de cada archivo de documentación:
 
 ```
-Documentation health:
-  README.md       [status] ([details])
-  ARCHITECTURE.md [status] ([details])
-  CONTRIBUTING.md [status] ([details])
-  CHANGELOG.md    [status] ([details])
-  TODOS.md        [status] ([details])
-  VERSION         [status] ([details])
+Salud de la documentación:
+  README.md       [estado] ([detalles])
+  ARCHITECTURE.md [estado] ([detalles])
+  CONTRIBUTING.md [estado] ([detalles])
+  CHANGELOG.md    [estado] ([detalles])
+  TODOS.md        [estado] ([detalles])
+  VERSION         [estado] ([detalles])
 ```
 
-Where status is one of:
-- Updated — with description of what changed
-- Current — no changes needed
-- Voice polished — wording adjusted
-- Not bumped — user chose to skip
-- Already bumped — version was set by /ship
-- Skipped — file does not exist
+Donde estado es uno de:
+- Actualizado — con descripción de lo que cambió
+- Vigente — no se necesitaron cambios
+- Tono pulido — se ajustó la redacción
+- No incrementado — el usuario eligió omitir
+- Ya incrementado — la versión fue establecida por /ship
+- Omitido — el archivo no existe
 
 ---
 
-## Important Rules
+## Reglas Importantes
 
-- **Read before editing.** Always read the full content of a file before modifying it.
-- **Never clobber CHANGELOG.** Polish wording only. Never delete, replace, or regenerate entries.
-- **Never bump VERSION silently.** Always ask. Even if already bumped, check whether it covers the full scope of changes.
-- **Be explicit about what changed.** Every edit gets a one-line summary.
-- **Generic heuristics, not project-specific.** The audit checks work on any repo.
-- **Discoverability matters.** Every doc file should be reachable from README or CLAUDE.md.
-- **Voice: friendly, user-forward, not obscure.** Write like you're explaining to a smart person
-  who hasn't seen the code.
+- **Leer antes de editar.** Siempre leer el contenido completo de un archivo antes de modificarlo.
+- **Nunca destruir el CHANGELOG.** Solo pulir la redacción. Nunca eliminar, reemplazar ni regenerar entradas.
+- **Nunca incrementar VERSION silenciosamente.** Siempre preguntar. Incluso si ya se incrementó, verificar si cubre el alcance completo de los cambios.
+- **Ser explícito sobre lo que cambió.** Cada edición recibe un resumen de una línea.
+- **Heurísticas genéricas, no específicas del proyecto.** Las verificaciones de auditoría funcionan en cualquier repositorio.
+- **La descubribilidad importa.** Cada archivo de documentación debería ser accesible desde README o CLAUDE.md.
+- **Tono: amigable, orientado al usuario, no oscuro.** Escribir como si estuvieras explicando a una persona inteligente
+  que no ha visto el código.

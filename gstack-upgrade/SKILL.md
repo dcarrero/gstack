@@ -2,9 +2,9 @@
 name: gstack-upgrade
 version: 1.1.0
 description: |
-  Upgrade gstack to the latest version. Detects global vs vendored install,
-  runs the upgrade, and shows what's new. Use when asked to "upgrade gstack",
-  "update gstack", or "get latest version".
+  Actualiza gstack a la última versión. Detecta si la instalación es global o
+  vendored, ejecuta la actualización y muestra las novedades. Úsalo cuando te
+  pidan "actualizar gstack", "upgrade gstack" u "obtener la última versión".
 allowed-tools:
   - Bash
   - Read
@@ -16,15 +16,15 @@ allowed-tools:
 
 # /gstack-upgrade
 
-Upgrade gstack to the latest version and show what's new.
+Actualiza gstack a la última versión y muestra las novedades.
 
-## Inline upgrade flow
+## Flujo de actualización en línea
 
-This section is referenced by all skill preambles when they detect `UPGRADE_AVAILABLE`.
+Esta sección es referenciada por todos los preámbulos de skills cuando detectan `UPGRADE_AVAILABLE`.
 
-### Step 1: Ask the user (or auto-upgrade)
+### Paso 1: Preguntar al usuario (o actualizar automáticamente)
 
-First, check if auto-upgrade is enabled:
+Primero, comprueba si la actualización automática está habilitada:
 ```bash
 _AUTO=""
 [ "${GSTACK_AUTO_UPGRADE:-}" = "1" ] && _AUTO="true"
@@ -32,21 +32,21 @@ _AUTO=""
 echo "AUTO_UPGRADE=$_AUTO"
 ```
 
-**If `AUTO_UPGRADE=true` or `AUTO_UPGRADE=1`:** Skip AskUserQuestion. Log "Auto-upgrading gstack v{old} → v{new}..." and proceed directly to Step 2. If `./setup` fails during auto-upgrade, restore from backup (`.bak` directory) and warn the user: "Auto-upgrade failed — restored previous version. Run `/gstack-upgrade` manually to retry."
+**Si `AUTO_UPGRADE=true` o `AUTO_UPGRADE=1`:** Omite AskUserQuestion. Registra "Auto-upgrading gstack v{old} → v{new}..." y procede directamente al Paso 2. Si `./setup` falla durante la actualización automática, restaura desde la copia de seguridad (directorio `.bak`) y advierte al usuario: "La actualización automática falló — se restauró la versión anterior. Ejecuta `/gstack-upgrade` manualmente para reintentar."
 
-**Otherwise**, use AskUserQuestion:
-- Question: "gstack **v{new}** is available (you're on v{old}). Upgrade now?"
-- Options: ["Yes, upgrade now", "Always keep me up to date", "Not now", "Never ask again"]
+**En caso contrario**, usa AskUserQuestion:
+- Pregunta: "gstack **v{new}** está disponible (tienes la v{old}). ¿Actualizar ahora?"
+- Opciones: ["Sí, actualizar ahora", "Mantenerme siempre al día", "Ahora no", "No preguntar más"]
 
-**If "Yes, upgrade now":** Proceed to Step 2.
+**Si "Sí, actualizar ahora":** Procede al Paso 2.
 
-**If "Always keep me up to date":**
+**Si "Mantenerme siempre al día":**
 ```bash
 ~/.claude/skills/gstack/bin/gstack-config set auto_upgrade true
 ```
-Tell user: "Auto-upgrade enabled. Future updates will install automatically." Then proceed to Step 2.
+Informa al usuario: "Actualización automática habilitada. Las futuras actualizaciones se instalarán automáticamente." Luego procede al Paso 2.
 
-**If "Not now":** Write snooze state with escalating backoff (first snooze = 24h, second = 48h, third+ = 1 week), then continue with the current skill. Do not mention the upgrade again.
+**Si "Ahora no":** Escribe el estado de aplazamiento con backoff progresivo (primer aplazamiento = 24h, segundo = 48h, tercero en adelante = 1 semana), y continúa con el skill actual. No menciones la actualización de nuevo.
 ```bash
 _SNOOZE_FILE=~/.gstack/update-snoozed
 _REMOTE_VER="{new}"
@@ -62,18 +62,18 @@ _NEW_LEVEL=$((_CUR_LEVEL + 1))
 [ "$_NEW_LEVEL" -gt 3 ] && _NEW_LEVEL=3
 echo "$_REMOTE_VER $_NEW_LEVEL $(date +%s)" > "$_SNOOZE_FILE"
 ```
-Note: `{new}` is the remote version from the `UPGRADE_AVAILABLE` output — substitute it from the update check result.
+Nota: `{new}` es la versión remota obtenida de la salida de `UPGRADE_AVAILABLE` — sustitúyela con el resultado de la comprobación de actualización.
 
-Tell user the snooze duration: "Next reminder in 24h" (or 48h or 1 week, depending on level). Tip: "Set `auto_upgrade: true` in `~/.gstack/config.yaml` for automatic upgrades."
+Informa al usuario la duración del aplazamiento: "Próximo recordatorio en 24h" (o 48h o 1 semana, según el nivel). Consejo: "Establece `auto_upgrade: true` en `~/.gstack/config.yaml` para actualizaciones automáticas."
 
-**If "Never ask again":**
+**Si "No preguntar más":**
 ```bash
 ~/.claude/skills/gstack/bin/gstack-config set update_check false
 ```
-Tell user: "Update checks disabled. Run `~/.claude/skills/gstack/bin/gstack-config set update_check true` to re-enable."
-Continue with the current skill.
+Informa al usuario: "Comprobación de actualizaciones deshabilitada. Ejecuta `~/.claude/skills/gstack/bin/gstack-config set update_check true` para reactivarla."
+Continúa con el skill actual.
 
-### Step 2: Detect install type
+### Paso 2: Detectar tipo de instalación
 
 ```bash
 if [ -d "$HOME/.claude/skills/gstack/.git" ]; then
@@ -101,21 +101,21 @@ fi
 echo "Install type: $INSTALL_TYPE at $INSTALL_DIR"
 ```
 
-The install type and directory path printed above will be used in all subsequent steps.
+El tipo de instalación y la ruta del directorio impresos arriba se usarán en todos los pasos siguientes.
 
-### Step 3: Save old version
+### Paso 3: Guardar la versión anterior
 
-Use the install directory from Step 2's output below:
+Usa el directorio de instalación de la salida del Paso 2 a continuación:
 
 ```bash
 OLD_VERSION=$(cat "$INSTALL_DIR/VERSION" 2>/dev/null || echo "unknown")
 ```
 
-### Step 4: Upgrade
+### Paso 4: Actualizar
 
-Use the install type and directory detected in Step 2:
+Usa el tipo de instalación y el directorio detectados en el Paso 2:
 
-**For git installs** (global-git, local-git):
+**Para instalaciones git** (global-git, local-git):
 ```bash
 cd "$INSTALL_DIR"
 STASH_OUTPUT=$(git stash 2>&1)
@@ -123,9 +123,9 @@ git fetch origin
 git reset --hard origin/main
 ./setup
 ```
-If `$STASH_OUTPUT` contains "Saved working directory", warn the user: "Note: local changes were stashed. Run `git stash pop` in the skill directory to restore them."
+Si `$STASH_OUTPUT` contiene "Saved working directory", advierte al usuario: "Nota: los cambios locales se guardaron en stash. Ejecuta `git stash pop` en el directorio del skill para restaurarlos."
 
-**For vendored installs** (vendored, vendored-global):
+**Para instalaciones vendored** (vendored, vendored-global):
 ```bash
 PARENT=$(dirname "$INSTALL_DIR")
 TMP_DIR=$(mktemp -d)
@@ -136,9 +136,9 @@ cd "$INSTALL_DIR" && ./setup
 rm -rf "$INSTALL_DIR.bak" "$TMP_DIR"
 ```
 
-### Step 4.5: Sync local vendored copy
+### Paso 4.5: Sincronizar la copia local vendored
 
-Use the install directory from Step 2. Check if there's also a local vendored copy that needs updating:
+Usa el directorio de instalación del Paso 2. Comprueba si también existe una copia local vendored que necesite actualizarse:
 
 ```bash
 _ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
@@ -153,7 +153,7 @@ fi
 echo "LOCAL_GSTACK=$LOCAL_GSTACK"
 ```
 
-If `LOCAL_GSTACK` is non-empty, update it by copying from the freshly-upgraded primary install (same approach as README vendored install):
+Si `LOCAL_GSTACK` no está vacío, actualízalo copiando desde la instalación primaria recién actualizada (mismo enfoque que la instalación vendored del README):
 ```bash
 mv "$LOCAL_GSTACK" "$LOCAL_GSTACK.bak"
 cp -Rf "$INSTALL_DIR" "$LOCAL_GSTACK"
@@ -161,16 +161,16 @@ rm -rf "$LOCAL_GSTACK/.git"
 cd "$LOCAL_GSTACK" && ./setup
 rm -rf "$LOCAL_GSTACK.bak"
 ```
-Tell user: "Also updated vendored copy at `$LOCAL_GSTACK` — commit `.claude/skills/gstack/` when you're ready."
+Informa al usuario: "También se actualizó la copia vendored en `$LOCAL_GSTACK` — haz commit de `.claude/skills/gstack/` cuando estés listo."
 
-If `./setup` fails, restore from backup and warn the user:
+Si `./setup` falla, restaura desde la copia de seguridad y advierte al usuario:
 ```bash
 rm -rf "$LOCAL_GSTACK"
 mv "$LOCAL_GSTACK.bak" "$LOCAL_GSTACK"
 ```
-Tell user: "Sync failed — restored previous version at `$LOCAL_GSTACK`. Run `/gstack-upgrade` manually to retry."
+Informa al usuario: "La sincronización falló — se restauró la versión anterior en `$LOCAL_GSTACK`. Ejecuta `/gstack-upgrade` manualmente para reintentar."
 
-### Step 5: Write marker + clear cache
+### Paso 5: Escribir marcador + limpiar caché
 
 ```bash
 mkdir -p ~/.gstack
@@ -179,54 +179,54 @@ rm -f ~/.gstack/last-update-check
 rm -f ~/.gstack/update-snoozed
 ```
 
-### Step 6: Show What's New
+### Paso 6: Mostrar novedades
 
-Read `$INSTALL_DIR/CHANGELOG.md`. Find all version entries between the old version and the new version. Summarize as 5-7 bullets grouped by theme. Don't overwhelm — focus on user-facing changes. Skip internal refactors unless they're significant.
+Lee `$INSTALL_DIR/CHANGELOG.md`. Encuentra todas las entradas de versión entre la versión anterior y la nueva. Resume en 5-7 puntos agrupados por tema. No abrumes — céntrate en los cambios visibles para el usuario. Omite refactorizaciones internas a menos que sean significativas.
 
-Format:
+Formato:
 ```
-gstack v{new} — upgraded from v{old}!
+gstack v{new} — ¡actualizado desde v{old}!
 
-What's new:
-- [bullet 1]
-- [bullet 2]
+Novedades:
+- [punto 1]
+- [punto 2]
 - ...
 
-Happy shipping!
+¡A seguir desarrollando!
 ```
 
-### Step 7: Continue
+### Paso 7: Continuar
 
-After showing What's New, continue with whatever skill the user originally invoked. The upgrade is done — no further action needed.
+Después de mostrar las novedades, continúa con el skill que el usuario invocó originalmente. La actualización ha terminado — no se necesita ninguna acción adicional.
 
 ---
 
-## Standalone usage
+## Uso independiente
 
-When invoked directly as `/gstack-upgrade` (not from a preamble):
+Cuando se invoca directamente como `/gstack-upgrade` (no desde un preámbulo):
 
-1. Force a fresh update check (bypass cache):
+1. Fuerza una comprobación de actualización nueva (sin caché):
 ```bash
 ~/.claude/skills/gstack/bin/gstack-update-check --force 2>/dev/null || \
 .claude/skills/gstack/bin/gstack-update-check --force 2>/dev/null || true
 ```
-Use the output to determine if an upgrade is available.
+Usa la salida para determinar si hay una actualización disponible.
 
-2. If `UPGRADE_AVAILABLE <old> <new>`: follow Steps 2-6 above.
+2. Si `UPGRADE_AVAILABLE <old> <new>`: sigue los Pasos 2-6 anteriores.
 
-3. If no output (primary is up to date): check for a stale local vendored copy.
+3. Si no hay salida (la instalación primaria está al día): comprueba si existe una copia local vendored desactualizada.
 
-Run the Step 2 bash block above to detect the primary install type and directory (`INSTALL_TYPE` and `INSTALL_DIR`). Then run the Step 4.5 detection bash block above to check for a local vendored copy (`LOCAL_GSTACK`).
+Ejecuta el bloque bash del Paso 2 anterior para detectar el tipo de instalación primaria y el directorio (`INSTALL_TYPE` e `INSTALL_DIR`). Luego ejecuta el bloque bash de detección del Paso 4.5 anterior para comprobar si existe una copia local vendored (`LOCAL_GSTACK`).
 
-**If `LOCAL_GSTACK` is empty** (no local vendored copy): tell the user "You're already on the latest version (v{version})."
+**Si `LOCAL_GSTACK` está vacío** (no hay copia local vendored): informa al usuario "Ya tienes la última versión (v{version})."
 
-**If `LOCAL_GSTACK` is non-empty**, compare versions:
+**Si `LOCAL_GSTACK` no está vacío**, compara las versiones:
 ```bash
 PRIMARY_VER=$(cat "$INSTALL_DIR/VERSION" 2>/dev/null || echo "unknown")
 LOCAL_VER=$(cat "$LOCAL_GSTACK/VERSION" 2>/dev/null || echo "unknown")
 echo "PRIMARY=$PRIMARY_VER LOCAL=$LOCAL_VER"
 ```
 
-**If versions differ:** follow the Step 4.5 sync bash block above to update the local copy from the primary. Tell user: "Global v{PRIMARY_VER} is up to date. Updated local vendored copy from v{LOCAL_VER} → v{PRIMARY_VER}. Commit `.claude/skills/gstack/` when you're ready."
+**Si las versiones difieren:** sigue el bloque bash de sincronización del Paso 4.5 anterior para actualizar la copia local desde la primaria. Informa al usuario: "La versión global v{PRIMARY_VER} está al día. Se actualizó la copia local vendored de v{LOCAL_VER} → v{PRIMARY_VER}. Haz commit de `.claude/skills/gstack/` cuando estés listo."
 
-**If versions match:** tell the user "You're on the latest version (v{PRIMARY_VER}). Global and local vendored copy are both up to date."
+**Si las versiones coinciden:** informa al usuario "Tienes la última versión (v{PRIMARY_VER}). La instalación global y la copia local vendored están al día."
