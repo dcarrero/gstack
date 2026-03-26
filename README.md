@@ -1,6 +1,6 @@
 # gstack-es
 
-> Fork en castellano de [garrytan/gstack](https://github.com/garrytan/gstack) — la fábrica de software open source de Garry Tan (CEO de Y Combinator).
+> Traducción al castellano con adaptaciones de [David Carrero](https://carrero.es) del proyecto [garrytan/gstack](https://github.com/garrytan/gstack) — la fábrica de software open source de Garry Tan (CEO de Y Combinator).
 
 > "No creo que haya escrito ni una línea de código probablemente desde diciembre, lo cual es un cambio enorme." — [Andrej Karpathy](https://fortune.com/2026/03/21/andrej-karpathy-openai-cofounder-ai-agents-coding-state-of-psychosis-openclaw/), No Priors podcast, marzo 2026
 
@@ -199,4 +199,4 @@ MIT. Gratis para siempre. Ve a construir algo.
 ---
 
 > **Proyecto original:** [garrytan/gstack](https://github.com/garrytan/gstack) por Garry Tan.
-> Esta es una adaptación al castellano. Ver [ORIGIN.md](ORIGIN.md) para detalles.
+> Traducción al castellano con adaptaciones por [David Carrero](https://carrero.es). Ver [ORIGIN.md](ORIGIN.md) para detalles.
