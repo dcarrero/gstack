@@ -8,22 +8,22 @@
 - [x] ORIGIN.md — nuevo, referencias al proyecto original
 - [x] office-hours/SKILL.md.tmpl — traducido completamente (skill insignia)
 
-### Pendiente — Skills principales (prioridad alta)
-- [ ] review/SKILL.md.tmpl — revisión de código pre-merge
-- [ ] qa/SKILL.md.tmpl — QA con navegador real
-- [ ] ship/SKILL.md.tmpl — release engineering
-- [ ] plan-ceo-review/SKILL.md.tmpl — revisión de producto CEO
-- [ ] plan-eng-review/SKILL.md.tmpl — revisión de arquitectura
-- [ ] investigate/SKILL.md.tmpl — debugging sistemático
+### Completado — Skills principales (prioridad alta)
+- [x] review/SKILL.md.tmpl — revisión de código pre-merge
+- [x] qa/SKILL.md.tmpl — QA con navegador real
+- [x] ship/SKILL.md.tmpl — release engineering
+- [x] plan-ceo-review/SKILL.md.tmpl — revisión de producto CEO
+- [x] plan-eng-review/SKILL.md.tmpl — revisión de arquitectura
+- [x] investigate/SKILL.md.tmpl — debugging sistemático
 
-### Pendiente — Skills secundarios (prioridad media)
-- [ ] plan-design-review/SKILL.md.tmpl
-- [ ] design-consultation/SKILL.md.tmpl
-- [ ] design-review/SKILL.md.tmpl
-- [ ] cso/SKILL.md.tmpl — auditoría de seguridad
-- [ ] qa-only/SKILL.md.tmpl
-- [ ] land-and-deploy/SKILL.md.tmpl
-- [ ] retro/SKILL.md.tmpl
+### Completado — Skills secundarios (prioridad media)
+- [x] plan-design-review/SKILL.md.tmpl
+- [x] design-consultation/SKILL.md.tmpl
+- [x] design-review/SKILL.md.tmpl
+- [x] cso/SKILL.md.tmpl — auditoría de seguridad
+- [x] qa-only/SKILL.md.tmpl
+- [x] land-and-deploy/SKILL.md.tmpl
+- [x] retro/SKILL.md.tmpl
 
 ### Pendiente — Skills de utilidad (prioridad baja)
 - [ ] careful/SKILL.md.tmpl

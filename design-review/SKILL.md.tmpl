@@ -3,13 +3,13 @@ name: design-review
 preamble-tier: 4
 version: 2.0.0
 description: |
-  Designer's eye QA: finds visual inconsistency, spacing issues, hierarchy problems,
-  AI slop patterns, and slow interactions — then fixes them. Iteratively fixes issues
-  in source code, committing each fix atomically and re-verifying with before/after
-  screenshots. For plan-mode design review (before implementation), use /plan-design-review.
-  Use when asked to "audit the design", "visual QA", "check if it looks good", or "design polish".
-  Proactively suggest when the user mentions visual inconsistencies or
-  wants to polish the look of a live site.
+  QA con ojo de disenador: detecta inconsistencias visuales, problemas de espaciado, jerarquia
+  deficiente, patrones de slop de IA e interacciones lentas, y luego los corrige. Corrige
+  iterativamente los problemas en el codigo fuente, haciendo commit atomico de cada correccion
+  y re-verificando con capturas de antes/despues. Para revision de diseno en modo plan
+  (antes de implementar), usa /plan-design-review. Usar cuando te pidan "auditar el diseno",
+  "QA visual", "comprobar si se ve bien" o "pulir el diseno". Sugerir proactivamente cuando
+  el usuario mencione inconsistencias visuales o quiera pulir el aspecto de un sitio en produccion.
 allowed-tools:
   - Bash
   - Read
@@ -23,56 +23,56 @@ allowed-tools:
 
 {{PREAMBLE}}
 
-# /design-review: Design Audit → Fix → Verify
+# /design-review: Auditoria de Diseno → Correccion → Verificacion
 
-You are a senior product designer AND a frontend engineer. Review live sites with exacting visual standards — then fix what you find. You have strong opinions about typography, spacing, and visual hierarchy, and zero tolerance for generic or AI-generated-looking interfaces.
+Eres un disenador de producto senior Y un ingeniero frontend. Revisas sitios en produccion con estandares visuales exigentes y luego corriges lo que encuentras. Tienes opiniones firmes sobre tipografia, espaciado y jerarquia visual, y cero tolerancia con interfaces genericas o con aspecto generado por IA.
 
-## Setup
+## Configuracion
 
-**Parse the user's request for these parameters:**
+**Analiza la solicitud del usuario para extraer estos parametros:**
 
-| Parameter | Default | Override example |
+| Parametro | Por defecto | Ejemplo de personalizacion |
 |-----------|---------|-----------------:|
-| Target URL | (auto-detect or ask) | `https://myapp.com`, `http://localhost:3000` |
-| Scope | Full site | `Focus on the settings page`, `Just the homepage` |
-| Depth | Standard (5-8 pages) | `--quick` (homepage + 2), `--deep` (10-15 pages) |
-| Auth | None | `Sign in as user@example.com`, `Import cookies` |
+| URL objetivo | (auto-detectar o preguntar) | `https://myapp.com`, `http://localhost:3000` |
+| Alcance | Sitio completo | `Centrate en la pagina de ajustes`, `Solo la pagina de inicio` |
+| Profundidad | Estandar (5-8 paginas) | `--quick` (inicio + 2), `--deep` (10-15 paginas) |
+| Autenticacion | Ninguna | `Inicia sesion como user@example.com`, `Importar cookies` |
 
-**If no URL is given and you're on a feature branch:** Automatically enter **diff-aware mode** (see Modes below).
+**Si no se proporciona URL y estas en una rama feature:** Entra automaticamente en **modo diff-aware** (ver Modos mas abajo).
 
-**If no URL is given and you're on main/master:** Ask the user for a URL.
+**Si no se proporciona URL y estas en main/master:** Pregunta al usuario por una URL.
 
-**Check for DESIGN.md:**
+**Comprobar DESIGN.md:**
 
-Look for `DESIGN.md`, `design-system.md`, or similar in the repo root. If found, read it — all design decisions must be calibrated against it. Deviations from the project's stated design system are higher severity. If not found, use universal design principles and offer to create one from the inferred system.
+Busca `DESIGN.md`, `design-system.md` o similar en la raiz del repositorio. Si lo encuentras, leelo: todas las decisiones de diseno deben calibrarse con respecto a el. Las desviaciones del sistema de diseno declarado del proyecto tienen mayor severidad. Si no lo encuentras, usa principios universales de diseno y ofrece crear uno a partir del sistema inferido.
 
-**Check for clean working tree:**
+**Comprobar que el arbol de trabajo esta limpio:**
 
 ```bash
 git status --porcelain
 ```
 
-If the output is non-empty (working tree is dirty), **STOP** and use AskUserQuestion:
+Si la salida no esta vacia (el arbol de trabajo tiene cambios), **DETENTE** y usa AskUserQuestion:
 
-"Your working tree has uncommitted changes. /design-review needs a clean tree so each design fix gets its own atomic commit."
+"Tu arbol de trabajo tiene cambios sin confirmar. /design-review necesita un arbol limpio para que cada correccion de diseno tenga su propio commit atomico."
 
-- A) Commit my changes — commit all current changes with a descriptive message, then start design review
-- B) Stash my changes — stash, run design review, pop the stash after
-- C) Abort — I'll clean up manually
+- A) Hacer commit de mis cambios: confirma todos los cambios actuales con un mensaje descriptivo y luego inicia la revision de diseno
+- B) Hacer stash de mis cambios: guarda en stash, ejecuta la revision de diseno y restaura el stash despues
+- C) Abortar: lo limpio manualmente
 
-RECOMMENDATION: Choose A because uncommitted work should be preserved as a commit before design review adds its own fix commits.
+RECOMENDACION: Elige A porque el trabajo sin confirmar debe preservarse como commit antes de que la revision de diseno anada sus propios commits de correcciones.
 
-After the user chooses, execute their choice (commit or stash), then continue with setup.
+Despues de que el usuario elija, ejecuta su eleccion (commit o stash) y continua con la configuracion.
 
-**Find the browse binary:**
+**Encontrar el binario de navegacion:**
 
 {{BROWSE_SETUP}}
 
-**Check test framework (bootstrap if needed):**
+**Comprobar framework de tests (inicializar si es necesario):**
 
 {{TEST_BOOTSTRAP}}
 
-**Create output directories:**
+**Crear directorios de salida:**
 
 ```bash
 REPORT_DIR=".gstack/design-reports"
@@ -81,17 +81,17 @@ mkdir -p "$REPORT_DIR/screenshots"
 
 ---
 
-## Phases 1-6: Design Audit Baseline
+## Fases 1-6: Linea Base de la Auditoria de Diseno
 
 {{DESIGN_METHODOLOGY}}
 
 {{DESIGN_HARD_RULES}}
 
-Record baseline design score and AI slop score at end of Phase 6.
+Registra la puntuacion de diseno base y la puntuacion de slop de IA al final de la Fase 6.
 
 ---
 
-## Output Structure
+## Estructura de Salida
 
 ```
 .gstack/design-reports/
@@ -112,39 +112,39 @@ Record baseline design score and AI slop score at end of Phase 6.
 
 {{DESIGN_OUTSIDE_VOICES}}
 
-## Phase 7: Triage
+## Fase 7: Triaje
 
-Sort all discovered findings by impact, then decide which to fix:
+Ordena todos los hallazgos descubiertos por impacto y decide cuales corregir:
 
-- **High Impact:** Fix first. These affect the first impression and hurt user trust.
-- **Medium Impact:** Fix next. These reduce polish and are felt subconsciously.
-- **Polish:** Fix if time allows. These separate good from great.
+- **Impacto Alto:** Corregir primero. Afectan la primera impresion y danan la confianza del usuario.
+- **Impacto Medio:** Corregir despues. Reducen el pulido y se perciben subconscientemente.
+- **Pulido:** Corregir si queda tiempo. Estos separan lo bueno de lo excelente.
 
-Mark findings that cannot be fixed from source code (e.g., third-party widget issues, content problems requiring copy from the team) as "deferred" regardless of impact.
+Marca los hallazgos que no se pueden corregir desde el codigo fuente (por ejemplo, problemas de widgets de terceros, problemas de contenido que requieren texto del equipo) como "deferred" independientemente del impacto.
 
 ---
 
-## Phase 8: Fix Loop
+## Fase 8: Bucle de Correcciones
 
-For each fixable finding, in impact order:
+Para cada hallazgo corregible, en orden de impacto:
 
-### 8a. Locate source
+### 8a. Localizar el codigo fuente
 
 ```bash
 # Search for CSS classes, component names, style files
 # Glob for file patterns matching the affected page
 ```
 
-- Find the source file(s) responsible for the design issue
-- ONLY modify files directly related to the finding
-- Prefer CSS/styling changes over structural component changes
+- Encuentra los archivos fuente responsables del problema de diseno
+- Modifica SOLO los archivos directamente relacionados con el hallazgo
+- Prefiere cambios en CSS/estilos sobre cambios estructurales en componentes
 
-### 8b. Fix
+### 8b. Corregir
 
-- Read the source code, understand the context
-- Make the **minimal fix** — smallest change that resolves the design issue
-- CSS-only changes are preferred (safer, more reversible)
-- Do NOT refactor surrounding code, add features, or "improve" unrelated things
+- Lee el codigo fuente, comprende el contexto
+- Haz la **correccion minima**: el cambio mas pequeno que resuelva el problema de diseno
+- Se prefieren los cambios solo en CSS (mas seguros, mas reversibles)
+- NO refactorices codigo adyacente, anadas funcionalidades ni "mejores" cosas no relacionadas
 
 ### 8c. Commit
 
@@ -153,12 +153,12 @@ git add <only-changed-files>
 git commit -m "style(design): FINDING-NNN — short description"
 ```
 
-- One commit per fix. Never bundle multiple fixes.
-- Message format: `style(design): FINDING-NNN — short description`
+- Un commit por correccion. Nunca agrupes multiples correcciones.
+- Formato del mensaje: `style(design): FINDING-NNN — short description`
 
-### 8d. Re-test
+### 8d. Re-verificar
 
-Navigate back to the affected page and verify the fix:
+Navega de vuelta a la pagina afectada y verifica la correccion:
 
 ```bash
 $B goto <affected-url>
@@ -167,29 +167,29 @@ $B console --errors
 $B snapshot -D
 ```
 
-Take **before/after screenshot pair** for every fix.
+Toma un **par de capturas antes/despues** para cada correccion.
 
-### 8e. Classify
+### 8e. Clasificar
 
-- **verified**: re-test confirms the fix works, no new errors introduced
-- **best-effort**: fix applied but couldn't fully verify (e.g., needs specific browser state)
-- **reverted**: regression detected → `git revert HEAD` → mark finding as "deferred"
+- **verified**: la re-verificacion confirma que la correccion funciona, sin errores nuevos introducidos
+- **best-effort**: correccion aplicada pero no se pudo verificar completamente (por ejemplo, requiere un estado especifico del navegador)
+- **reverted**: se detecto una regresion → `git revert HEAD` → marcar hallazgo como "deferred"
 
-### 8e.5. Regression Test (design-review variant)
+### 8e.5. Test de Regresion (variante de design-review)
 
-Design fixes are typically CSS-only. Only generate regression tests for fixes involving
-JavaScript behavior changes — broken dropdowns, animation failures, conditional rendering,
-interactive state issues.
+Las correcciones de diseno suelen ser solo CSS. Genera tests de regresion unicamente para correcciones
+que impliquen cambios de comportamiento en JavaScript: dropdowns rotos, fallos de animacion,
+renderizado condicional, problemas de estado interactivo.
 
-For CSS-only fixes: skip entirely. CSS regressions are caught by re-running /design-review.
+Para correcciones solo CSS: omitir completamente. Las regresiones CSS se detectan re-ejecutando /design-review.
 
-If the fix involved JS behavior: follow the same procedure as /qa Phase 8e.5 (study existing
-test patterns, write a regression test encoding the exact bug condition, run it, commit if
-passes or defer if fails). Commit format: `test(design): regression test for FINDING-NNN`.
+Si la correccion involucro comportamiento JS: sigue el mismo procedimiento que /qa Fase 8e.5 (estudia
+los patrones de test existentes, escribe un test de regresion que codifique la condicion exacta del bug,
+ejecutalo, haz commit si pasa o aplaza si falla). Formato de commit: `test(design): regression test for FINDING-NNN`.
 
-### 8f. Self-Regulation (STOP AND EVALUATE)
+### 8f. Autorregulacion (DETENTE Y EVALUA)
 
-Every 5 fixes (or after any revert), compute the design-fix risk level:
+Cada 5 correcciones (o despues de cualquier revert), calcula el nivel de riesgo de correcciones de diseno:
 
 ```
 DESIGN-FIX RISK:
@@ -201,67 +201,67 @@ DESIGN-FIX RISK:
   Touching unrelated files:           +20%
 ```
 
-**If risk > 20%:** STOP immediately. Show the user what you've done so far. Ask whether to continue.
+**Si el riesgo > 20%:** DETENTE inmediatamente. Muestra al usuario lo que has hecho hasta ahora. Pregunta si debe continuar.
 
-**Hard cap: 30 fixes.** After 30 fixes, stop regardless of remaining findings.
-
----
-
-## Phase 9: Final Design Audit
-
-After all fixes are applied:
-
-1. Re-run the design audit on all affected pages
-2. Compute final design score and AI slop score
-3. **If final scores are WORSE than baseline:** WARN prominently — something regressed
+**Limite estricto: 30 correcciones.** Despues de 30 correcciones, detente independientemente de los hallazgos restantes.
 
 ---
 
-## Phase 10: Report
+## Fase 9: Auditoria de Diseno Final
 
-Write the report to both local and project-scoped locations:
+Despues de aplicar todas las correcciones:
+
+1. Re-ejecuta la auditoria de diseno en todas las paginas afectadas
+2. Calcula la puntuacion de diseno final y la puntuacion de slop de IA
+3. **Si las puntuaciones finales son PEORES que la linea base:** ADVIERTE de forma prominente: algo ha regresado
+
+---
+
+## Fase 10: Informe
+
+Escribe el informe tanto en la ubicacion local como en la del proyecto:
 
 **Local:** `.gstack/design-reports/design-audit-{domain}-{YYYY-MM-DD}.md`
 
-**Project-scoped:**
+**Ambito de proyecto:**
 ```bash
 {{SLUG_SETUP}}
 ```
-Write to `~/.gstack/projects/{slug}/{user}-{branch}-design-audit-{datetime}.md`
+Escribe en `~/.gstack/projects/{slug}/{user}-{branch}-design-audit-{datetime}.md`
 
-**Per-finding additions** (beyond standard design audit report):
-- Fix Status: verified / best-effort / reverted / deferred
-- Commit SHA (if fixed)
-- Files Changed (if fixed)
-- Before/After screenshots (if fixed)
+**Adiciones por hallazgo** (ademas del informe estandar de auditoria de diseno):
+- Estado de la correccion: verified / best-effort / reverted / deferred
+- SHA del commit (si se corrigio)
+- Archivos modificados (si se corrigio)
+- Capturas antes/despues (si se corrigio)
 
-**Summary section:**
-- Total findings
-- Fixes applied (verified: X, best-effort: Y, reverted: Z)
-- Deferred findings
-- Design score delta: baseline → final
-- AI slop score delta: baseline → final
+**Seccion de resumen:**
+- Total de hallazgos
+- Correcciones aplicadas (verified: X, best-effort: Y, reverted: Z)
+- Hallazgos aplazados
+- Delta de puntuacion de diseno: linea base → final
+- Delta de puntuacion de slop de IA: linea base → final
 
-**PR Summary:** Include a one-line summary suitable for PR descriptions:
-> "Design review found N issues, fixed M. Design score X → Y, AI slop score X → Y."
-
----
-
-## Phase 11: TODOS.md Update
-
-If the repo has a `TODOS.md`:
-
-1. **New deferred design findings** → add as TODOs with impact level, category, and description
-2. **Fixed findings that were in TODOS.md** → annotate with "Fixed by /design-review on {branch}, {date}"
+**Resumen para PR:** Incluye un resumen de una linea adecuado para descripciones de PR:
+> "La revision de diseno encontro N problemas, corrigio M. Puntuacion de diseno X → Y, puntuacion de slop de IA X → Y."
 
 ---
 
-## Additional Rules (design-review specific)
+## Fase 11: Actualizacion de TODOS.md
 
-11. **Clean working tree required.** If dirty, use AskUserQuestion to offer commit/stash/abort before proceeding.
-12. **One commit per fix.** Never bundle multiple design fixes into one commit.
-13. **Only modify tests when generating regression tests in Phase 8e.5.** Never modify CI configuration. Never modify existing tests — only create new test files.
-14. **Revert on regression.** If a fix makes things worse, `git revert HEAD` immediately.
-15. **Self-regulate.** Follow the design-fix risk heuristic. When in doubt, stop and ask.
-16. **CSS-first.** Prefer CSS/styling changes over structural component changes. CSS-only changes are safer and more reversible.
-17. **DESIGN.md export.** You MAY write a DESIGN.md file if the user accepts the offer from Phase 2.
+Si el repositorio tiene un `TODOS.md`:
+
+1. **Nuevos hallazgos de diseno aplazados** → anadir como TODOs con nivel de impacto, categoria y descripcion
+2. **Hallazgos corregidos que estaban en TODOS.md** → anotar con "Corregido por /design-review en {branch}, {date}"
+
+---
+
+## Reglas Adicionales (especificas de design-review)
+
+11. **Arbol de trabajo limpio obligatorio.** Si esta sucio, usa AskUserQuestion para ofrecer commit/stash/abortar antes de continuar.
+12. **Un commit por correccion.** Nunca agrupes multiples correcciones de diseno en un solo commit.
+13. **Solo modifica tests al generar tests de regresion en la Fase 8e.5.** Nunca modifiques la configuracion de CI. Nunca modifiques tests existentes: solo crea archivos de test nuevos.
+14. **Revertir ante regresion.** Si una correccion empeora las cosas, ejecuta `git revert HEAD` inmediatamente.
+15. **Autorregulacion.** Sigue la heuristica de riesgo de correcciones de diseno. Ante la duda, detente y pregunta.
+16. **CSS primero.** Prefiere cambios en CSS/estilos sobre cambios estructurales en componentes. Los cambios solo en CSS son mas seguros y mas reversibles.
+17. **Exportacion de DESIGN.md.** PUEDES escribir un archivo DESIGN.md si el usuario acepta la oferta de la Fase 2.

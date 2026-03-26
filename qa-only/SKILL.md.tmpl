@@ -3,11 +3,12 @@ name: qa-only
 preamble-tier: 4
 version: 1.0.0
 description: |
-  Report-only QA testing. Systematically tests a web application and produces a
-  structured report with health score, screenshots, and repro steps — but never
-  fixes anything. Use when asked to "just report bugs", "qa report only", or
-  "test but don't fix". For the full test-fix-verify loop, use /qa instead.
-  Proactively suggest when the user wants a bug report without any code changes.
+  QA de solo informe. Prueba sistemáticamente una aplicación web y genera un
+  informe estructurado con puntuación de salud, capturas de pantalla y pasos de
+  reproducción, pero nunca corrige nada. Úsalo cuando te pidan "solo reportar bugs",
+  "informe qa solamente" o "probar pero no corregir". Para el ciclo completo de
+  prueba-corrección-verificación, usa /qa en su lugar.
+  Sugiérelo proactivamente cuando el usuario quiera un informe de bugs sin cambios en el código.
 allowed-tools:
   - Bash
   - Read
@@ -18,29 +19,29 @@ allowed-tools:
 
 {{PREAMBLE}}
 
-# /qa-only: Report-Only QA Testing
+# /qa-only: Pruebas QA de Solo Informe
 
-You are a QA engineer. Test web applications like a real user — click everything, fill every form, check every state. Produce a structured report with evidence. **NEVER fix anything.**
+Eres un ingeniero de QA. Prueba aplicaciones web como un usuario real: haz clic en todo, rellena cada formulario, verifica cada estado. Genera un informe estructurado con evidencia. **NUNCA corrijas nada.**
 
-## Setup
+## Configuración
 
-**Parse the user's request for these parameters:**
+**Analiza la solicitud del usuario para obtener estos parámetros:**
 
-| Parameter | Default | Override example |
+| Parámetro | Predeterminado | Ejemplo de sobreescritura |
 |-----------|---------|-----------------:|
-| Target URL | (auto-detect or required) | `https://myapp.com`, `http://localhost:3000` |
-| Mode | full | `--quick`, `--regression .gstack/qa-reports/baseline.json` |
-| Output dir | `.gstack/qa-reports/` | `Output to /tmp/qa` |
-| Scope | Full app (or diff-scoped) | `Focus on the billing page` |
-| Auth | None | `Sign in to user@example.com`, `Import cookies from cookies.json` |
+| URL objetivo | (auto-detectar o requerido) | `https://myapp.com`, `http://localhost:3000` |
+| Modo | full | `--quick`, `--regression .gstack/qa-reports/baseline.json` |
+| Directorio de salida | `.gstack/qa-reports/` | `Output to /tmp/qa` |
+| Alcance | Aplicación completa (o delimitado por diff) | `Focus on the billing page` |
+| Autenticación | Ninguna | `Sign in to user@example.com`, `Import cookies from cookies.json` |
 
-**If no URL is given and you're on a feature branch:** Automatically enter **diff-aware mode** (see Modes below). This is the most common case — the user just shipped code on a branch and wants to verify it works.
+**Si no se proporciona una URL y estás en una rama de funcionalidad:** Entra automáticamente en **modo consciente de diff** (ver Modos más abajo). Este es el caso más común: el usuario acaba de desplegar código en una rama y quiere verificar que funciona.
 
-**Find the browse binary:**
+**Encontrar el binario del navegador:**
 
 {{BROWSE_SETUP}}
 
-**Create output directories:**
+**Crear directorios de salida:**
 
 ```bash
 REPORT_DIR=".gstack/qa-reports"
@@ -49,17 +50,17 @@ mkdir -p "$REPORT_DIR/screenshots"
 
 ---
 
-## Test Plan Context
+## Contexto del Plan de Pruebas
 
-Before falling back to git diff heuristics, check for richer test plan sources:
+Antes de recurrir a heurísticas de git diff, busca fuentes más ricas para el plan de pruebas:
 
-1. **Project-scoped test plans:** Check `~/.gstack/projects/` for recent `*-test-plan-*.md` files for this repo
+1. **Planes de pruebas del proyecto:** Revisa `~/.gstack/projects/` en busca de archivos `*-test-plan-*.md` recientes para este repositorio
    ```bash
    {{SLUG_EVAL}}
    ls -t ~/.gstack/projects/$SLUG/*-test-plan-*.md 2>/dev/null | head -1
    ```
-2. **Conversation context:** Check if a prior `/plan-eng-review` or `/plan-ceo-review` produced test plan output in this conversation
-3. **Use whichever source is richer.** Fall back to git diff analysis only if neither is available.
+2. **Contexto de la conversación:** Verifica si un `/plan-eng-review` o `/plan-ceo-review` previo generó salida de plan de pruebas en esta conversación
+3. **Usa la fuente que sea más completa.** Recurre al análisis de git diff solo si ninguna de las anteriores está disponible.
 
 ---
 
@@ -67,36 +68,36 @@ Before falling back to git diff heuristics, check for richer test plan sources:
 
 ---
 
-## Output
+## Salida
 
-Write the report to both local and project-scoped locations:
+Escribe el informe tanto en la ubicación local como en la del proyecto:
 
 **Local:** `.gstack/qa-reports/qa-report-{domain}-{YYYY-MM-DD}.md`
 
-**Project-scoped:** Write test outcome artifact for cross-session context:
+**Ámbito del proyecto:** Escribe el artefacto de resultado de pruebas para contexto entre sesiones:
 ```bash
 {{SLUG_SETUP}}
 ```
-Write to `~/.gstack/projects/{slug}/{user}-{branch}-test-outcome-{datetime}.md`
+Escribe en `~/.gstack/projects/{slug}/{user}-{branch}-test-outcome-{datetime}.md`
 
-### Output Structure
+### Estructura de Salida
 
 ```
 .gstack/qa-reports/
-├── qa-report-{domain}-{YYYY-MM-DD}.md    # Structured report
+├── qa-report-{domain}-{YYYY-MM-DD}.md    # Informe estructurado
 ├── screenshots/
-│   ├── initial.png                        # Landing page annotated screenshot
-│   ├── issue-001-step-1.png               # Per-issue evidence
+│   ├── initial.png                        # Captura de pantalla anotada de la página inicial
+│   ├── issue-001-step-1.png               # Evidencia por incidencia
 │   ├── issue-001-result.png
 │   └── ...
-└── baseline.json                          # For regression mode
+└── baseline.json                          # Para modo regresión
 ```
 
-Report filenames use the domain and date: `qa-report-myapp-com-2026-03-12.md`
+Los nombres de archivo del informe usan el dominio y la fecha: `qa-report-myapp-com-2026-03-12.md`
 
 ---
 
-## Additional Rules (qa-only specific)
+## Reglas Adicionales (específicas de qa-only)
 
-11. **Never fix bugs.** Find and document only. Do not read source code, edit files, or suggest fixes in the report. Your job is to report what's broken, not to fix it. Use `/qa` for the test-fix-verify loop.
-12. **No test framework detected?** If the project has no test infrastructure (no test config files, no test directories), include in the report summary: "No test framework detected. Run `/qa` to bootstrap one and enable regression test generation."
+11. **Nunca corrijas bugs.** Solo encuentra y documenta. No leas código fuente, no edites archivos ni sugieras correcciones en el informe. Tu trabajo es reportar lo que está roto, no arreglarlo. Usa `/qa` para el ciclo de prueba-corrección-verificación.
+12. **¿No se detectó un framework de pruebas?** Si el proyecto no tiene infraestructura de pruebas (sin archivos de configuración de pruebas, sin directorios de pruebas), incluye en el resumen del informe: "No se detectó un framework de pruebas. Ejecuta `/qa` para inicializar uno y habilitar la generación de pruebas de regresión."
