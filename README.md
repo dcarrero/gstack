@@ -61,7 +61,7 @@ cd ~/gstack && ./setup --host auto
 ```
 Tú:     Quiero construir una app de briefing diario para mi calendario.
 Tú:     /office-hours
-Claude: [pregunta sobre el dolor — ejemplos específicos, no hipotéticos]
+Claude: [pregunta sobre el problema real — ejemplos específicos, no hipotéticos]
 
 Tú:     Múltiples calendarios de Google, eventos con info obsoleta,
         ubicaciones incorrectas. Preparar todo tarda una eternidad
@@ -156,7 +156,7 @@ gstack funciona bien con un sprint. Se pone interesante con diez ejecutándose a
 | Doc | Contenido |
 |-----|-----------|
 | [Origen del proyecto](ORIGIN.md) | Créditos, sincronización con upstream y filosofía de la adaptación |
-| [Filosofía del Constructor](ETHOS.md) | Filosofía: Hervir el Lago, Buscar Antes de Construir |
+| [Filosofía del Constructor](ETHOS.md) | Filosofía: Completar sin Atajos, Buscar Antes de Construir |
 | [Arquitectura](ARCHITECTURE.md) | Decisiones de diseño e internos del sistema |
 | [Referencia del Navegador](BROWSER.md) | Referencia completa de comandos de `/browse` |
 | [Contribuir](CONTRIBUTING.md) | Setup de desarrollo, testing y modo contribuidor |

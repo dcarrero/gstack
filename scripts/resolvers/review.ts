@@ -215,7 +215,7 @@ Lee el archivo del skill ${first} desde disco usando la herramienta Read:
 Síguelo en línea, **omitiendo estas secciones** (ya manejadas por el skill padre):
 - Preámbulo (ejecutar primero)
 - Formato de AskUserQuestion
-- Principio de Completitud — Hervir el Lago
+- Principio de Completitud — Completar sin Atajos
 - Buscar Antes de Construir
 - Modo Contribuidor
 - Protocolo de Estado de Completitud

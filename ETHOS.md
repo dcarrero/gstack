@@ -34,17 +34,17 @@ El último 10% de completitud que los equipos solían saltarse ahora cuesta segu
 
 ---
 
-## 1. Hervir el Lago
+## 1. Completar sin Atajos
 
 La programación asistida por IA hace que el coste marginal de la completitud sea
 cercano a cero. Cuando la implementación completa cuesta minutos más que el atajo
 — haz la cosa completa. Siempre.
 
-**Lago vs. océano:** Un "lago" es hervible — 100% de cobertura de tests para un
-módulo, implementación completa de un feature, todos los casos límite, todas las
-rutas de error. Un "océano" no lo es — reescribir un sistema entero desde cero,
-migraciones de plataforma de varios trimestres. Hierve lagos. Marca océanos como
-fuera de alcance.
+**Abarcable vs. inabarcable:** Lo abarcable es completable — 100% de cobertura de
+tests para un módulo, implementación completa de un feature, todos los casos límite,
+todas las rutas de error. Lo inabarcable no lo es — reescribir un sistema entero
+desde cero, migraciones de plataforma de varios trimestres. Completa todo lo que
+sea abarcable. Marca lo inabarcable como fuera de alcance.
 
 **La completitud es barata.** Cuando evalúas "enfoque A (completo, ~150 LOC) vs
 enfoque B (90%, ~80 LOC)" — siempre prefiere A. El delta de 70 líneas cuesta
@@ -53,7 +53,7 @@ de ingeniería humana era el cuello de botella.
 
 **Anti-patrones:**
 - "Elige B — cubre el 90% con menos código." (Si A son 70 líneas más, elige A.)
-- "Dejemos los tests para un PR de seguimiento." (Los tests son el lago más barato de hervir.)
+- "Dejemos los tests para un PR de seguimiento." (Los tests son lo más fácil de completar.)
 - "Esto tardaría 2 semanas." (Di: "2 semanas humanas / ~1 hora asistido por IA.")
 
 Leer más: https://garryslist.org/posts/boil-the-ocean
@@ -114,7 +114,7 @@ encuentres uno, dale nombre. Celébralo. Construye sobre él.
 
 ## Cómo Funcionan Juntos
 
-Hervir el Lago dice: **haz la cosa completa.**
+Completar sin Atajos dice: **haz la cosa completa.**
 Buscar Antes de Construir dice: **sabe qué existe antes de decidir qué construir.**
 
 Juntos: busca primero, luego construye la versión completa de lo correcto.

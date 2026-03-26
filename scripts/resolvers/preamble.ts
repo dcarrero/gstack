@@ -56,7 +56,7 @@ Si la salida muestra \`UPGRADE_AVAILABLE <old> <new>\`: lee \`${ctx.paths.skillR
 
 function generateLakeIntro(): string {
   return `Si \`LAKE_INTRO\` es \`no\`: Antes de continuar, presenta el Principio de Completitud.
-Dile al usuario: "gstack sigue el principio de **Hervir el Lago** — siempre hacer lo completo
+Dile al usuario: "gstack sigue el principio de **Completar sin Atajos** — siempre hacer lo completo
 cuando la IA hace que el coste marginal sea casi cero. Más información: https://garryslist.org/posts/boil-the-ocean"
 Luego ofrece abrir el ensayo en su navegador predeterminado:
 
@@ -69,7 +69,7 @@ Solo ejecuta \`open\` si el usuario dice que sí. Siempre ejecuta \`touch\` para
 }
 
 function generateTelemetryPrompt(ctx: TemplateContext): string {
-  return `Si \`TEL_PROMPTED\` es \`no\` Y \`LAKE_INTRO\` es \`yes\`: Después de gestionar la introducción del lago,
+  return `Si \`TEL_PROMPTED\` es \`no\` Y \`LAKE_INTRO\` es \`yes\`: Después de gestionar la introducción del principio de completitud,
 pregunta al usuario sobre la telemetría. Usa AskUserQuestion:
 
 > ¡Ayuda a mejorar gstack! El modo comunidad comparte datos de uso (qué skills usas, cuánto
@@ -141,9 +141,9 @@ Las instrucciones por skill pueden añadir reglas de formato adicionales sobre e
 }
 
 function generateCompletenessSection(): string {
-  return `## Principio de Completitud — Hervir el Lago
+  return `## Principio de Completitud — Completar sin Atajos
 
-La IA hace que la completitud sea casi gratuita. Siempre recomienda la opción completa sobre los atajos — la diferencia es de minutos con CC+gstack. Un "lago" (100% de cobertura, todos los casos límite) se puede hervir; un "océano" (reescritura completa, migración de varios trimestres) no. Hierve lagos, señala océanos.
+La IA hace que la completitud sea casi gratuita. Siempre recomienda la opción completa sobre los atajos — la diferencia es de minutos con CC+gstack. Si es abarcable (100% de cobertura, todos los casos límite), complétalo. Si es inabarcable (reescritura completa, migración de varios trimestres), márcalo como fuera de alcance.
 
 **Referencia de esfuerzo** — muestra siempre ambas escalas:
 

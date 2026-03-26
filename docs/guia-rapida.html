@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>gstack-es — Guía Rápida</title>
+<style>
+  @page { size: A4; margin: 8mm; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 8pt; line-height: 1.25; color: #1a1a1a; max-width: 210mm; margin: 0 auto; padding: 6mm; }
+  h1 { font-size: 14pt; margin-bottom: 1mm; color: #111; }
+  h1 span { font-weight: normal; font-size: 9pt; color: #666; }
+  h2 { font-size: 9.5pt; color: #c0392b; margin: 2mm 0 1mm; border-bottom: 1px solid #e0e0e0; padding-bottom: 0.5mm; }
+  h3 { font-size: 8.5pt; color: #2c3e50; margin: 1mm 0 0.5mm; }
+  .subtitle { font-size: 8pt; color: #666; margin-bottom: 2mm; }
+  .sprint-flow { display: flex; gap: 1.5mm; margin: 2mm 0; flex-wrap: wrap; }
+  .sprint-step { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 3px; padding: 1.5mm 2mm; text-align: center; flex: 1; min-width: 20mm; }
+  .sprint-step strong { display: block; font-size: 7pt; color: #c0392b; }
+  .sprint-step code { font-size: 6.5pt; color: #495057; }
+  .sprint-arrow { align-self: center; color: #adb5bd; font-size: 10pt; }
+  table { width: 100%; border-collapse: collapse; margin: 1mm 0; font-size: 7.5pt; }
+  th { background: #2c3e50; color: #fff; padding: 1mm 1.5mm; text-align: left; font-size: 7pt; }
+  td { padding: 1mm 1.5mm; border-bottom: 1px solid #eee; vertical-align: top; }
+  tr:nth-child(even) { background: #f8f9fa; }
+  code { font-family: 'SF Mono', 'Fira Code', monospace; background: #f1f3f5; padding: 0.3mm 1mm; border-radius: 2px; font-size: 7.5pt; }
+  .cmd { color: #c0392b; font-weight: bold; }
+  .columns { display: flex; gap: 3mm; }
+  .col { flex: 1; }
+  .box { background: #fff3cd; border: 1px solid #ffc107; border-radius: 3px; padding: 1.5mm 2mm; margin: 1.5mm 0; font-size: 7.5pt; }
+  .box-blue { background: #d1ecf1; border-color: #17a2b8; }
+  .box-green { background: #d4edda; border-color: #28a745; }
+  .footer { margin-top: 2mm; padding-top: 1mm; border-top: 1px solid #dee2e6; font-size: 6.5pt; color: #888; display: flex; justify-content: space-between; }
+  @media print { body { padding: 0; } }
+</style>
+</head>
+<body>
+
+<h1>gstack-es <span>— Guía Rápida de Referencia</span></h1>
+<p class="subtitle">Convierte Claude Code en un equipo virtual de ingeniería. 27 skills, todo en comandos slash.<br>
+Fork en castellano por <strong>David Carrero</strong> · <a href="https://carrero.es">carrero.es</a> · Original: <a href="https://github.com/garrytan/gstack">garrytan/gstack</a></p>
+
+<h2>El Sprint — Flujo de trabajo completo</h2>
+<div class="sprint-flow">
+  <div class="sprint-step"><strong>Pensar</strong><code>/office-hours</code></div>
+  <div class="sprint-arrow">→</div>
+  <div class="sprint-step"><strong>Planificar</strong><code>/plan-ceo-review</code><br><code>/plan-eng-review</code></div>
+  <div class="sprint-arrow">→</div>
+  <div class="sprint-step"><strong>Construir</strong><code>Claude Code</code></div>
+  <div class="sprint-arrow">→</div>
+  <div class="sprint-step"><strong>Revisar</strong><code>/review</code></div>
+  <div class="sprint-arrow">→</div>
+  <div class="sprint-step"><strong>Probar</strong><code>/qa</code></div>
+  <div class="sprint-arrow">→</div>
+  <div class="sprint-step"><strong>Entregar</strong><code>/ship</code></div>
+  <div class="sprint-arrow">→</div>
+  <div class="sprint-step"><strong>Reflexionar</strong><code>/retro</code></div>
+</div>
+
+<div class="columns">
+<div class="col">
+
+<h2>Skills principales</h2>
+<table>
+<tr><th>Comando</th><th>Rol</th><th>Qué hace</th></tr>
+<tr><td><code class="cmd">/office-hours</code></td><td>Socio YC</td><td>6 preguntas forzadas, genera doc de diseño. Punto de entrada.</td></tr>
+<tr><td><code class="cmd">/plan-ceo-review</code></td><td>CEO</td><td>Replantea el problema. 4 modos: Expansión, Selectiva, Mantener, Reducción.</td></tr>
+<tr><td><code class="cmd">/plan-eng-review</code></td><td>Jefe Ing.</td><td>Fija arquitectura, diagramas ASCII, tests, edge cases.</td></tr>
+<tr><td><code class="cmd">/plan-design-review</code></td><td>Diseñador</td><td>Puntúa diseño 0-10. Detección de "AI Slop".</td></tr>
+<tr><td><code class="cmd">/review</code></td><td>Ing. Staff</td><td>Revisa diff vs rama base. Auto-corrige bugs obvios.</td></tr>
+<tr><td><code class="cmd">/qa</code></td><td>QA Lead</td><td>Abre navegador real, prueba flujos, corrige y re-verifica.</td></tr>
+<tr><td><code class="cmd">/ship</code></td><td>Release Eng.</td><td>Tests → review → version → changelog → PR. Automático.</td></tr>
+<tr><td><code class="cmd">/investigate</code></td><td>Debugger</td><td>Root cause primero. Ley de hierro: no fix sin investigación.</td></tr>
+<tr><td><code class="cmd">/cso</code></td><td>Seguridad</td><td>OWASP Top 10 + STRIDE. Cero ruido, alta confianza.</td></tr>
+<tr><td><code class="cmd">/retro</code></td><td>Jefe Ing.</td><td>Retrospectiva semanal. Stats por persona y proyecto.</td></tr>
+</table>
+
+<h2>Skills de diseño</h2>
+<table>
+<tr><th>Comando</th><th>Qué hace</th></tr>
+<tr><td><code class="cmd">/design-consultation</code></td><td>Crea sistema de diseño completo desde cero</td></tr>
+<tr><td><code class="cmd">/design-review</code></td><td>Auditoría visual + correcciones con commits atómicos</td></tr>
+</table>
+
+</div>
+<div class="col">
+
+<h2>Skills de operaciones</h2>
+<table>
+<tr><th>Comando</th><th>Qué hace</th></tr>
+<tr><td><code class="cmd">/land-and-deploy</code></td><td>Merge PR → deploy → verificar producción</td></tr>
+<tr><td><code class="cmd">/canary</code></td><td>Monitorización post-deploy (errores, rendimiento)</td></tr>
+<tr><td><code class="cmd">/benchmark</code></td><td>Core Web Vitals, tiempos de carga, comparativa</td></tr>
+<tr><td><code class="cmd">/document-release</code></td><td>Actualiza docs tras entregar cambios</td></tr>
+<tr><td><code class="cmd">/qa-only</code></td><td>Como /qa pero solo reporta, sin tocar código</td></tr>
+<tr><td><code class="cmd">/autoplan</code></td><td>Pipeline automático: CEO → diseño → ingeniería</td></tr>
+</table>
+
+<h2>Herramientas y seguridad</h2>
+<table>
+<tr><th>Comando</th><th>Qué hace</th></tr>
+<tr><td><code class="cmd">/browse</code></td><td>Navegador Chromium headless. ~100ms/comando.</td></tr>
+<tr><td><code class="cmd">/codex</code></td><td>Segunda opinión independiente vía OpenAI Codex</td></tr>
+<tr><td><code class="cmd">/careful</code></td><td>Avisa antes de comandos destructivos</td></tr>
+<tr><td><code class="cmd">/freeze</code></td><td>Restringe ediciones a un directorio</td></tr>
+<tr><td><code class="cmd">/guard</code></td><td>/careful + /freeze en un comando</td></tr>
+<tr><td><code class="cmd">/unfreeze</code></td><td>Elimina restricción de /freeze</td></tr>
+<tr><td><code class="cmd">/setup-deploy</code></td><td>Configura deploy (Fly.io, Vercel, etc.)</td></tr>
+<tr><td><code class="cmd">/setup-browser-cookies</code></td><td>Importa cookies reales al headless</td></tr>
+<tr><td><code class="cmd">/gstack-upgrade</code></td><td>Actualiza gstack a la última versión</td></tr>
+</table>
+
+<div class="box box-green">
+<h3>⚡ Inicio en 30 segundos</h3>
+<code>git clone https://github.com/dcarrero/gstack.git ~/.claude/skills/gstack && cd ~/.claude/skills/gstack && ./setup</code>
+</div>
+
+</div>
+</div>
+
+<h2>Filosofía: dos principios</h2>
+<div class="columns">
+<div class="col">
+<div class="box">
+<h3>🏔 Completar sin Atajos</h3>
+Con IA, el coste de hacer las cosas completas es cercano a cero. Haz siempre la versión completa. Si la diferencia entre 90% y 100% son 70 líneas más, elige 100%.
+<br><strong>Abarcable</strong> = hazlo completo (100% tests, todos los edge cases). <strong>Inabarcable</strong> = márcalo como fuera de alcance (reescribir todo desde cero).
+</div>
+</div>
+<div class="col">
+<div class="box box-blue">
+<h3>🔍 Buscar Antes de Construir</h3>
+<strong>Capa 1:</strong> Lo probado (no reinventes). <strong>Capa 2:</strong> Lo nuevo y popular (examina con escepticismo).
+<strong>Capa 3:</strong> Primeros principios (lo más valioso).
+<br>El <strong>Momento Eureka</strong>: cuando descubres que la sabiduría convencional está equivocada.
+</div>
+</div>
+</div>
+
+<h2>Compresión de tiempo</h2>
+<table>
+<tr><th>Tarea</th><th>Equipo humano</th><th>Con IA</th><th>×</th></tr>
+<tr><td>Boilerplate</td><td>2 días</td><td>15 min</td><td>100×</td></tr>
+<tr><td>Tests</td><td>1 día</td><td>15 min</td><td>50×</td></tr>
+<tr><td>Feature</td><td>1 semana</td><td>30 min</td><td>30×</td></tr>
+<tr><td>Bug fix</td><td>4 horas</td><td>15 min</td><td>20×</td></tr>
+<tr><td>Arquitectura</td><td>2 días</td><td>4 horas</td><td>5×</td></tr>
+</table>
+
+<div class="footer">
+<span>gstack-es v0.11.19.0 · Licencia MIT · <a href="https://github.com/dcarrero/gstack">github.com/dcarrero/gstack</a></span>
+<span>Traducción: David Carrero · <a href="https://carrero.es">carrero.es</a> · Original: Garry Tan (Y Combinator)</span>
+</div>
+
+</body>
+</html>

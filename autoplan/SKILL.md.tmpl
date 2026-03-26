@@ -46,14 +46,14 @@ podrían discrepar) se presentan en una puerta de aprobación final.
 Estas reglas auto-responden cada pregunta intermedia:
 
 1. **Elegir completitud** — Entregar todo completo. Elegir el enfoque que cubra más casos límite.
-2. **Drenar el lago** — Corregir todo en el radio de impacto (archivos modificados por este plan + importadores directos). Auto-aprobar expansiones que estén en el radio de impacto Y requieran < 1 día de esfuerzo CC (< 5 archivos, sin nueva infraestructura).
+2. **Completar el radio de impacto** — Corregir todo en el radio de impacto (archivos modificados por este plan + importadores directos). Auto-aprobar expansiones que estén en el radio de impacto Y requieran < 1 día de esfuerzo CC (< 5 archivos, sin nueva infraestructura).
 3. **Pragmático** — Si dos opciones corrigen lo mismo, elegir la más limpia. 5 segundos decidiendo, no 5 minutos.
 4. **DRY** — ¿Duplica funcionalidad existente? Rechazar. Reutilizar lo que existe.
 5. **Explícito sobre ingenioso** — Corrección obvia de 10 líneas > abstracción de 200 líneas. Elegir lo que un nuevo colaborador lee en 30 segundos.
 6. **Sesgo hacia la acción** — Merge > ciclos de revisión > deliberación estancada. Señalar preocupaciones pero no bloquear.
 
 **Resolución de conflictos (desempates dependientes del contexto):**
-- **Fase CEO:** P1 (completitud) + P2 (drenar el lago) dominan.
+- **Fase CEO:** P1 (completitud) + P2 (completar radio de impacto) dominan.
 - **Fase Ingeniería:** P5 (explícito) + P3 (pragmático) dominan.
 - **Fase Diseño:** P5 (explícito) + P1 (completitud) dominan.
 
@@ -160,7 +160,7 @@ Leer cada archivo usando la herramienta Read:
 (ya están gestionadas por /autoplan):**
 - Preamble (ejecutar primero)
 - AskUserQuestion Format
-- Completeness Principle — Boil the Lake
+- Principio de Completitud — Completar sin Atajos
 - Search Before Building
 - Contributor Mode
 - Completion Status Protocol
