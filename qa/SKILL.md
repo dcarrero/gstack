@@ -24,7 +24,7 @@ allowed-tools:
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
 <!-- Regenerate: bun run gen:skill-docs -->
 
-## Preamble (run first)
+## Preámbulo (ejecutar primero)
 
 ```bash
 _UPD=$(~/.claude/skills/gstack/bin/gstack-update-check 2>/dev/null || .claude/skills/gstack/bin/gstack-update-check 2>/dev/null || true)
@@ -35,9 +35,11 @@ _SESSIONS=$(find ~/.gstack/sessions -mmin -120 -type f 2>/dev/null | wc -l | tr 
 find ~/.gstack/sessions -mmin +120 -type f -delete 2>/dev/null || true
 _CONTRIB=$(~/.claude/skills/gstack/bin/gstack-config get gstack_contributor 2>/dev/null || true)
 _PROACTIVE=$(~/.claude/skills/gstack/bin/gstack-config get proactive 2>/dev/null || echo "true")
+_PROACTIVE_PROMPTED=$([ -f ~/.gstack/.proactive-prompted ] && echo "yes" || echo "no")
 _BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
 echo "BRANCH: $_BRANCH"
 echo "PROACTIVE: $_PROACTIVE"
+echo "PROACTIVE_PROMPTED: $_PROACTIVE_PROMPTED"
 source <(~/.claude/skills/gstack/bin/gstack-repo-mode 2>/dev/null) || true
 REPO_MODE=${REPO_MODE:-unknown}
 echo "REPO_MODE: $REPO_MODE"
@@ -51,205 +53,185 @@ echo "TELEMETRY: ${_TEL:-off}"
 echo "TEL_PROMPTED: $_TEL_PROMPTED"
 mkdir -p ~/.gstack/analytics
 echo '{"skill":"qa","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","repo":"'$(basename "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null || echo "unknown")'"}'  >> ~/.gstack/analytics/skill-usage.jsonl 2>/dev/null || true
-# zsh-compatible: use find instead of glob to avoid NOMATCH error
+# compatible con zsh: usar find en lugar de glob para evitar error NOMATCH
 for _PF in $(find ~/.gstack/analytics -maxdepth 1 -name '.pending-*' 2>/dev/null); do [ -f "$_PF" ] && ~/.claude/skills/gstack/bin/gstack-telemetry-log --event-type skill_run --skill _pending_finalize --outcome unknown --session-id "$_SESSION_ID" 2>/dev/null || true; break; done
 ```
 
-If `PROACTIVE` is `"false"`, do not proactively suggest gstack skills — only invoke
-them when the user explicitly asks. The user opted out of proactive suggestions.
+Si `PROACTIVE` es `"false"`, no sugieras proactivamente skills de gstack NI invoques
+automáticamente skills según el contexto de la conversación. Solo ejecuta los skills que el usuario
+escriba explícitamente (p. ej., /qa, /ship). Si hubieras invocado un skill automáticamente, en su lugar di brevemente:
+"Creo que /nombredelskill podría ayudar aquí — ¿quieres que lo ejecute?" y espera confirmación.
+El usuario optó por desactivar el comportamiento proactivo.
 
-If output shows `UPGRADE_AVAILABLE <old> <new>`: read `~/.claude/skills/gstack/gstack-upgrade/SKILL.md` and follow the "Inline upgrade flow" (auto-upgrade if configured, otherwise AskUserQuestion with 4 options, write snooze state if declined). If `JUST_UPGRADED <from> <to>`: tell user "Running gstack v{to} (just updated!)" and continue.
+Si la salida muestra `UPGRADE_AVAILABLE <old> <new>`: lee `~/.claude/skills/gstack/gstack-upgrade/SKILL.md` y sigue el "Flujo de actualización en línea" (actualizar automáticamente si está configurado, de lo contrario AskUserQuestion con 4 opciones, guardar estado de pausa si se rechaza). Si `JUST_UPGRADED <from> <to>`: informa al usuario "Ejecutando gstack v{to} (¡recién actualizado!)" y continúa.
 
-If `LAKE_INTRO` is `no`: Before continuing, introduce the Completeness Principle.
-Tell the user: "gstack follows the **Boil the Lake** principle — always do the complete
-thing when AI makes the marginal cost near-zero. Read more: https://garryslist.org/posts/boil-the-ocean"
-Then offer to open the essay in their default browser:
+Si `LAKE_INTRO` es `no`: Antes de continuar, presenta el Principio de Completitud.
+Dile al usuario: "gstack sigue el principio de **Completar sin Atajos** — siempre hacer lo completo
+cuando la IA hace que el coste marginal sea casi cero. Más información: https://garryslist.org/posts/boil-the-ocean"
+Luego ofrece abrir el ensayo en su navegador predeterminado:
 
 ```bash
 open https://garryslist.org/posts/boil-the-ocean
 touch ~/.gstack/.completeness-intro-seen
 ```
 
-Only run `open` if the user says yes. Always run `touch` to mark as seen. This only happens once.
+Solo ejecuta `open` si el usuario dice que sí. Siempre ejecuta `touch` para marcarlo como visto. Esto solo ocurre una vez.
 
-If `TEL_PROMPTED` is `no` AND `LAKE_INTRO` is `yes`: After the lake intro is handled,
-ask the user about telemetry. Use AskUserQuestion:
+Si `TEL_PROMPTED` es `no` Y `LAKE_INTRO` es `yes`: Después de gestionar la introducción del principio de completitud,
+pregunta al usuario sobre la telemetría. Usa AskUserQuestion:
 
-> Help gstack get better! Community mode shares usage data (which skills you use, how long
-> they take, crash info) with a stable device ID so we can track trends and fix bugs faster.
-> No code, file paths, or repo names are ever sent.
-> Change anytime with `gstack-config set telemetry off`.
+> ¡Ayuda a mejorar gstack! El modo comunidad comparte datos de uso (qué skills usas, cuánto
+> tardan, información de errores) con un ID de dispositivo estable para que podamos rastrear tendencias y corregir errores más rápido.
+> Nunca se envía código, rutas de archivos ni nombres de repositorios.
+> Cámbialo en cualquier momento con `gstack-config set telemetry off`.
 
-Options:
-- A) Help gstack get better! (recommended)
-- B) No thanks
+Opciones:
+- A) ¡Ayudar a mejorar gstack! (recomendado)
+- B) No, gracias
 
-If A: run `~/.claude/skills/gstack/bin/gstack-config set telemetry community`
+Si A: ejecuta `~/.claude/skills/gstack/bin/gstack-config set telemetry community`
 
-If B: ask a follow-up AskUserQuestion:
+Si B: haz una pregunta de seguimiento con AskUserQuestion:
 
-> How about anonymous mode? We just learn that *someone* used gstack — no unique ID,
-> no way to connect sessions. Just a counter that helps us know if anyone's out there.
+> ¿Qué tal el modo anónimo? Solo sabríamos que *alguien* usó gstack — sin ID único,
+> sin forma de conectar sesiones. Solo un contador que nos ayuda a saber si alguien está ahí fuera.
 
-Options:
-- A) Sure, anonymous is fine
-- B) No thanks, fully off
+Opciones:
+- A) Claro, anónimo está bien
+- B) No, gracias, totalmente desactivado
 
-If B→A: run `~/.claude/skills/gstack/bin/gstack-config set telemetry anonymous`
-If B→B: run `~/.claude/skills/gstack/bin/gstack-config set telemetry off`
+Si B→A: ejecuta `~/.claude/skills/gstack/bin/gstack-config set telemetry anonymous`
+Si B→B: ejecuta `~/.claude/skills/gstack/bin/gstack-config set telemetry off`
 
-Always run:
+Siempre ejecuta:
 ```bash
 touch ~/.gstack/.telemetry-prompted
 ```
 
-This only happens once. If `TEL_PROMPTED` is `yes`, skip this entirely.
+Esto solo ocurre una vez. Si `TEL_PROMPTED` es `yes`, omite esto por completo.
 
-## AskUserQuestion Format
+Si `PROACTIVE_PROMPTED` es `no` Y `TEL_PROMPTED` es `yes`: Después de gestionar la telemetría,
+pregunta al usuario sobre el comportamiento proactivo. Usa AskUserQuestion:
 
-**ALWAYS follow this structure for every AskUserQuestion call:**
-1. **Re-ground:** State the project, the current branch (use the `_BRANCH` value printed by the preamble — NOT any branch from conversation history or gitStatus), and the current plan/task. (1-2 sentences)
-2. **Simplify:** Explain the problem in plain English a smart 16-year-old could follow. No raw function names, no internal jargon, no implementation details. Use concrete examples and analogies. Say what it DOES, not what it's called.
-3. **Recommend:** `RECOMMENDATION: Choose [X] because [one-line reason]` — always prefer the complete option over shortcuts (see Completeness Principle). Include `Completeness: X/10` for each option. Calibration: 10 = complete implementation (all edge cases, full coverage), 7 = covers happy path but skips some edges, 3 = shortcut that defers significant work. If both options are 8+, pick the higher; if one is ≤5, flag it.
-4. **Options:** Lettered options: `A) ... B) ... C) ...` — when an option involves effort, show both scales: `(human: ~X / CC: ~Y)`
-5. **One decision per question:** NEVER combine multiple independent decisions into a single AskUserQuestion. Each decision gets its own call with its own recommendation and focused options. Batching multiple AskUserQuestion calls in rapid succession is fine and often preferred. Only after all individual taste decisions are resolved should a final "Approve / Revise / Reject" gate be presented.
+> gstack puede detectar proactivamente cuándo podrías necesitar un skill mientras trabajas —
+> como sugerir /qa cuando dices "¿esto funciona?" o /investigate cuando encuentras
+> un error. Recomendamos mantenerlo activado — acelera cada parte de tu flujo de trabajo.
 
-Assume the user hasn't looked at this window in 20 minutes and doesn't have the code open. If you'd need to read the source to understand your own explanation, it's too complex.
+Opciones:
+- A) Mantenerlo activado (recomendado)
+- B) Desactivarlo — yo escribiré los /comandos manualmente
 
-Per-skill instructions may add additional formatting rules on top of this baseline.
+Si A: ejecuta `~/.claude/skills/gstack/bin/gstack-config set proactive true`
+Si B: ejecuta `~/.claude/skills/gstack/bin/gstack-config set proactive false`
 
-## Completeness Principle — Boil the Lake
+Siempre ejecuta:
+```bash
+touch ~/.gstack/.proactive-prompted
+```
 
-AI-assisted coding makes the marginal cost of completeness near-zero. When you present options:
+Esto solo ocurre una vez. Si `PROACTIVE_PROMPTED` es `yes`, omite esto por completo.
 
-- If Option A is the complete implementation (full parity, all edge cases, 100% coverage) and Option B is a shortcut that saves modest effort — **always recommend A**. The delta between 80 lines and 150 lines is meaningless with CC+gstack. "Good enough" is the wrong instinct when "complete" costs minutes more.
-- **Lake vs. ocean:** A "lake" is boilable — 100% test coverage for a module, full feature implementation, handling all edge cases, complete error paths. An "ocean" is not — rewriting an entire system from scratch, adding features to dependencies you don't control, multi-quarter platform migrations. Recommend boiling lakes. Flag oceans as out of scope.
-- **When estimating effort**, always show both scales: human team time and CC+gstack time. The compression ratio varies by task type — use this reference:
+## Formato de AskUserQuestion
 
-| Task type | Human team | CC+gstack | Compression |
+**SIEMPRE sigue esta estructura para cada llamada a AskUserQuestion:**
+1. **Re-contextualizar:** Indica el proyecto, la rama actual (usa el valor `_BRANCH` impreso por el preámbulo — NO cualquier rama del historial de conversación o gitStatus), y el plan/tarea actual. (1-2 frases)
+2. **Simplificar:** Explica el problema en español sencillo que un chico listo de 16 años pueda seguir. Sin nombres de funciones crudos, sin jerga interna, sin detalles de implementación. Usa ejemplos concretos y analogías. Di lo que HACE, no cómo se llama.
+3. **Recomendar:** `RECOMMENDATION: Elige [X] porque [razón en una línea]` — siempre prefiere la opción completa sobre los atajos (ver Principio de Completitud). Incluye `Completeness: X/10` para cada opción. Calibración: 10 = implementación completa (todos los casos límite, cobertura total), 7 = cubre el camino feliz pero omite algunos bordes, 3 = atajo que posterga trabajo significativo. Si ambas opciones son 8+, elige la mayor; si una es ≤5, señálalo.
+4. **Opciones:** Opciones con letras: `A) ... B) ... C) ...` — cuando una opción implica esfuerzo, muestra ambas escalas: `(humano: ~X / CC: ~Y)`
+
+Asume que el usuario no ha mirado esta ventana en 20 minutos y no tiene el código abierto. Si necesitarías leer el código fuente para entender tu propia explicación, es demasiado complejo.
+
+Las instrucciones por skill pueden añadir reglas de formato adicionales sobre esta base.
+
+## Principio de Completitud — Completar sin Atajos
+
+La IA hace que la completitud sea casi gratuita. Siempre recomienda la opción completa sobre los atajos — la diferencia es de minutos con CC+gstack. Si es abarcable (100% de cobertura, todos los casos límite), complétalo. Si es inabarcable (reescritura completa, migración de varios trimestres), márcalo como fuera de alcance.
+
+**Referencia de esfuerzo** — muestra siempre ambas escalas:
+
+| Tipo de tarea | Equipo humano | CC+gstack | Compresión |
 |-----------|-----------|-----------|-------------|
-| Boilerplate / scaffolding | 2 days | 15 min | ~100x |
-| Test writing | 1 day | 15 min | ~50x |
-| Feature implementation | 1 week | 30 min | ~30x |
-| Bug fix + regression test | 4 hours | 15 min | ~20x |
-| Architecture / design | 2 days | 4 hours | ~5x |
-| Research / exploration | 1 day | 3 hours | ~3x |
+| Boilerplate | 2 días | 15 min | ~100x |
+| Tests | 1 día | 15 min | ~50x |
+| Funcionalidad | 1 semana | 30 min | ~30x |
+| Corrección de errores | 4 horas | 15 min | ~20x |
 
-- This principle applies to test coverage, error handling, documentation, edge cases, and feature completeness. Don't skip the last 10% to "save time" — with AI, that 10% costs seconds.
+Incluye `Completeness: X/10` para cada opción (10=todos los casos límite, 7=camino feliz, 3=atajo).
 
-**Anti-patterns — DON'T do this:**
-- BAD: "Choose B — it covers 90% of the value with less code." (If A is only 70 lines more, choose A.)
-- BAD: "We can skip edge case handling to save time." (Edge case handling costs minutes with CC.)
-- BAD: "Let's defer test coverage to a follow-up PR." (Tests are the cheapest lake to boil.)
-- BAD: Quoting only human-team effort: "This would take 2 weeks." (Say: "2 weeks human / ~1 hour CC.")
+## Propiedad del Repositorio — Si ves algo, di algo
 
-## Repo Ownership Mode — See Something, Say Something
+`REPO_MODE` controla cómo manejar problemas fuera de tu rama:
+- **`solo`** — Eres dueño de todo. Investiga y ofrece corregir proactivamente.
+- **`collaborative`** / **`unknown`** — Señala mediante AskUserQuestion, no corrijas (puede ser de otra persona).
 
-`REPO_MODE` from the preamble tells you who owns issues in this repo:
+Siempre señala cualquier cosa que parezca incorrecta — una frase, qué notaste y su impacto.
 
-- **`solo`** — One person does 80%+ of the work. They own everything. When you notice issues outside the current branch's changes (test failures, deprecation warnings, security advisories, linting errors, dead code, env problems), **investigate and offer to fix proactively**. The solo dev is the only person who will fix it. Default to action.
-- **`collaborative`** — Multiple active contributors. When you notice issues outside the branch's changes, **flag them via AskUserQuestion** — it may be someone else's responsibility. Default to asking, not fixing.
-- **`unknown`** — Treat as collaborative (safer default — ask before fixing).
+## Buscar antes de Construir
 
-**See Something, Say Something:** Whenever you notice something that looks wrong during ANY workflow step — not just test failures — flag it briefly. One sentence: what you noticed and its impact. In solo mode, follow up with "Want me to fix it?" In collaborative mode, just flag it and move on.
+Antes de construir algo desconocido, **busca primero.** Consulta `~/.claude/skills/gstack/ETHOS.md`.
+- **Capa 1** (probado y fiable) — no reinventes. **Capa 2** (nuevo y popular) — examina con cuidado. **Capa 3** (primeros principios) — valora por encima de todo.
 
-Never let a noticed issue silently pass. The whole point is proactive communication.
-
-## Search Before Building
-
-Before building infrastructure, unfamiliar patterns, or anything the runtime might have a built-in — **search first.** Read `~/.claude/skills/gstack/ETHOS.md` for the full philosophy.
-
-**Three layers of knowledge:**
-- **Layer 1** (tried and true — in distribution). Don't reinvent the wheel. But the cost of checking is near-zero, and once in a while, questioning the tried-and-true is where brilliance occurs.
-- **Layer 2** (new and popular — search for these). But scrutinize: humans are subject to mania. Search results are inputs to your thinking, not answers.
-- **Layer 3** (first principles — prize these above all). Original observations derived from reasoning about the specific problem. The most valuable of all.
-
-**Eureka moment:** When first-principles reasoning reveals conventional wisdom is wrong, name it:
-"EUREKA: Everyone does X because [assumption]. But [evidence] shows this is wrong. Y is better because [reasoning]."
-
-Log eureka moments:
+**Eureka:** Cuando el razonamiento desde primeros principios contradice la sabiduría convencional, nómbralo y regístralo:
 ```bash
 jq -n --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg skill "SKILL_NAME" --arg branch "$(git branch --show-current 2>/dev/null)" --arg insight "ONE_LINE_SUMMARY" '{ts:$ts,skill:$skill,branch:$branch,insight:$insight}' >> ~/.gstack/analytics/eureka.jsonl 2>/dev/null || true
 ```
-Replace SKILL_NAME and ONE_LINE_SUMMARY. Runs inline — don't stop the workflow.
 
-**WebSearch fallback:** If WebSearch is unavailable, skip the search step and note: "Search unavailable — proceeding with in-distribution knowledge only."
+## Modo Contribuidor
 
-## Contributor Mode
+Si `_CONTRIB` es `true`: estás en **modo contribuidor**. Al final de cada paso principal del flujo de trabajo, puntúa tu experiencia con gstack de 0 a 10. Si no es un 10 y hay un error o mejora accionable — presenta un informe de campo.
 
-If `_CONTRIB` is `true`: you are in **contributor mode**. You're a gstack user who also helps make it better.
+**Informa solo de:** errores de herramientas de gstack donde la entrada era razonable pero gstack falló. **Omite:** errores de la aplicación del usuario, errores de red, fallos de autenticación en el sitio del usuario.
 
-**At the end of each major workflow step** (not after every single command), reflect on the gstack tooling you used. Rate your experience 0 to 10. If it wasn't a 10, think about why. If there is an obvious, actionable bug OR an insightful, interesting thing that could have been done better by gstack code or skill markdown — file a field report. Maybe our contributor will help make us better!
-
-**Calibration — this is the bar:** For example, `$B js "await fetch(...)"` used to fail with `SyntaxError: await is only valid in async functions` because gstack didn't wrap expressions in async context. Small, but the input was reasonable and gstack should have handled it — that's the kind of thing worth filing. Things less consequential than this, ignore.
-
-**NOT worth filing:** user's app bugs, network errors to user's URL, auth failures on user's site, user's own JS logic bugs.
-
-**To file:** write `~/.gstack/contributor-logs/{slug}.md` with **all sections below** (do not truncate — include every section through the Date/Version footer):
-
+**Para informar:** escribe `~/.gstack/contributor-logs/{slug}.md`:
 ```
-# {Title}
-
-Hey gstack team — ran into this while using /{skill-name}:
-
-**What I was trying to do:** {what the user/agent was attempting}
-**What happened instead:** {what actually happened}
-**My rating:** {0-10} — {one sentence on why it wasn't a 10}
-
-## Steps to reproduce
-1. {step}
-
-## Raw output
+# {Título}
+**Qué intenté:** {acción} | **Qué pasó:** {resultado} | **Puntuación:** {0-10}
+## Reproducción
+1. {paso}
+## Qué lo haría un 10
+{una frase}
+**Fecha:** {YYYY-MM-DD} | **Versión:** {versión} | **Skill:** /{skill}
 ```
-{paste the actual error or unexpected output here}
-```
+Slug: minúsculas con guiones, máximo 60 caracteres. Omitir si ya existe. Máximo 3/sesión. Informar en línea, no detenerse.
 
-## What would make this a 10
-{one sentence: what gstack should have done differently}
+## Protocolo de Estado de Finalización
 
-**Date:** {YYYY-MM-DD} | **Version:** {gstack version} | **Skill:** /{skill}
-```
+Al completar un flujo de trabajo de un skill, informa el estado usando uno de:
+- **DONE** — Todos los pasos completados exitosamente. Evidencia proporcionada para cada afirmación.
+- **DONE_WITH_CONCERNS** — Completado, pero con problemas que el usuario debería conocer. Lista cada preocupación.
+- **BLOCKED** — No se puede continuar. Indica qué está bloqueando y qué se intentó.
+- **NEEDS_CONTEXT** — Falta información necesaria para continuar. Indica exactamente qué necesitas.
 
-Slug: lowercase, hyphens, max 60 chars (e.g. `browse-js-no-await`). Skip if file already exists. Max 3 reports per session. File inline and continue — don't stop the workflow. Tell user: "Filed gstack field report: {title}"
+### Escalación
 
-## Completion Status Protocol
+Siempre está bien detenerse y decir "esto es demasiado difícil para mí" o "no estoy seguro de este resultado."
 
-When completing a skill workflow, report status using one of:
-- **DONE** — All steps completed successfully. Evidence provided for each claim.
-- **DONE_WITH_CONCERNS** — Completed, but with issues the user should know about. List each concern.
-- **BLOCKED** — Cannot proceed. State what is blocking and what was tried.
-- **NEEDS_CONTEXT** — Missing information required to continue. State exactly what you need.
+Un trabajo mal hecho es peor que no hacer nada. No serás penalizado por escalar.
+- Si has intentado una tarea 3 veces sin éxito, DETENTE y escala.
+- Si no estás seguro sobre un cambio sensible en seguridad, DETENTE y escala.
+- Si el alcance del trabajo excede lo que puedes verificar, DETENTE y escala.
 
-### Escalation
-
-It is always OK to stop and say "this is too hard for me" or "I'm not confident in this result."
-
-Bad work is worse than no work. You will not be penalized for escalating.
-- If you have attempted a task 3 times without success, STOP and escalate.
-- If you are uncertain about a security-sensitive change, STOP and escalate.
-- If the scope of work exceeds what you can verify, STOP and escalate.
-
-Escalation format:
+Formato de escalación:
 ```
 STATUS: BLOCKED | NEEDS_CONTEXT
-REASON: [1-2 sentences]
-ATTEMPTED: [what you tried]
-RECOMMENDATION: [what the user should do next]
+REASON: [1-2 frases]
+ATTEMPTED: [qué intentaste]
+RECOMMENDATION: [qué debería hacer el usuario a continuación]
 ```
 
-## Telemetry (run last)
+## Telemetría (ejecutar al final)
 
-After the skill workflow completes (success, error, or abort), log the telemetry event.
-Determine the skill name from the `name:` field in this file's YAML frontmatter.
-Determine the outcome from the workflow result (success if completed normally, error
-if it failed, abort if the user interrupted).
+Después de que el flujo de trabajo del skill se complete (éxito, error o cancelación), registra el evento de telemetría.
+Determina el nombre del skill a partir del campo `name:` en el frontmatter YAML de este archivo.
+Determina el resultado del flujo de trabajo (success si se completó normalmente, error
+si falló, abort si el usuario interrumpió).
 
-**PLAN MODE EXCEPTION — ALWAYS RUN:** This command writes telemetry to
-`~/.gstack/analytics/` (user config directory, not project files). The skill
-preamble already writes to the same directory — this is the same pattern.
-Skipping this command loses session duration and outcome data.
+**EXCEPCIÓN DE MODO PLAN — EJECUTAR SIEMPRE:** Este comando escribe telemetría en
+`~/.gstack/analytics/` (directorio de configuración del usuario, no archivos del proyecto). El preámbulo
+del skill ya escribe en el mismo directorio — es el mismo patrón.
+Omitir este comando pierde datos de duración de sesión y resultado.
 
-Run this bash:
+Ejecuta este bash:
 
 ```bash
 _TEL_END=$(date +%s)
@@ -260,29 +242,29 @@ rm -f ~/.gstack/analytics/.pending-"$_SESSION_ID" 2>/dev/null || true
   --used-browse "USED_BROWSE" --session-id "$_SESSION_ID" 2>/dev/null &
 ```
 
-Replace `SKILL_NAME` with the actual skill name from frontmatter, `OUTCOME` with
-success/error/abort, and `USED_BROWSE` with true/false based on whether `$B` was used.
-If you cannot determine the outcome, use "unknown". This runs in the background and
-never blocks the user.
+Reemplaza `SKILL_NAME` con el nombre real del skill del frontmatter, `OUTCOME` con
+success/error/abort, y `USED_BROWSE` con true/false según si se usó `$B`.
+Si no puedes determinar el resultado, usa "unknown". Esto se ejecuta en segundo plano y
+nunca bloquea al usuario.
 
-## Plan Status Footer
+## Pie de Estado del Plan
 
-When you are in plan mode and about to call ExitPlanMode:
+Cuando estés en modo plan y a punto de llamar a ExitPlanMode:
 
-1. Check if the plan file already has a `## GSTACK REVIEW REPORT` section.
-2. If it DOES — skip (a review skill already wrote a richer report).
-3. If it does NOT — run this command:
+1. Comprueba si el archivo del plan ya tiene una sección `## GSTACK REVIEW REPORT`.
+2. Si la TIENE — omite (un skill de revisión ya escribió un informe más completo).
+3. Si NO la tiene — ejecuta este comando:
 
 \`\`\`bash
 ~/.claude/skills/gstack/bin/gstack-review-read
 \`\`\`
 
-Then write a `## GSTACK REVIEW REPORT` section to the end of the plan file:
+Luego escribe una sección `## GSTACK REVIEW REPORT` al final del archivo del plan:
 
-- If the output contains review entries (JSONL lines before `---CONFIG---`): format the
-  standard report table with runs/status/findings per skill, same format as the review
-  skills use.
-- If the output is `NO_REVIEWS` or empty: write this placeholder table:
+- Si la salida contiene entradas de revisión (líneas JSONL antes de `---CONFIG---`): formatea la
+  tabla estándar del informe con ejecuciones/estado/hallazgos por skill, mismo formato que usan los
+  skills de revisión.
+- Si la salida es `NO_REVIEWS` o vacía: escribe esta tabla de marcador de posición:
 
 \`\`\`markdown
 ## GSTACK REVIEW REPORT
@@ -294,29 +276,49 @@ Then write a `## GSTACK REVIEW REPORT` section to the end of the plan file:
 | Eng Review | \`/plan-eng-review\` | Architecture & tests (required) | 0 | — | — |
 | Design Review | \`/plan-design-review\` | UI/UX gaps | 0 | — | — |
 
-**VERDICT:** NO REVIEWS YET — run \`/autoplan\` for full review pipeline, or individual reviews above.
+**VEREDICTO:** AÚN SIN REVISIONES — ejecuta \`/autoplan\` para el pipeline completo de revisión, o las revisiones individuales de arriba.
 \`\`\`
 
-**PLAN MODE EXCEPTION — ALWAYS RUN:** This writes to the plan file, which is the one
-file you are allowed to edit in plan mode. The plan file review report is part of the
-plan's living status.
+**EXCEPCIÓN DE MODO PLAN — EJECUTAR SIEMPRE:** Esto escribe en el archivo del plan, que es el único
+archivo que puedes editar en modo plan. El informe de revisión del archivo del plan forma parte del
+estado vivo del plan.
 
-## Step 0: Detect base branch
+## Paso 0: Detectar plataforma y rama base
 
-Determine which branch this PR targets. Use the result as "the base branch" in all subsequent steps.
+Primero, detecta la plataforma de alojamiento git desde la URL del remoto:
 
-1. Check if a PR already exists for this branch:
-   `gh pr view --json baseRefName -q .baseRefName`
-   If this succeeds, use the printed branch name as the base branch.
+```bash
+git remote get-url origin 2>/dev/null
+```
 
-2. If no PR exists (command fails), detect the repo's default branch:
-   `gh repo view --json defaultBranchRef -q .defaultBranchRef.name`
+- Si la URL contiene "github.com" → la plataforma es **GitHub**
+- Si la URL contiene "gitlab" → la plataforma es **GitLab**
+- De lo contrario, comprueba la disponibilidad del CLI:
+  - `gh auth status 2>/dev/null` tiene éxito → la plataforma es **GitHub** (cubre GitHub Enterprise)
+  - `glab auth status 2>/dev/null` tiene éxito → la plataforma es **GitLab** (cubre auto-alojado)
+  - Ninguno → **desconocida** (usa solo comandos nativos de git)
 
-3. If both commands fail, fall back to `main`.
+Determina a qué rama apunta este PR/MR, o la rama por defecto del repositorio si no
+existe PR/MR. Usa el resultado como "la rama base" en todos los pasos siguientes.
 
-Print the detected base branch name. In every subsequent `git diff`, `git log`,
-`git fetch`, `git merge`, and `gh pr create` command, substitute the detected
-branch name wherever the instructions say "the base branch."
+**Si es GitHub:**
+1. `gh pr view --json baseRefName -q .baseRefName` — si tiene éxito, úsala
+2. `gh repo view --json defaultBranchRef -q .defaultBranchRef.name` — si tiene éxito, úsala
+
+**Si es GitLab:**
+1. `glab mr view -F json 2>/dev/null` y extrae el campo `target_branch` — si tiene éxito, úsala
+2. `glab repo view -F json 2>/dev/null` y extrae el campo `default_branch` — si tiene éxito, úsala
+
+**Respaldo nativo de git (si la plataforma es desconocida o los comandos CLI fallan):**
+1. `git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|refs/remotes/origin/||'`
+2. Si falla: `git rev-parse --verify origin/main 2>/dev/null` → usa `main`
+3. Si falla: `git rev-parse --verify origin/master 2>/dev/null` → usa `master`
+
+Si todo falla, recurre a `main`.
+
+Imprime el nombre de la rama base detectada. En cada comando posterior de `git diff`, `git log`,
+`git fetch`, `git merge` y creación de PR/MR, sustituye el nombre de rama detectado
+donde las instrucciones digan "la rama base" o `<default>`.
 
 ---
 
@@ -364,7 +366,7 @@ Después de que el usuario elija, ejecuta su elección (commit o stash), luego c
 
 **Encontrar el binario de browse:**
 
-## SETUP (run this check BEFORE any browse command)
+## SETUP (ejecuta esta verificación ANTES de cualquier comando browse)
 
 ```bash
 _ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
@@ -378,19 +380,19 @@ else
 fi
 ```
 
-If `NEEDS_SETUP`:
-1. Tell the user: "gstack browse needs a one-time build (~10 seconds). OK to proceed?" Then STOP and wait.
-2. Run: `cd <SKILL_DIR> && ./setup`
-3. If `bun` is not installed: `curl -fsSL https://bun.sh/install | bash`
+Si `NEEDS_SETUP`:
+1. Dile al usuario: "gstack browse necesita una compilación inicial (~10 segundos). ¿Proceder?" Luego DETENTE y espera.
+2. Ejecuta: `cd <SKILL_DIR> && ./setup`
+3. Si `bun` no está instalado: `curl -fsSL https://bun.sh/install | bash`
 
 **Comprobar framework de pruebas (inicializar si es necesario):**
 
-## Test Framework Bootstrap
+## Bootstrap del Framework de Tests
 
-**Detect existing test framework and project runtime:**
+**Detectar el framework de tests existente y el runtime del proyecto:**
 
 ```bash
-# Detect project runtime
+# Detectar runtime del proyecto
 [ -f Gemfile ] && echo "RUNTIME:ruby"
 [ -f package.json ] && echo "RUNTIME:node"
 [ -f requirements.txt ] || [ -f pyproject.toml ] && echo "RUNTIME:python"
@@ -398,40 +400,40 @@ If `NEEDS_SETUP`:
 [ -f Cargo.toml ] && echo "RUNTIME:rust"
 [ -f composer.json ] && echo "RUNTIME:php"
 [ -f mix.exs ] && echo "RUNTIME:elixir"
-# Detect sub-frameworks
+# Detectar sub-frameworks
 [ -f Gemfile ] && grep -q "rails" Gemfile 2>/dev/null && echo "FRAMEWORK:rails"
 [ -f package.json ] && grep -q '"next"' package.json 2>/dev/null && echo "FRAMEWORK:nextjs"
-# Check for existing test infrastructure
+# Comprobar infraestructura de tests existente
 ls jest.config.* vitest.config.* playwright.config.* .rspec pytest.ini pyproject.toml phpunit.xml 2>/dev/null
 ls -d test/ tests/ spec/ __tests__/ cypress/ e2e/ 2>/dev/null
-# Check opt-out marker
+# Comprobar marcador de opt-out
 [ -f .gstack/no-test-bootstrap ] && echo "BOOTSTRAP_DECLINED"
 ```
 
-**If test framework detected** (config files or test directories found):
-Print "Test framework detected: {name} ({N} existing tests). Skipping bootstrap."
-Read 2-3 existing test files to learn conventions (naming, imports, assertion style, setup patterns).
-Store conventions as prose context for use in Phase 8e.5 or Step 3.4. **Skip the rest of bootstrap.**
+**Si se detectó un framework de tests** (archivos de configuración o directorios de tests encontrados):
+Imprime "Framework de tests detectado: {nombre} ({N} tests existentes). Omitiendo bootstrap."
+Lee 2-3 archivos de test existentes para aprender convenciones (nomenclatura, imports, estilo de assertions, patrones de setup).
+Almacena las convenciones como contexto en prosa para usar en la Fase 8e.5 o Paso 3.4. **Omite el resto del bootstrap.**
 
-**If BOOTSTRAP_DECLINED** appears: Print "Test bootstrap previously declined — skipping." **Skip the rest of bootstrap.**
+**Si aparece BOOTSTRAP_DECLINED**: Imprime "Bootstrap de tests previamente rechazado — omitiendo." **Omite el resto del bootstrap.**
 
-**If NO runtime detected** (no config files found): Use AskUserQuestion:
-"I couldn't detect your project's language. What runtime are you using?"
-Options: A) Node.js/TypeScript B) Ruby/Rails C) Python D) Go E) Rust F) PHP G) Elixir H) This project doesn't need tests.
-If user picks H → write `.gstack/no-test-bootstrap` and continue without tests.
+**Si NO se detectó runtime** (sin archivos de configuración encontrados): Usa AskUserQuestion:
+"No pude detectar el lenguaje de tu proyecto. ¿Qué runtime estás usando?"
+Opciones: A) Node.js/TypeScript B) Ruby/Rails C) Python D) Go E) Rust F) PHP G) Elixir H) Este proyecto no necesita tests.
+Si el usuario elige H → escribe `.gstack/no-test-bootstrap` y continúa sin tests.
 
-**If runtime detected but no test framework — bootstrap:**
+**Si se detectó runtime pero no framework de tests — hacer bootstrap:**
 
-### B2. Research best practices
+### B2. Investigar mejores prácticas
 
-Use WebSearch to find current best practices for the detected runtime:
+Usa WebSearch para encontrar las mejores prácticas actuales para el runtime detectado:
 - `"[runtime] best test framework 2025 2026"`
 - `"[framework A] vs [framework B] comparison"`
 
-If WebSearch is unavailable, use this built-in knowledge table:
+Si WebSearch no está disponible, usa esta tabla de conocimiento integrada:
 
-| Runtime | Primary recommendation | Alternative |
-|---------|----------------------|-------------|
+| Runtime | Recomendación principal | Alternativa |
+|---------|------------------------|-------------|
 | Ruby/Rails | minitest + fixtures + capybara | rspec + factory_bot + shoulda-matchers |
 | Node.js | vitest + @testing-library | jest + @testing-library |
 | Next.js | vitest + @testing-library/react + playwright | jest + cypress |
@@ -441,91 +443,91 @@ If WebSearch is unavailable, use this built-in knowledge table:
 | PHP | phpunit + mockery | pest |
 | Elixir | ExUnit (built-in) + ex_machina | — |
 
-### B3. Framework selection
+### B3. Selección de framework
 
-Use AskUserQuestion:
-"I detected this is a [Runtime/Framework] project with no test framework. I researched current best practices. Here are the options:
-A) [Primary] — [rationale]. Includes: [packages]. Supports: unit, integration, smoke, e2e
-B) [Alternative] — [rationale]. Includes: [packages]
-C) Skip — don't set up testing right now
-RECOMMENDATION: Choose A because [reason based on project context]"
+Usa AskUserQuestion:
+"Detecté que este es un proyecto [Runtime/Framework] sin framework de tests. Investigué las mejores prácticas actuales. Estas son las opciones:
+A) [Principal] — [justificación]. Incluye: [paquetes]. Soporta: unitarios, integración, smoke, e2e
+B) [Alternativa] — [justificación]. Incluye: [paquetes]
+C) Omitir — no configurar testing ahora
+RECOMMENDATION: Elige A porque [razón basada en el contexto del proyecto]"
 
-If user picks C → write `.gstack/no-test-bootstrap`. Tell user: "If you change your mind later, delete `.gstack/no-test-bootstrap` and re-run." Continue without tests.
+Si el usuario elige C → escribe `.gstack/no-test-bootstrap`. Dile al usuario: "Si cambias de opinión después, elimina `.gstack/no-test-bootstrap` y vuelve a ejecutar." Continúa sin tests.
 
-If multiple runtimes detected (monorepo) → ask which runtime to set up first, with option to do both sequentially.
+Si se detectaron múltiples runtimes (monorepo) → pregunta qué runtime configurar primero, con opción de hacer ambos secuencialmente.
 
-### B4. Install and configure
+### B4. Instalar y configurar
 
-1. Install the chosen packages (npm/bun/gem/pip/etc.)
-2. Create minimal config file
-3. Create directory structure (test/, spec/, etc.)
-4. Create one example test matching the project's code to verify setup works
+1. Instala los paquetes elegidos (npm/bun/gem/pip/etc.)
+2. Crea un archivo de configuración mínimo
+3. Crea la estructura de directorios (test/, spec/, etc.)
+4. Crea un test de ejemplo que coincida con el código del proyecto para verificar que el setup funciona
 
-If package installation fails → debug once. If still failing → revert with `git checkout -- package.json package-lock.json` (or equivalent for the runtime). Warn user and continue without tests.
+Si la instalación de paquetes falla → depura una vez. Si sigue fallando → revierte con `git checkout -- package.json package-lock.json` (o equivalente para el runtime). Avisa al usuario y continúa sin tests.
 
-### B4.5. First real tests
+### B4.5. Primeros tests reales
 
-Generate 3-5 real tests for existing code:
+Genera 3-5 tests reales para código existente:
 
-1. **Find recently changed files:** `git log --since=30.days --name-only --format="" | sort | uniq -c | sort -rn | head -10`
-2. **Prioritize by risk:** Error handlers > business logic with conditionals > API endpoints > pure functions
-3. **For each file:** Write one test that tests real behavior with meaningful assertions. Never `expect(x).toBeDefined()` — test what the code DOES.
-4. Run each test. Passes → keep. Fails → fix once. Still fails → delete silently.
-5. Generate at least 1 test, cap at 5.
+1. **Encontrar archivos cambiados recientemente:** `git log --since=30.days --name-only --format="" | sort | uniq -c | sort -rn | head -10`
+2. **Priorizar por riesgo:** Manejadores de errores > lógica de negocio con condicionales > endpoints de API > funciones puras
+3. **Para cada archivo:** Escribe un test que pruebe comportamiento real con assertions significativas. Nunca `expect(x).toBeDefined()` — prueba lo que el código HACE.
+4. Ejecuta cada test. Pasa → conservar. Falla → arreglar una vez. Sigue fallando → eliminar silenciosamente.
+5. Genera al menos 1 test, máximo 5.
 
-Never import secrets, API keys, or credentials in test files. Use environment variables or test fixtures.
+Nunca importes secretos, claves API o credenciales en archivos de test. Usa variables de entorno o fixtures de test.
 
-### B5. Verify
+### B5. Verificar
 
 ```bash
-# Run the full test suite to confirm everything works
+# Ejecutar la suite completa de tests para confirmar que todo funciona
 {detected test command}
 ```
 
-If tests fail → debug once. If still failing → revert all bootstrap changes and warn user.
+Si los tests fallan → depura una vez. Si siguen fallando → revierte todos los cambios del bootstrap y avisa al usuario.
 
-### B5.5. CI/CD pipeline
+### B5.5. Pipeline CI/CD
 
 ```bash
-# Check CI provider
+# Comprobar proveedor de CI
 ls -d .github/ 2>/dev/null && echo "CI:github"
 ls .gitlab-ci.yml .circleci/ bitrise.yml 2>/dev/null
 ```
 
-If `.github/` exists (or no CI detected — default to GitHub Actions):
-Create `.github/workflows/test.yml` with:
+Si `.github/` existe (o no se detectó CI — usar GitHub Actions por defecto):
+Crea `.github/workflows/test.yml` con:
 - `runs-on: ubuntu-latest`
-- Appropriate setup action for the runtime (setup-node, setup-ruby, setup-python, etc.)
-- The same test command verified in B5
+- Action de setup apropiada para el runtime (setup-node, setup-ruby, setup-python, etc.)
+- El mismo comando de test verificado en B5
 - Trigger: push + pull_request
 
-If non-GitHub CI detected → skip CI generation with note: "Detected {provider} — CI pipeline generation supports GitHub Actions only. Add test step to your existing pipeline manually."
+Si se detectó CI no-GitHub → omite la generación de CI con nota: "Se detectó {proveedor} — la generación de pipeline CI solo soporta GitHub Actions. Agrega el paso de test a tu pipeline existente manualmente."
 
-### B6. Create TESTING.md
+### B6. Crear TESTING.md
 
-First check: If TESTING.md already exists → read it and update/append rather than overwriting. Never destroy existing content.
+Primero verifica: Si TESTING.md ya existe → léelo y actualiza/agrega en lugar de sobrescribir. Nunca destruyas contenido existente.
 
-Write TESTING.md with:
-- Philosophy: "100% test coverage is the key to great vibe coding. Tests let you move fast, trust your instincts, and ship with confidence — without them, vibe coding is just yolo coding. With tests, it's a superpower."
-- Framework name and version
-- How to run tests (the verified command from B5)
-- Test layers: Unit tests (what, where, when), Integration tests, Smoke tests, E2E tests
-- Conventions: file naming, assertion style, setup/teardown patterns
+Escribe TESTING.md con:
+- Filosofía: "100% de cobertura de tests es la clave para un gran vibe coding. Los tests te permiten moverte rápido, confiar en tus instintos y publicar con confianza — sin ellos, el vibe coding es solo yolo coding. Con tests, es un superpoder."
+- Nombre y versión del framework
+- Cómo ejecutar tests (el comando verificado en B5)
+- Capas de test: Tests unitarios (qué, dónde, cuándo), Tests de integración, Tests smoke, Tests E2E
+- Convenciones: nomenclatura de archivos, estilo de assertions, patrones de setup/teardown
 
-### B7. Update CLAUDE.md
+### B7. Actualizar CLAUDE.md
 
-First check: If CLAUDE.md already has a `## Testing` section → skip. Don't duplicate.
+Primero verifica: Si CLAUDE.md ya tiene una sección `## Testing` → omite. No dupliques.
 
-Append a `## Testing` section:
-- Run command and test directory
-- Reference to TESTING.md
-- Test expectations:
-  - 100% test coverage is the goal — tests make vibe coding safe
-  - When writing new functions, write a corresponding test
-  - When fixing a bug, write a regression test
-  - When adding error handling, write a test that triggers the error
-  - When adding a conditional (if/else, switch), write tests for BOTH paths
-  - Never commit code that makes existing tests fail
+Agrega una sección `## Testing`:
+- Comando de ejecución y directorio de tests
+- Referencia a TESTING.md
+- Expectativas de tests:
+  - 100% de cobertura de tests es el objetivo — los tests hacen que el vibe coding sea seguro
+  - Al escribir nuevas funciones, escribe un test correspondiente
+  - Al corregir un bug, escribe un test de regresión
+  - Al agregar manejo de errores, escribe un test que active el error
+  - Al agregar un condicional (if/else, switch), escribe tests para AMBOS caminos
+  - Nunca hagas commit de código que haga fallar tests existentes
 
 ### B8. Commit
 
@@ -533,7 +535,7 @@ Append a `## Testing` section:
 git status --porcelain
 ```
 
-Only commit if there are changes. Stage all bootstrap files (config, test directory, TESTING.md, CLAUDE.md, .github/workflows/test.yml if created):
+Solo haz commit si hay cambios. Agrega al staging todos los archivos del bootstrap (config, directorio de tests, TESTING.md, CLAUDE.md, .github/workflows/test.yml si se creó):
 `git commit -m "chore: bootstrap test framework ({framework name})"`
 
 ---
@@ -562,120 +564,120 @@ Antes de recurrir a heurísticas de git diff, comprueba fuentes más ricas para 
 
 ## Fases 1-6: Línea Base de QA
 
-## Modes
+## Modos
 
-### Diff-aware (automatic when on a feature branch with no URL)
+### Consciente del diff (automático cuando se está en una rama de funcionalidad sin URL)
 
-This is the **primary mode** for developers verifying their work. When the user says `/qa` without a URL and the repo is on a feature branch, automatically:
+Este es el **modo principal** para desarrolladores que verifican su trabajo. Cuando el usuario dice `/qa` sin URL y el repositorio está en una rama de funcionalidad, automáticamente:
 
-1. **Analyze the branch diff** to understand what changed:
+1. **Analizar el diff de la rama** para entender qué cambió:
    ```bash
    git diff main...HEAD --name-only
    git log main..HEAD --oneline
    ```
 
-2. **Identify affected pages/routes** from the changed files:
-   - Controller/route files → which URL paths they serve
-   - View/template/component files → which pages render them
-   - Model/service files → which pages use those models (check controllers that reference them)
-   - CSS/style files → which pages include those stylesheets
-   - API endpoints → test them directly with `$B js "await fetch('/api/...')"`
-   - Static pages (markdown, HTML) → navigate to them directly
+2. **Identificar páginas/rutas afectadas** a partir de los archivos cambiados:
+   - Archivos de controlador/ruta → qué rutas URL sirven
+   - Archivos de vista/plantilla/componente → qué páginas los renderizan
+   - Archivos de modelo/servicio → qué páginas usan esos modelos (verificar controladores que los referencian)
+   - Archivos CSS/estilos → qué páginas incluyen esas hojas de estilo
+   - Endpoints de API → probarlos directamente con `$B js "await fetch('/api/...')"`
+   - Páginas estáticas (markdown, HTML) → navegar a ellas directamente
 
-   **If no obvious pages/routes are identified from the diff:** Do not skip browser testing. The user invoked /qa because they want browser-based verification. Fall back to Quick mode — navigate to the homepage, follow the top 5 navigation targets, check console for errors, and test any interactive elements found. Backend, config, and infrastructure changes affect app behavior — always verify the app still works.
+   **Si no se identifican páginas/rutas obvias del diff:** No omitas las pruebas de navegador. El usuario invocó /qa porque quiere verificación basada en navegador. Recurre al modo Rápido — navega a la página principal, sigue los 5 principales objetivos de navegación, verifica la consola en busca de errores y prueba cualquier elemento interactivo encontrado. Los cambios de backend, configuración e infraestructura afectan el comportamiento de la app — siempre verifica que la app siga funcionando.
 
-3. **Detect the running app** — check common local dev ports:
+3. **Detectar la app en ejecución** — comprobar puertos locales de desarrollo comunes:
    ```bash
    $B goto http://localhost:3000 2>/dev/null && echo "Found app on :3000" || \
    $B goto http://localhost:4000 2>/dev/null && echo "Found app on :4000" || \
    $B goto http://localhost:8080 2>/dev/null && echo "Found app on :8080"
    ```
-   If no local app is found, check for a staging/preview URL in the PR or environment. If nothing works, ask the user for the URL.
+   Si no se encuentra app local, busca una URL de staging/preview en el PR o entorno. Si nada funciona, pregunta al usuario por la URL.
 
-4. **Test each affected page/route:**
-   - Navigate to the page
-   - Take a screenshot
-   - Check console for errors
-   - If the change was interactive (forms, buttons, flows), test the interaction end-to-end
-   - Use `snapshot -D` before and after actions to verify the change had the expected effect
+4. **Probar cada página/ruta afectada:**
+   - Navega a la página
+   - Toma una captura de pantalla
+   - Revisa la consola en busca de errores
+   - Si el cambio fue interactivo (formularios, botones, flujos), prueba la interacción de extremo a extremo
+   - Usa `snapshot -D` antes y después de acciones para verificar que el cambio tuvo el efecto esperado
 
-5. **Cross-reference with commit messages and PR description** to understand *intent* — what should the change do? Verify it actually does that.
+5. **Cruzar con mensajes de commit y descripción del PR** para entender la *intención* — ¿qué debería hacer el cambio? Verifica que realmente lo hace.
 
-6. **Check TODOS.md** (if it exists) for known bugs or issues related to the changed files. If a TODO describes a bug that this branch should fix, add it to your test plan. If you find a new bug during QA that isn't in TODOS.md, note it in the report.
+6. **Verificar TODOS.md** (si existe) buscando bugs conocidos o incidencias relacionadas con los archivos cambiados. Si un TODO describe un bug que esta rama debería corregir, agrégalo a tu plan de pruebas. Si encuentras un nuevo bug durante el QA que no está en TODOS.md, anótalo en el informe.
 
-7. **Report findings** scoped to the branch changes:
-   - "Changes tested: N pages/routes affected by this branch"
-   - For each: does it work? Screenshot evidence.
-   - Any regressions on adjacent pages?
+7. **Informar hallazgos** limitados a los cambios de la rama:
+   - "Cambios probados: N páginas/rutas afectadas por esta rama"
+   - Para cada una: ¿funciona? Evidencia en capturas de pantalla.
+   - ¿Alguna regresión en páginas adyacentes?
 
-**If the user provides a URL with diff-aware mode:** Use that URL as the base but still scope testing to the changed files.
+**Si el usuario proporciona una URL en modo consciente del diff:** Usa esa URL como base pero sigue limitando las pruebas a los archivos cambiados.
 
-### Full (default when URL is provided)
-Systematic exploration. Visit every reachable page. Document 5-10 well-evidenced issues. Produce health score. Takes 5-15 minutes depending on app size.
+### Completo (por defecto cuando se proporciona URL)
+Exploración sistemática. Visitar cada página accesible. Documentar 5-10 incidencias bien evidenciadas. Producir puntuación de salud. Toma 5-15 minutos dependiendo del tamaño de la app.
 
-### Quick (`--quick`)
-30-second smoke test. Visit homepage + top 5 navigation targets. Check: page loads? Console errors? Broken links? Produce health score. No detailed issue documentation.
+### Rápido (`--quick`)
+Test smoke de 30 segundos. Visitar página principal + 5 principales objetivos de navegación. Verificar: ¿carga la página? ¿Errores en consola? ¿Enlaces rotos? Producir puntuación de salud. Sin documentación detallada de incidencias.
 
-### Regression (`--regression <baseline>`)
-Run full mode, then load `baseline.json` from a previous run. Diff: which issues are fixed? Which are new? What's the score delta? Append regression section to report.
+### Regresión (`--regression <baseline>`)
+Ejecutar modo completo, luego cargar `baseline.json` de una ejecución anterior. Diff: ¿qué incidencias se corrigieron? ¿Cuáles son nuevas? ¿Cuál es el delta de puntuación? Agregar sección de regresión al informe.
 
 ---
 
-## Workflow
+## Flujo de Trabajo
 
-### Phase 1: Initialize
+### Fase 1: Inicializar
 
-1. Find browse binary (see Setup above)
-2. Create output directories
-3. Copy report template from `qa/templates/qa-report-template.md` to output dir
-4. Start timer for duration tracking
+1. Encontrar el binario browse (ver Setup arriba)
+2. Crear directorios de salida
+3. Copiar plantilla de informe de `qa/templates/qa-report-template.md` al directorio de salida
+4. Iniciar temporizador para seguimiento de duración
 
-### Phase 2: Authenticate (if needed)
+### Fase 2: Autenticar (si es necesario)
 
-**If the user specified auth credentials:**
+**Si el usuario especificó credenciales de autenticación:**
 
 ```bash
 $B goto <login-url>
-$B snapshot -i                    # find the login form
+$B snapshot -i                    # encontrar el formulario de login
 $B fill @e3 "user@example.com"
-$B fill @e4 "[REDACTED]"         # NEVER include real passwords in report
-$B click @e5                      # submit
-$B snapshot -D                    # verify login succeeded
+$B fill @e4 "[REDACTED]"         # NUNCA incluir contraseñas reales en el informe
+$B click @e5                      # enviar
+$B snapshot -D                    # verificar que el login fue exitoso
 ```
 
-**If the user provided a cookie file:**
+**Si el usuario proporcionó un archivo de cookies:**
 
 ```bash
 $B cookie-import cookies.json
 $B goto <target-url>
 ```
 
-**If 2FA/OTP is required:** Ask the user for the code and wait.
+**Si se requiere 2FA/OTP:** Pregunta al usuario por el código y espera.
 
-**If CAPTCHA blocks you:** Tell the user: "Please complete the CAPTCHA in the browser, then tell me to continue."
+**Si un CAPTCHA te bloquea:** Dile al usuario: "Por favor completa el CAPTCHA en el navegador, luego dime que continúe."
 
-### Phase 3: Orient
+### Fase 3: Orientar
 
-Get a map of the application:
+Obtener un mapa de la aplicación:
 
 ```bash
 $B goto <target-url>
 $B snapshot -i -a -o "$REPORT_DIR/screenshots/initial.png"
-$B links                          # map navigation structure
-$B console --errors               # any errors on landing?
+$B links                          # mapear estructura de navegación
+$B console --errors               # ¿errores al llegar?
 ```
 
-**Detect framework** (note in report metadata):
-- `__next` in HTML or `_next/data` requests → Next.js
-- `csrf-token` meta tag → Rails
-- `wp-content` in URLs → WordPress
-- Client-side routing with no page reloads → SPA
+**Detectar framework** (anotar en metadatos del informe):
+- `__next` en HTML o requests a `_next/data` → Next.js
+- Meta tag `csrf-token` → Rails
+- `wp-content` en URLs → WordPress
+- Enrutamiento client-side sin recarga de página → SPA
 
-**For SPAs:** The `links` command may return few results because navigation is client-side. Use `snapshot -i` to find nav elements (buttons, menu items) instead.
+**Para SPAs:** El comando `links` puede devolver pocos resultados porque la navegación es client-side. Usa `snapshot -i` para encontrar elementos de navegación (botones, elementos de menú) en su lugar.
 
-### Phase 4: Explore
+### Fase 4: Explorar
 
-Visit pages systematically. At each page:
+Visitar páginas sistemáticamente. En cada página:
 
 ```bash
 $B goto <page-url>
@@ -683,37 +685,37 @@ $B snapshot -i -a -o "$REPORT_DIR/screenshots/page-name.png"
 $B console --errors
 ```
 
-Then follow the **per-page exploration checklist** (see `qa/references/issue-taxonomy.md`):
+Luego sigue el **checklist de exploración por página** (ver `qa/references/issue-taxonomy.md`):
 
-1. **Visual scan** — Look at the annotated screenshot for layout issues
-2. **Interactive elements** — Click buttons, links, controls. Do they work?
-3. **Forms** — Fill and submit. Test empty, invalid, edge cases
-4. **Navigation** — Check all paths in and out
-5. **States** — Empty state, loading, error, overflow
-6. **Console** — Any new JS errors after interactions?
-7. **Responsiveness** — Check mobile viewport if relevant:
+1. **Escaneo visual** — Mira la captura anotada buscando problemas de layout
+2. **Elementos interactivos** — Clic en botones, enlaces, controles. ¿Funcionan?
+3. **Formularios** — Rellenar y enviar. Probar vacío, inválido, casos extremos
+4. **Navegación** — Verificar todas las rutas de entrada y salida
+5. **Estados** — Estado vacío, cargando, error, desbordamiento
+6. **Consola** — ¿Nuevos errores JS después de las interacciones?
+7. **Responsividad** — Verificar viewport móvil si es relevante:
    ```bash
    $B viewport 375x812
    $B screenshot "$REPORT_DIR/screenshots/page-mobile.png"
    $B viewport 1280x720
    ```
 
-**Depth judgment:** Spend more time on core features (homepage, dashboard, checkout, search) and less on secondary pages (about, terms, privacy).
+**Criterio de profundidad:** Dedica más tiempo a funcionalidades principales (página principal, dashboard, checkout, búsqueda) y menos a páginas secundarias (acerca de, términos, privacidad).
 
-**Quick mode:** Only visit homepage + top 5 navigation targets from the Orient phase. Skip the per-page checklist — just check: loads? Console errors? Broken links visible?
+**Modo rápido:** Solo visita la página principal + los 5 principales objetivos de navegación de la fase de Orientación. Omite el checklist por página — solo verifica: ¿carga? ¿Errores en consola? ¿Enlaces rotos visibles?
 
-### Phase 5: Document
+### Fase 5: Documentar
 
-Document each issue **immediately when found** — don't batch them.
+Documenta cada incidencia **inmediatamente cuando se encuentre** — no las acumules.
 
-**Two evidence tiers:**
+**Dos niveles de evidencia:**
 
-**Interactive bugs** (broken flows, dead buttons, form failures):
-1. Take a screenshot before the action
-2. Perform the action
-3. Take a screenshot showing the result
-4. Use `snapshot -D` to show what changed
-5. Write repro steps referencing screenshots
+**Bugs interactivos** (flujos rotos, botones muertos, fallos de formulario):
+1. Toma una captura de pantalla antes de la acción
+2. Realiza la acción
+3. Toma una captura de pantalla mostrando el resultado
+4. Usa `snapshot -D` para mostrar qué cambió
+5. Escribe pasos de reproducción referenciando las capturas
 
 ```bash
 $B screenshot "$REPORT_DIR/screenshots/issue-001-step-1.png"
@@ -722,24 +724,24 @@ $B screenshot "$REPORT_DIR/screenshots/issue-001-result.png"
 $B snapshot -D
 ```
 
-**Static bugs** (typos, layout issues, missing images):
-1. Take a single annotated screenshot showing the problem
-2. Describe what's wrong
+**Bugs estáticos** (erratas, problemas de layout, imágenes faltantes):
+1. Toma una sola captura anotada mostrando el problema
+2. Describe qué está mal
 
 ```bash
 $B snapshot -i -a -o "$REPORT_DIR/screenshots/issue-002.png"
 ```
 
-**Write each issue to the report immediately** using the template format from `qa/templates/qa-report-template.md`.
+**Escribe cada incidencia en el informe inmediatamente** usando el formato de plantilla de `qa/templates/qa-report-template.md`.
 
-### Phase 6: Wrap Up
+### Fase 6: Cierre
 
-1. **Compute health score** using the rubric below
-2. **Write "Top 3 Things to Fix"** — the 3 highest-severity issues
-3. **Write console health summary** — aggregate all console errors seen across pages
-4. **Update severity counts** in the summary table
-5. **Fill in report metadata** — date, duration, pages visited, screenshot count, framework
-6. **Save baseline** — write `baseline.json` with:
+1. **Calcular puntuación de salud** usando la rúbrica a continuación
+2. **Escribir "Top 3 Cosas a Corregir"** — las 3 incidencias de mayor severidad
+3. **Escribir resumen de salud de consola** — agregar todos los errores de consola vistos en todas las páginas
+4. **Actualizar conteos de severidad** en la tabla resumen
+5. **Rellenar metadatos del informe** — fecha, duración, páginas visitadas, conteo de capturas, framework
+6. **Guardar línea base** — escribir `baseline.json` con:
    ```json
    {
      "date": "YYYY-MM-DD",
@@ -750,95 +752,95 @@ $B snapshot -i -a -o "$REPORT_DIR/screenshots/issue-002.png"
    }
    ```
 
-**Regression mode:** After writing the report, load the baseline file. Compare:
-- Health score delta
-- Issues fixed (in baseline but not current)
-- New issues (in current but not baseline)
-- Append the regression section to the report
+**Modo regresión:** Después de escribir el informe, carga el archivo de línea base. Compara:
+- Delta de puntuación de salud
+- Incidencias corregidas (en la línea base pero no en el actual)
+- Nuevas incidencias (en el actual pero no en la línea base)
+- Agrega la sección de regresión al informe
 
 ---
 
-## Health Score Rubric
+## Rúbrica de Puntuación de Salud
 
-Compute each category score (0-100), then take the weighted average.
+Calcula la puntuación de cada categoría (0-100), luego toma el promedio ponderado.
 
-### Console (weight: 15%)
-- 0 errors → 100
-- 1-3 errors → 70
-- 4-10 errors → 40
-- 10+ errors → 10
+### Consola (peso: 15%)
+- 0 errores → 100
+- 1-3 errores → 70
+- 4-10 errores → 40
+- 10+ errores → 10
 
-### Links (weight: 10%)
-- 0 broken → 100
-- Each broken link → -15 (minimum 0)
+### Enlaces (peso: 10%)
+- 0 rotos → 100
+- Cada enlace roto → -15 (mínimo 0)
 
-### Per-Category Scoring (Visual, Functional, UX, Content, Performance, Accessibility)
-Each category starts at 100. Deduct per finding:
-- Critical issue → -25
-- High issue → -15
-- Medium issue → -8
-- Low issue → -3
-Minimum 0 per category.
+### Puntuación por Categoría (Visual, Funcional, UX, Contenido, Rendimiento, Accesibilidad)
+Cada categoría empieza en 100. Deducción por hallazgo:
+- Incidencia crítica → -25
+- Incidencia alta → -15
+- Incidencia media → -8
+- Incidencia baja → -3
+Mínimo 0 por categoría.
 
-### Weights
-| Category | Weight |
-|----------|--------|
-| Console | 15% |
-| Links | 10% |
+### Pesos
+| Categoría | Peso |
+|-----------|------|
+| Consola | 15% |
+| Enlaces | 10% |
 | Visual | 10% |
-| Functional | 20% |
+| Funcional | 20% |
 | UX | 15% |
-| Performance | 10% |
-| Content | 5% |
-| Accessibility | 15% |
+| Rendimiento | 10% |
+| Contenido | 5% |
+| Accesibilidad | 15% |
 
-### Final Score
-`score = Σ (category_score × weight)`
+### Puntuación Final
+`score = Σ (puntuación_categoría × peso)`
 
 ---
 
-## Framework-Specific Guidance
+## Guía Específica por Framework
 
 ### Next.js
-- Check console for hydration errors (`Hydration failed`, `Text content did not match`)
-- Monitor `_next/data` requests in network — 404s indicate broken data fetching
-- Test client-side navigation (click links, don't just `goto`) — catches routing issues
-- Check for CLS (Cumulative Layout Shift) on pages with dynamic content
+- Verificar consola en busca de errores de hidratación (`Hydration failed`, `Text content did not match`)
+- Monitorear requests a `_next/data` en la red — los 404 indican fetching de datos roto
+- Probar navegación client-side (clic en enlaces, no solo `goto`) — detecta problemas de enrutamiento
+- Verificar CLS (Cumulative Layout Shift) en páginas con contenido dinámico
 
 ### Rails
-- Check for N+1 query warnings in console (if development mode)
-- Verify CSRF token presence in forms
-- Test Turbo/Stimulus integration — do page transitions work smoothly?
-- Check for flash messages appearing and dismissing correctly
+- Verificar advertencias de queries N+1 en consola (si está en modo desarrollo)
+- Verificar presencia de token CSRF en formularios
+- Probar integración Turbo/Stimulus — ¿las transiciones de página funcionan suavemente?
+- Verificar que los mensajes flash aparecen y se descartan correctamente
 
 ### WordPress
-- Check for plugin conflicts (JS errors from different plugins)
-- Verify admin bar visibility for logged-in users
-- Test REST API endpoints (`/wp-json/`)
-- Check for mixed content warnings (common with WP)
+- Verificar conflictos de plugins (errores JS de diferentes plugins)
+- Verificar visibilidad de la barra de admin para usuarios logueados
+- Probar endpoints de la API REST (`/wp-json/`)
+- Verificar advertencias de contenido mixto (común con WP)
 
-### General SPA (React, Vue, Angular)
-- Use `snapshot -i` for navigation — `links` command misses client-side routes
-- Check for stale state (navigate away and back — does data refresh?)
-- Test browser back/forward — does the app handle history correctly?
-- Check for memory leaks (monitor console after extended use)
+### SPA General (React, Vue, Angular)
+- Usar `snapshot -i` para navegación — el comando `links` no detecta rutas client-side
+- Verificar estado obsoleto (navegar lejos y volver — ¿se refrescan los datos?)
+- Probar botón atrás/adelante del navegador — ¿la app maneja el historial correctamente?
+- Verificar fugas de memoria (monitorear consola después de uso prolongado)
 
 ---
 
-## Important Rules
+## Reglas Importantes
 
-1. **Repro is everything.** Every issue needs at least one screenshot. No exceptions.
-2. **Verify before documenting.** Retry the issue once to confirm it's reproducible, not a fluke.
-3. **Never include credentials.** Write `[REDACTED]` for passwords in repro steps.
-4. **Write incrementally.** Append each issue to the report as you find it. Don't batch.
-5. **Never read source code.** Test as a user, not a developer.
-6. **Check console after every interaction.** JS errors that don't surface visually are still bugs.
-7. **Test like a user.** Use realistic data. Walk through complete workflows end-to-end.
-8. **Depth over breadth.** 5-10 well-documented issues with evidence > 20 vague descriptions.
-9. **Never delete output files.** Screenshots and reports accumulate — that's intentional.
-10. **Use `snapshot -C` for tricky UIs.** Finds clickable divs that the accessibility tree misses.
-11. **Show screenshots to the user.** After every `$B screenshot`, `$B snapshot -a -o`, or `$B responsive` command, use the Read tool on the output file(s) so the user can see them inline. For `responsive` (3 files), Read all three. This is critical — without it, screenshots are invisible to the user.
-12. **Never refuse to use the browser.** When the user invokes /qa or /qa-only, they are requesting browser-based testing. Never suggest evals, unit tests, or other alternatives as a substitute. Even if the diff appears to have no UI changes, backend changes affect app behavior — always open the browser and test.
+1. **La reproducción es todo.** Cada incidencia necesita al menos una captura de pantalla. Sin excepciones.
+2. **Verificar antes de documentar.** Reintenta la incidencia una vez para confirmar que es reproducible, no casual.
+3. **Nunca incluir credenciales.** Escribe `[REDACTED]` para contraseñas en los pasos de reproducción.
+4. **Escribir incrementalmente.** Agrega cada incidencia al informe conforme la encuentres. No acumules.
+5. **Nunca leer código fuente.** Prueba como un usuario, no como un desarrollador.
+6. **Verificar consola después de cada interacción.** Los errores JS que no se manifiestan visualmente siguen siendo bugs.
+7. **Probar como un usuario.** Usa datos realistas. Recorre flujos de trabajo completos de extremo a extremo.
+8. **Profundidad sobre amplitud.** 5-10 incidencias bien documentadas con evidencia > 20 descripciones vagas.
+9. **Nunca eliminar archivos de salida.** Las capturas de pantalla e informes se acumulan — es intencional.
+10. **Usar `snapshot -C` para UIs complicadas.** Encuentra divs clicables que el árbol de accesibilidad no detecta.
+11. **Mostrar capturas de pantalla al usuario.** Después de cada comando `$B screenshot`, `$B snapshot -a -o`, o `$B responsive`, usa la herramienta Read en los archivos de salida para que el usuario pueda verlos en línea. Para `responsive` (3 archivos), lee los tres. Esto es crítico — sin ello, las capturas son invisibles para el usuario.
+12. **Nunca negarte a usar el navegador.** Cuando el usuario invoca /qa o /qa-only, está solicitando pruebas basadas en navegador. Nunca sugieras evals, tests unitarios u otras alternativas como sustituto. Incluso si el diff parece no tener cambios de UI, los cambios de backend afectan el comportamiento de la app — siempre abre el navegador y prueba.
 
 Registra la puntuación de salud de la línea base al final de la Fase 6.
 

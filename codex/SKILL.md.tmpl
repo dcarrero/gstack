@@ -127,7 +127,7 @@ ANÁLISIS ENTRE MODELOS:
 
 7. Persistir el resultado de la revisión:
 ```bash
-~/.claude/skills/gstack/bin/gstack-review-log '{"skill":"codex-review","timestamp":"TIMESTAMP","status":"STATUS","gate":"GATE","findings":N,"findings_fixed":N}'
+~/.claude/skills/gstack/bin/gstack-review-log '{"skill":"codex-review","timestamp":"TIMESTAMP","status":"STATUS","gate":"GATE","findings":N,"findings_fixed":N,"commit":"'"$(git rev-parse --short HEAD)"'"}'
 ```
 
 Sustituir: TIMESTAMP (ISO 8601), STATUS ("clean" si PASS, "issues_found" si FAIL),

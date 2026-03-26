@@ -9,22 +9,42 @@ export function generateSlugSetup(ctx: TemplateContext): string {
 }
 
 export function generateBaseBranchDetect(_ctx: TemplateContext): string {
-  return `## Paso 0: Detectar rama base
+  return `## Paso 0: Detectar plataforma y rama base
 
-Determina a qué rama apunta este PR. Usa el resultado como "la rama base" en todos los pasos siguientes.
+Primero, detecta la plataforma de alojamiento git desde la URL del remoto:
 
-1. Comprueba si ya existe un PR para esta rama:
-   \`gh pr view --json baseRefName -q .baseRefName\`
-   Si tiene éxito, usa el nombre de rama impreso como la rama base.
+\`\`\`bash
+git remote get-url origin 2>/dev/null
+\`\`\`
 
-2. Si no existe PR (el comando falla), detecta la rama por defecto del repositorio:
-   \`gh repo view --json defaultBranchRef -q .defaultBranchRef.name\`
+- Si la URL contiene "github.com" → la plataforma es **GitHub**
+- Si la URL contiene "gitlab" → la plataforma es **GitLab**
+- De lo contrario, comprueba la disponibilidad del CLI:
+  - \`gh auth status 2>/dev/null\` tiene éxito → la plataforma es **GitHub** (cubre GitHub Enterprise)
+  - \`glab auth status 2>/dev/null\` tiene éxito → la plataforma es **GitLab** (cubre auto-alojado)
+  - Ninguno → **desconocida** (usa solo comandos nativos de git)
 
-3. Si ambos comandos fallan, recurre a \`main\`.
+Determina a qué rama apunta este PR/MR, o la rama por defecto del repositorio si no
+existe PR/MR. Usa el resultado como "la rama base" en todos los pasos siguientes.
+
+**Si es GitHub:**
+1. \`gh pr view --json baseRefName -q .baseRefName\` — si tiene éxito, úsala
+2. \`gh repo view --json defaultBranchRef -q .defaultBranchRef.name\` — si tiene éxito, úsala
+
+**Si es GitLab:**
+1. \`glab mr view -F json 2>/dev/null\` y extrae el campo \`target_branch\` — si tiene éxito, úsala
+2. \`glab repo view -F json 2>/dev/null\` y extrae el campo \`default_branch\` — si tiene éxito, úsala
+
+**Respaldo nativo de git (si la plataforma es desconocida o los comandos CLI fallan):**
+1. \`git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|refs/remotes/origin/||'\`
+2. Si falla: \`git rev-parse --verify origin/main 2>/dev/null\` → usa \`main\`
+3. Si falla: \`git rev-parse --verify origin/master 2>/dev/null\` → usa \`master\`
+
+Si todo falla, recurre a \`main\`.
 
 Imprime el nombre de la rama base detectada. En cada comando posterior de \`git diff\`, \`git log\`,
-\`git fetch\`, \`git merge\` y \`gh pr create\`, sustituye el nombre de rama detectado
-donde las instrucciones digan "la rama base."
+\`git fetch\`, \`git merge\` y creación de PR/MR, sustituye el nombre de rama detectado
+donde las instrucciones digan "la rama base" o \`<default>\`.
 
 ---`;
 }

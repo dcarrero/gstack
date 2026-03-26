@@ -292,12 +292,18 @@ EOF
 git push
 ```
 
-**Actualización del cuerpo del PR (idempotente, segura ante concurrencia):**
+**Actualización del cuerpo del PR/MR (idempotente, segura ante concurrencia):**
 
-1. Leer el cuerpo existente del PR en un archivo temporal con PID único:
+1. Leer el cuerpo existente del PR/MR en un archivo temporal con PID único (usar la plataforma detectada en el Paso 0):
 
+**If GitHub:**
 ```bash
 gh pr view --json body -q .body > /tmp/gstack-pr-body-$$.md
+```
+
+**Si es GitLab:**
+```bash
+glab mr view -F json 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin).get('description',''))" > /tmp/gstack-pr-body-$$.md
 ```
 
 2. Si el archivo temporal ya contiene una sección `## Documentation`, reemplazar esa sección con el
@@ -309,8 +315,18 @@ gh pr view --json body -q .body > /tmp/gstack-pr-body-$$.md
 
 4. Escribir el cuerpo actualizado de vuelta:
 
+**If GitHub:**
 ```bash
 gh pr edit --body-file /tmp/gstack-pr-body-$$.md
+```
+
+**Si es GitLab:**
+Leer el contenido de `/tmp/gstack-pr-body-$$.md` usando la herramienta Read, luego pasarlo a `glab mr update` usando un heredoc para evitar problemas con metacaracteres del shell:
+```bash
+glab mr update -d "$(cat <<'MRBODY'
+<pegar el contenido del archivo aquí>
+MRBODY
+)"
 ```
 
 5. Limpiar el archivo temporal:
@@ -319,8 +335,8 @@ gh pr edit --body-file /tmp/gstack-pr-body-$$.md
 rm -f /tmp/gstack-pr-body-$$.md
 ```
 
-6. Si `gh pr view` falla (no existe PR): omitir con el mensaje "No se encontró PR — se omite la actualización del cuerpo."
-7. Si `gh pr edit` falla: advertir "No se pudo actualizar el cuerpo del PR — los cambios de documentación están en el
+6. Si `gh pr view` / `glab mr view` falla (no existe PR/MR): omitir con el mensaje "No se encontró PR/MR — se omite la actualización del cuerpo."
+7. Si `gh pr edit` / `glab mr update` falla: advertir "No se pudo actualizar el cuerpo del PR/MR — los cambios de documentación están en el
    commit." y continuar.
 
 **Resumen estructurado de salud de documentación (resultado final):**

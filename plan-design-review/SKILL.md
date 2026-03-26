@@ -21,7 +21,7 @@ allowed-tools:
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
 <!-- Regenerate: bun run gen:skill-docs -->
 
-## Preamble (run first)
+## Preámbulo (ejecutar primero)
 
 ```bash
 _UPD=$(~/.claude/skills/gstack/bin/gstack-update-check 2>/dev/null || .claude/skills/gstack/bin/gstack-update-check 2>/dev/null || true)
@@ -32,9 +32,11 @@ _SESSIONS=$(find ~/.gstack/sessions -mmin -120 -type f 2>/dev/null | wc -l | tr 
 find ~/.gstack/sessions -mmin +120 -type f -delete 2>/dev/null || true
 _CONTRIB=$(~/.claude/skills/gstack/bin/gstack-config get gstack_contributor 2>/dev/null || true)
 _PROACTIVE=$(~/.claude/skills/gstack/bin/gstack-config get proactive 2>/dev/null || echo "true")
+_PROACTIVE_PROMPTED=$([ -f ~/.gstack/.proactive-prompted ] && echo "yes" || echo "no")
 _BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
 echo "BRANCH: $_BRANCH"
 echo "PROACTIVE: $_PROACTIVE"
+echo "PROACTIVE_PROMPTED: $_PROACTIVE_PROMPTED"
 source <(~/.claude/skills/gstack/bin/gstack-repo-mode 2>/dev/null) || true
 REPO_MODE=${REPO_MODE:-unknown}
 echo "REPO_MODE: $REPO_MODE"
@@ -48,205 +50,185 @@ echo "TELEMETRY: ${_TEL:-off}"
 echo "TEL_PROMPTED: $_TEL_PROMPTED"
 mkdir -p ~/.gstack/analytics
 echo '{"skill":"plan-design-review","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","repo":"'$(basename "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null || echo "unknown")'"}'  >> ~/.gstack/analytics/skill-usage.jsonl 2>/dev/null || true
-# zsh-compatible: use find instead of glob to avoid NOMATCH error
+# compatible con zsh: usar find en lugar de glob para evitar error NOMATCH
 for _PF in $(find ~/.gstack/analytics -maxdepth 1 -name '.pending-*' 2>/dev/null); do [ -f "$_PF" ] && ~/.claude/skills/gstack/bin/gstack-telemetry-log --event-type skill_run --skill _pending_finalize --outcome unknown --session-id "$_SESSION_ID" 2>/dev/null || true; break; done
 ```
 
-If `PROACTIVE` is `"false"`, do not proactively suggest gstack skills — only invoke
-them when the user explicitly asks. The user opted out of proactive suggestions.
+Si `PROACTIVE` es `"false"`, no sugieras proactivamente skills de gstack NI invoques
+automáticamente skills según el contexto de la conversación. Solo ejecuta los skills que el usuario
+escriba explícitamente (p. ej., /qa, /ship). Si hubieras invocado un skill automáticamente, en su lugar di brevemente:
+"Creo que /nombredelskill podría ayudar aquí — ¿quieres que lo ejecute?" y espera confirmación.
+El usuario optó por desactivar el comportamiento proactivo.
 
-If output shows `UPGRADE_AVAILABLE <old> <new>`: read `~/.claude/skills/gstack/gstack-upgrade/SKILL.md` and follow the "Inline upgrade flow" (auto-upgrade if configured, otherwise AskUserQuestion with 4 options, write snooze state if declined). If `JUST_UPGRADED <from> <to>`: tell user "Running gstack v{to} (just updated!)" and continue.
+Si la salida muestra `UPGRADE_AVAILABLE <old> <new>`: lee `~/.claude/skills/gstack/gstack-upgrade/SKILL.md` y sigue el "Flujo de actualización en línea" (actualizar automáticamente si está configurado, de lo contrario AskUserQuestion con 4 opciones, guardar estado de pausa si se rechaza). Si `JUST_UPGRADED <from> <to>`: informa al usuario "Ejecutando gstack v{to} (¡recién actualizado!)" y continúa.
 
-If `LAKE_INTRO` is `no`: Before continuing, introduce the Completeness Principle.
-Tell the user: "gstack follows the **Boil the Lake** principle — always do the complete
-thing when AI makes the marginal cost near-zero. Read more: https://garryslist.org/posts/boil-the-ocean"
-Then offer to open the essay in their default browser:
+Si `LAKE_INTRO` es `no`: Antes de continuar, presenta el Principio de Completitud.
+Dile al usuario: "gstack sigue el principio de **Completar sin Atajos** — siempre hacer lo completo
+cuando la IA hace que el coste marginal sea casi cero. Más información: https://garryslist.org/posts/boil-the-ocean"
+Luego ofrece abrir el ensayo en su navegador predeterminado:
 
 ```bash
 open https://garryslist.org/posts/boil-the-ocean
 touch ~/.gstack/.completeness-intro-seen
 ```
 
-Only run `open` if the user says yes. Always run `touch` to mark as seen. This only happens once.
+Solo ejecuta `open` si el usuario dice que sí. Siempre ejecuta `touch` para marcarlo como visto. Esto solo ocurre una vez.
 
-If `TEL_PROMPTED` is `no` AND `LAKE_INTRO` is `yes`: After the lake intro is handled,
-ask the user about telemetry. Use AskUserQuestion:
+Si `TEL_PROMPTED` es `no` Y `LAKE_INTRO` es `yes`: Después de gestionar la introducción del principio de completitud,
+pregunta al usuario sobre la telemetría. Usa AskUserQuestion:
 
-> Help gstack get better! Community mode shares usage data (which skills you use, how long
-> they take, crash info) with a stable device ID so we can track trends and fix bugs faster.
-> No code, file paths, or repo names are ever sent.
-> Change anytime with `gstack-config set telemetry off`.
+> ¡Ayuda a mejorar gstack! El modo comunidad comparte datos de uso (qué skills usas, cuánto
+> tardan, información de errores) con un ID de dispositivo estable para que podamos rastrear tendencias y corregir errores más rápido.
+> Nunca se envía código, rutas de archivos ni nombres de repositorios.
+> Cámbialo en cualquier momento con `gstack-config set telemetry off`.
 
-Options:
-- A) Help gstack get better! (recommended)
-- B) No thanks
+Opciones:
+- A) ¡Ayudar a mejorar gstack! (recomendado)
+- B) No, gracias
 
-If A: run `~/.claude/skills/gstack/bin/gstack-config set telemetry community`
+Si A: ejecuta `~/.claude/skills/gstack/bin/gstack-config set telemetry community`
 
-If B: ask a follow-up AskUserQuestion:
+Si B: haz una pregunta de seguimiento con AskUserQuestion:
 
-> How about anonymous mode? We just learn that *someone* used gstack — no unique ID,
-> no way to connect sessions. Just a counter that helps us know if anyone's out there.
+> ¿Qué tal el modo anónimo? Solo sabríamos que *alguien* usó gstack — sin ID único,
+> sin forma de conectar sesiones. Solo un contador que nos ayuda a saber si alguien está ahí fuera.
 
-Options:
-- A) Sure, anonymous is fine
-- B) No thanks, fully off
+Opciones:
+- A) Claro, anónimo está bien
+- B) No, gracias, totalmente desactivado
 
-If B→A: run `~/.claude/skills/gstack/bin/gstack-config set telemetry anonymous`
-If B→B: run `~/.claude/skills/gstack/bin/gstack-config set telemetry off`
+Si B→A: ejecuta `~/.claude/skills/gstack/bin/gstack-config set telemetry anonymous`
+Si B→B: ejecuta `~/.claude/skills/gstack/bin/gstack-config set telemetry off`
 
-Always run:
+Siempre ejecuta:
 ```bash
 touch ~/.gstack/.telemetry-prompted
 ```
 
-This only happens once. If `TEL_PROMPTED` is `yes`, skip this entirely.
+Esto solo ocurre una vez. Si `TEL_PROMPTED` es `yes`, omite esto por completo.
 
-## AskUserQuestion Format
+Si `PROACTIVE_PROMPTED` es `no` Y `TEL_PROMPTED` es `yes`: Después de gestionar la telemetría,
+pregunta al usuario sobre el comportamiento proactivo. Usa AskUserQuestion:
 
-**ALWAYS follow this structure for every AskUserQuestion call:**
-1. **Re-ground:** State the project, the current branch (use the `_BRANCH` value printed by the preamble — NOT any branch from conversation history or gitStatus), and the current plan/task. (1-2 sentences)
-2. **Simplify:** Explain the problem in plain English a smart 16-year-old could follow. No raw function names, no internal jargon, no implementation details. Use concrete examples and analogies. Say what it DOES, not what it's called.
-3. **Recommend:** `RECOMMENDATION: Choose [X] because [one-line reason]` — always prefer the complete option over shortcuts (see Completeness Principle). Include `Completeness: X/10` for each option. Calibration: 10 = complete implementation (all edge cases, full coverage), 7 = covers happy path but skips some edges, 3 = shortcut that defers significant work. If both options are 8+, pick the higher; if one is ≤5, flag it.
-4. **Options:** Lettered options: `A) ... B) ... C) ...` — when an option involves effort, show both scales: `(human: ~X / CC: ~Y)`
-5. **One decision per question:** NEVER combine multiple independent decisions into a single AskUserQuestion. Each decision gets its own call with its own recommendation and focused options. Batching multiple AskUserQuestion calls in rapid succession is fine and often preferred. Only after all individual taste decisions are resolved should a final "Approve / Revise / Reject" gate be presented.
+> gstack puede detectar proactivamente cuándo podrías necesitar un skill mientras trabajas —
+> como sugerir /qa cuando dices "¿esto funciona?" o /investigate cuando encuentras
+> un error. Recomendamos mantenerlo activado — acelera cada parte de tu flujo de trabajo.
 
-Assume the user hasn't looked at this window in 20 minutes and doesn't have the code open. If you'd need to read the source to understand your own explanation, it's too complex.
+Opciones:
+- A) Mantenerlo activado (recomendado)
+- B) Desactivarlo — yo escribiré los /comandos manualmente
 
-Per-skill instructions may add additional formatting rules on top of this baseline.
+Si A: ejecuta `~/.claude/skills/gstack/bin/gstack-config set proactive true`
+Si B: ejecuta `~/.claude/skills/gstack/bin/gstack-config set proactive false`
 
-## Completeness Principle — Boil the Lake
+Siempre ejecuta:
+```bash
+touch ~/.gstack/.proactive-prompted
+```
 
-AI-assisted coding makes the marginal cost of completeness near-zero. When you present options:
+Esto solo ocurre una vez. Si `PROACTIVE_PROMPTED` es `yes`, omite esto por completo.
 
-- If Option A is the complete implementation (full parity, all edge cases, 100% coverage) and Option B is a shortcut that saves modest effort — **always recommend A**. The delta between 80 lines and 150 lines is meaningless with CC+gstack. "Good enough" is the wrong instinct when "complete" costs minutes more.
-- **Lake vs. ocean:** A "lake" is boilable — 100% test coverage for a module, full feature implementation, handling all edge cases, complete error paths. An "ocean" is not — rewriting an entire system from scratch, adding features to dependencies you don't control, multi-quarter platform migrations. Recommend boiling lakes. Flag oceans as out of scope.
-- **When estimating effort**, always show both scales: human team time and CC+gstack time. The compression ratio varies by task type — use this reference:
+## Formato de AskUserQuestion
 
-| Task type | Human team | CC+gstack | Compression |
+**SIEMPRE sigue esta estructura para cada llamada a AskUserQuestion:**
+1. **Re-contextualizar:** Indica el proyecto, la rama actual (usa el valor `_BRANCH` impreso por el preámbulo — NO cualquier rama del historial de conversación o gitStatus), y el plan/tarea actual. (1-2 frases)
+2. **Simplificar:** Explica el problema en español sencillo que un chico listo de 16 años pueda seguir. Sin nombres de funciones crudos, sin jerga interna, sin detalles de implementación. Usa ejemplos concretos y analogías. Di lo que HACE, no cómo se llama.
+3. **Recomendar:** `RECOMMENDATION: Elige [X] porque [razón en una línea]` — siempre prefiere la opción completa sobre los atajos (ver Principio de Completitud). Incluye `Completeness: X/10` para cada opción. Calibración: 10 = implementación completa (todos los casos límite, cobertura total), 7 = cubre el camino feliz pero omite algunos bordes, 3 = atajo que posterga trabajo significativo. Si ambas opciones son 8+, elige la mayor; si una es ≤5, señálalo.
+4. **Opciones:** Opciones con letras: `A) ... B) ... C) ...` — cuando una opción implica esfuerzo, muestra ambas escalas: `(humano: ~X / CC: ~Y)`
+
+Asume que el usuario no ha mirado esta ventana en 20 minutos y no tiene el código abierto. Si necesitarías leer el código fuente para entender tu propia explicación, es demasiado complejo.
+
+Las instrucciones por skill pueden añadir reglas de formato adicionales sobre esta base.
+
+## Principio de Completitud — Completar sin Atajos
+
+La IA hace que la completitud sea casi gratuita. Siempre recomienda la opción completa sobre los atajos — la diferencia es de minutos con CC+gstack. Si es abarcable (100% de cobertura, todos los casos límite), complétalo. Si es inabarcable (reescritura completa, migración de varios trimestres), márcalo como fuera de alcance.
+
+**Referencia de esfuerzo** — muestra siempre ambas escalas:
+
+| Tipo de tarea | Equipo humano | CC+gstack | Compresión |
 |-----------|-----------|-----------|-------------|
-| Boilerplate / scaffolding | 2 days | 15 min | ~100x |
-| Test writing | 1 day | 15 min | ~50x |
-| Feature implementation | 1 week | 30 min | ~30x |
-| Bug fix + regression test | 4 hours | 15 min | ~20x |
-| Architecture / design | 2 days | 4 hours | ~5x |
-| Research / exploration | 1 day | 3 hours | ~3x |
+| Boilerplate | 2 días | 15 min | ~100x |
+| Tests | 1 día | 15 min | ~50x |
+| Funcionalidad | 1 semana | 30 min | ~30x |
+| Corrección de errores | 4 horas | 15 min | ~20x |
 
-- This principle applies to test coverage, error handling, documentation, edge cases, and feature completeness. Don't skip the last 10% to "save time" — with AI, that 10% costs seconds.
+Incluye `Completeness: X/10` para cada opción (10=todos los casos límite, 7=camino feliz, 3=atajo).
 
-**Anti-patterns — DON'T do this:**
-- BAD: "Choose B — it covers 90% of the value with less code." (If A is only 70 lines more, choose A.)
-- BAD: "We can skip edge case handling to save time." (Edge case handling costs minutes with CC.)
-- BAD: "Let's defer test coverage to a follow-up PR." (Tests are the cheapest lake to boil.)
-- BAD: Quoting only human-team effort: "This would take 2 weeks." (Say: "2 weeks human / ~1 hour CC.")
+## Propiedad del Repositorio — Si ves algo, di algo
 
-## Repo Ownership Mode — See Something, Say Something
+`REPO_MODE` controla cómo manejar problemas fuera de tu rama:
+- **`solo`** — Eres dueño de todo. Investiga y ofrece corregir proactivamente.
+- **`collaborative`** / **`unknown`** — Señala mediante AskUserQuestion, no corrijas (puede ser de otra persona).
 
-`REPO_MODE` from the preamble tells you who owns issues in this repo:
+Siempre señala cualquier cosa que parezca incorrecta — una frase, qué notaste y su impacto.
 
-- **`solo`** — One person does 80%+ of the work. They own everything. When you notice issues outside the current branch's changes (test failures, deprecation warnings, security advisories, linting errors, dead code, env problems), **investigate and offer to fix proactively**. The solo dev is the only person who will fix it. Default to action.
-- **`collaborative`** — Multiple active contributors. When you notice issues outside the branch's changes, **flag them via AskUserQuestion** — it may be someone else's responsibility. Default to asking, not fixing.
-- **`unknown`** — Treat as collaborative (safer default — ask before fixing).
+## Buscar antes de Construir
 
-**See Something, Say Something:** Whenever you notice something that looks wrong during ANY workflow step — not just test failures — flag it briefly. One sentence: what you noticed and its impact. In solo mode, follow up with "Want me to fix it?" In collaborative mode, just flag it and move on.
+Antes de construir algo desconocido, **busca primero.** Consulta `~/.claude/skills/gstack/ETHOS.md`.
+- **Capa 1** (probado y fiable) — no reinventes. **Capa 2** (nuevo y popular) — examina con cuidado. **Capa 3** (primeros principios) — valora por encima de todo.
 
-Never let a noticed issue silently pass. The whole point is proactive communication.
-
-## Search Before Building
-
-Before building infrastructure, unfamiliar patterns, or anything the runtime might have a built-in — **search first.** Read `~/.claude/skills/gstack/ETHOS.md` for the full philosophy.
-
-**Three layers of knowledge:**
-- **Layer 1** (tried and true — in distribution). Don't reinvent the wheel. But the cost of checking is near-zero, and once in a while, questioning the tried-and-true is where brilliance occurs.
-- **Layer 2** (new and popular — search for these). But scrutinize: humans are subject to mania. Search results are inputs to your thinking, not answers.
-- **Layer 3** (first principles — prize these above all). Original observations derived from reasoning about the specific problem. The most valuable of all.
-
-**Eureka moment:** When first-principles reasoning reveals conventional wisdom is wrong, name it:
-"EUREKA: Everyone does X because [assumption]. But [evidence] shows this is wrong. Y is better because [reasoning]."
-
-Log eureka moments:
+**Eureka:** Cuando el razonamiento desde primeros principios contradice la sabiduría convencional, nómbralo y regístralo:
 ```bash
 jq -n --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg skill "SKILL_NAME" --arg branch "$(git branch --show-current 2>/dev/null)" --arg insight "ONE_LINE_SUMMARY" '{ts:$ts,skill:$skill,branch:$branch,insight:$insight}' >> ~/.gstack/analytics/eureka.jsonl 2>/dev/null || true
 ```
-Replace SKILL_NAME and ONE_LINE_SUMMARY. Runs inline — don't stop the workflow.
 
-**WebSearch fallback:** If WebSearch is unavailable, skip the search step and note: "Search unavailable — proceeding with in-distribution knowledge only."
+## Modo Contribuidor
 
-## Contributor Mode
+Si `_CONTRIB` es `true`: estás en **modo contribuidor**. Al final de cada paso principal del flujo de trabajo, puntúa tu experiencia con gstack de 0 a 10. Si no es un 10 y hay un error o mejora accionable — presenta un informe de campo.
 
-If `_CONTRIB` is `true`: you are in **contributor mode**. You're a gstack user who also helps make it better.
+**Informa solo de:** errores de herramientas de gstack donde la entrada era razonable pero gstack falló. **Omite:** errores de la aplicación del usuario, errores de red, fallos de autenticación en el sitio del usuario.
 
-**At the end of each major workflow step** (not after every single command), reflect on the gstack tooling you used. Rate your experience 0 to 10. If it wasn't a 10, think about why. If there is an obvious, actionable bug OR an insightful, interesting thing that could have been done better by gstack code or skill markdown — file a field report. Maybe our contributor will help make us better!
-
-**Calibration — this is the bar:** For example, `$B js "await fetch(...)"` used to fail with `SyntaxError: await is only valid in async functions` because gstack didn't wrap expressions in async context. Small, but the input was reasonable and gstack should have handled it — that's the kind of thing worth filing. Things less consequential than this, ignore.
-
-**NOT worth filing:** user's app bugs, network errors to user's URL, auth failures on user's site, user's own JS logic bugs.
-
-**To file:** write `~/.gstack/contributor-logs/{slug}.md` with **all sections below** (do not truncate — include every section through the Date/Version footer):
-
+**Para informar:** escribe `~/.gstack/contributor-logs/{slug}.md`:
 ```
-# {Title}
-
-Hey gstack team — ran into this while using /{skill-name}:
-
-**What I was trying to do:** {what the user/agent was attempting}
-**What happened instead:** {what actually happened}
-**My rating:** {0-10} — {one sentence on why it wasn't a 10}
-
-## Steps to reproduce
-1. {step}
-
-## Raw output
+# {Título}
+**Qué intenté:** {acción} | **Qué pasó:** {resultado} | **Puntuación:** {0-10}
+## Reproducción
+1. {paso}
+## Qué lo haría un 10
+{una frase}
+**Fecha:** {YYYY-MM-DD} | **Versión:** {versión} | **Skill:** /{skill}
 ```
-{paste the actual error or unexpected output here}
-```
+Slug: minúsculas con guiones, máximo 60 caracteres. Omitir si ya existe. Máximo 3/sesión. Informar en línea, no detenerse.
 
-## What would make this a 10
-{one sentence: what gstack should have done differently}
+## Protocolo de Estado de Finalización
 
-**Date:** {YYYY-MM-DD} | **Version:** {gstack version} | **Skill:** /{skill}
-```
+Al completar un flujo de trabajo de un skill, informa el estado usando uno de:
+- **DONE** — Todos los pasos completados exitosamente. Evidencia proporcionada para cada afirmación.
+- **DONE_WITH_CONCERNS** — Completado, pero con problemas que el usuario debería conocer. Lista cada preocupación.
+- **BLOCKED** — No se puede continuar. Indica qué está bloqueando y qué se intentó.
+- **NEEDS_CONTEXT** — Falta información necesaria para continuar. Indica exactamente qué necesitas.
 
-Slug: lowercase, hyphens, max 60 chars (e.g. `browse-js-no-await`). Skip if file already exists. Max 3 reports per session. File inline and continue — don't stop the workflow. Tell user: "Filed gstack field report: {title}"
+### Escalación
 
-## Completion Status Protocol
+Siempre está bien detenerse y decir "esto es demasiado difícil para mí" o "no estoy seguro de este resultado."
 
-When completing a skill workflow, report status using one of:
-- **DONE** — All steps completed successfully. Evidence provided for each claim.
-- **DONE_WITH_CONCERNS** — Completed, but with issues the user should know about. List each concern.
-- **BLOCKED** — Cannot proceed. State what is blocking and what was tried.
-- **NEEDS_CONTEXT** — Missing information required to continue. State exactly what you need.
+Un trabajo mal hecho es peor que no hacer nada. No serás penalizado por escalar.
+- Si has intentado una tarea 3 veces sin éxito, DETENTE y escala.
+- Si no estás seguro sobre un cambio sensible en seguridad, DETENTE y escala.
+- Si el alcance del trabajo excede lo que puedes verificar, DETENTE y escala.
 
-### Escalation
-
-It is always OK to stop and say "this is too hard for me" or "I'm not confident in this result."
-
-Bad work is worse than no work. You will not be penalized for escalating.
-- If you have attempted a task 3 times without success, STOP and escalate.
-- If you are uncertain about a security-sensitive change, STOP and escalate.
-- If the scope of work exceeds what you can verify, STOP and escalate.
-
-Escalation format:
+Formato de escalación:
 ```
 STATUS: BLOCKED | NEEDS_CONTEXT
-REASON: [1-2 sentences]
-ATTEMPTED: [what you tried]
-RECOMMENDATION: [what the user should do next]
+REASON: [1-2 frases]
+ATTEMPTED: [qué intentaste]
+RECOMMENDATION: [qué debería hacer el usuario a continuación]
 ```
 
-## Telemetry (run last)
+## Telemetría (ejecutar al final)
 
-After the skill workflow completes (success, error, or abort), log the telemetry event.
-Determine the skill name from the `name:` field in this file's YAML frontmatter.
-Determine the outcome from the workflow result (success if completed normally, error
-if it failed, abort if the user interrupted).
+Después de que el flujo de trabajo del skill se complete (éxito, error o cancelación), registra el evento de telemetría.
+Determina el nombre del skill a partir del campo `name:` en el frontmatter YAML de este archivo.
+Determina el resultado del flujo de trabajo (success si se completó normalmente, error
+si falló, abort si el usuario interrumpió).
 
-**PLAN MODE EXCEPTION — ALWAYS RUN:** This command writes telemetry to
-`~/.gstack/analytics/` (user config directory, not project files). The skill
-preamble already writes to the same directory — this is the same pattern.
-Skipping this command loses session duration and outcome data.
+**EXCEPCIÓN DE MODO PLAN — EJECUTAR SIEMPRE:** Este comando escribe telemetría en
+`~/.gstack/analytics/` (directorio de configuración del usuario, no archivos del proyecto). El preámbulo
+del skill ya escribe en el mismo directorio — es el mismo patrón.
+Omitir este comando pierde datos de duración de sesión y resultado.
 
-Run this bash:
+Ejecuta este bash:
 
 ```bash
 _TEL_END=$(date +%s)
@@ -257,29 +239,29 @@ rm -f ~/.gstack/analytics/.pending-"$_SESSION_ID" 2>/dev/null || true
   --used-browse "USED_BROWSE" --session-id "$_SESSION_ID" 2>/dev/null &
 ```
 
-Replace `SKILL_NAME` with the actual skill name from frontmatter, `OUTCOME` with
-success/error/abort, and `USED_BROWSE` with true/false based on whether `$B` was used.
-If you cannot determine the outcome, use "unknown". This runs in the background and
-never blocks the user.
+Reemplaza `SKILL_NAME` con el nombre real del skill del frontmatter, `OUTCOME` con
+success/error/abort, y `USED_BROWSE` con true/false según si se usó `$B`.
+Si no puedes determinar el resultado, usa "unknown". Esto se ejecuta en segundo plano y
+nunca bloquea al usuario.
 
-## Plan Status Footer
+## Pie de Estado del Plan
 
-When you are in plan mode and about to call ExitPlanMode:
+Cuando estés en modo plan y a punto de llamar a ExitPlanMode:
 
-1. Check if the plan file already has a `## GSTACK REVIEW REPORT` section.
-2. If it DOES — skip (a review skill already wrote a richer report).
-3. If it does NOT — run this command:
+1. Comprueba si el archivo del plan ya tiene una sección `## GSTACK REVIEW REPORT`.
+2. Si la TIENE — omite (un skill de revisión ya escribió un informe más completo).
+3. Si NO la tiene — ejecuta este comando:
 
 \`\`\`bash
 ~/.claude/skills/gstack/bin/gstack-review-read
 \`\`\`
 
-Then write a `## GSTACK REVIEW REPORT` section to the end of the plan file:
+Luego escribe una sección `## GSTACK REVIEW REPORT` al final del archivo del plan:
 
-- If the output contains review entries (JSONL lines before `---CONFIG---`): format the
-  standard report table with runs/status/findings per skill, same format as the review
-  skills use.
-- If the output is `NO_REVIEWS` or empty: write this placeholder table:
+- Si la salida contiene entradas de revisión (líneas JSONL antes de `---CONFIG---`): formatea la
+  tabla estándar del informe con ejecuciones/estado/hallazgos por skill, mismo formato que usan los
+  skills de revisión.
+- Si la salida es `NO_REVIEWS` o vacía: escribe esta tabla de marcador de posición:
 
 \`\`\`markdown
 ## GSTACK REVIEW REPORT
@@ -291,29 +273,49 @@ Then write a `## GSTACK REVIEW REPORT` section to the end of the plan file:
 | Eng Review | \`/plan-eng-review\` | Architecture & tests (required) | 0 | — | — |
 | Design Review | \`/plan-design-review\` | UI/UX gaps | 0 | — | — |
 
-**VERDICT:** NO REVIEWS YET — run \`/autoplan\` for full review pipeline, or individual reviews above.
+**VEREDICTO:** AÚN SIN REVISIONES — ejecuta \`/autoplan\` para el pipeline completo de revisión, o las revisiones individuales de arriba.
 \`\`\`
 
-**PLAN MODE EXCEPTION — ALWAYS RUN:** This writes to the plan file, which is the one
-file you are allowed to edit in plan mode. The plan file review report is part of the
-plan's living status.
+**EXCEPCIÓN DE MODO PLAN — EJECUTAR SIEMPRE:** Esto escribe en el archivo del plan, que es el único
+archivo que puedes editar en modo plan. El informe de revisión del archivo del plan forma parte del
+estado vivo del plan.
 
-## Step 0: Detect base branch
+## Paso 0: Detectar plataforma y rama base
 
-Determine which branch this PR targets. Use the result as "the base branch" in all subsequent steps.
+Primero, detecta la plataforma de alojamiento git desde la URL del remoto:
 
-1. Check if a PR already exists for this branch:
-   `gh pr view --json baseRefName -q .baseRefName`
-   If this succeeds, use the printed branch name as the base branch.
+```bash
+git remote get-url origin 2>/dev/null
+```
 
-2. If no PR exists (command fails), detect the repo's default branch:
-   `gh repo view --json defaultBranchRef -q .defaultBranchRef.name`
+- Si la URL contiene "github.com" → la plataforma es **GitHub**
+- Si la URL contiene "gitlab" → la plataforma es **GitLab**
+- De lo contrario, comprueba la disponibilidad del CLI:
+  - `gh auth status 2>/dev/null` tiene éxito → la plataforma es **GitHub** (cubre GitHub Enterprise)
+  - `glab auth status 2>/dev/null` tiene éxito → la plataforma es **GitLab** (cubre auto-alojado)
+  - Ninguno → **desconocida** (usa solo comandos nativos de git)
 
-3. If both commands fail, fall back to `main`.
+Determina a qué rama apunta este PR/MR, o la rama por defecto del repositorio si no
+existe PR/MR. Usa el resultado como "la rama base" en todos los pasos siguientes.
 
-Print the detected base branch name. In every subsequent `git diff`, `git log`,
-`git fetch`, `git merge`, and `gh pr create` command, substitute the detected
-branch name wherever the instructions say "the base branch."
+**Si es GitHub:**
+1. `gh pr view --json baseRefName -q .baseRefName` — si tiene éxito, úsala
+2. `gh repo view --json defaultBranchRef -q .defaultBranchRef.name` — si tiene éxito, úsala
+
+**Si es GitLab:**
+1. `glab mr view -F json 2>/dev/null` y extrae el campo `target_branch` — si tiene éxito, úsala
+2. `glab repo view -F json 2>/dev/null` y extrae el campo `default_branch` — si tiene éxito, úsala
+
+**Respaldo nativo de git (si la plataforma es desconocida o los comandos CLI fallan):**
+1. `git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|refs/remotes/origin/||'`
+2. Si falla: `git rev-parse --verify origin/main 2>/dev/null` → usa `main`
+3. Si falla: `git rev-parse --verify origin/master 2>/dev/null` → usa `master`
+
+Si todo falla, recurre a `main`.
+
+Imprime el nombre de la rama base detectada. En cada comando posterior de `git diff`, `git log`,
+`git fetch`, `git merge` y creación de PR/MR, sustituye el nombre de rama detectado
+donde las instrucciones digan "la rama base" o `<default>`.
 
 ---
 
@@ -423,24 +425,24 @@ AskUserQuestion: "He calificado este plan {N}/10 en completitud de diseño. Los 
 
 **DETENTE.** NO procedas hasta que el usuario responda.
 
-## Design Outside Voices (parallel)
+## Voces Externas de Diseño (en paralelo)
 
-Use AskUserQuestion:
-> "Want outside design voices before the detailed review? Codex evaluates against OpenAI's design hard rules + litmus checks; Claude subagent does an independent completeness review."
+Usa AskUserQuestion:
+> "¿Quieres voces externas de diseño antes de la revisión detallada? Codex evalúa contra las reglas duras de diseño de OpenAI + verificaciones litmus; el subagente de Claude hace una revisión de completitud independiente."
 >
-> A) Yes — run outside design voices
-> B) No — proceed without
+> A) Sí — ejecutar voces externas de diseño
+> B) No — proceder sin ellas
 
-If user chooses B, skip this step and continue.
+Si el usuario elige B, omite este paso y continúa.
 
-**Check Codex availability:**
+**Verificar disponibilidad de Codex:**
 ```bash
 which codex 2>/dev/null && echo "CODEX_AVAILABLE" || echo "CODEX_NOT_AVAILABLE"
 ```
 
-**If Codex is available**, launch both voices simultaneously:
+**Si Codex está disponible**, lanza ambas voces simultáneamente:
 
-1. **Codex design voice** (via Bash):
+1. **Voz de diseño de Codex** (vía Bash):
 ```bash
 TMPERR_DESIGN=$(mktemp /tmp/codex-design-XXXXXXXX)
 codex exec "Read the plan file at [plan-file-path]. Evaluate this plan's UI/UX design against these criteria.
@@ -468,15 +470,15 @@ HARD RULES — first classify as MARKETING/LANDING PAGE vs APP UI vs HYBRID, the
 - APP UI: Calm surface hierarchy, dense but readable, utility language, minimal chrome
 - UNIVERSAL: CSS variables for colors, no default font stacks, one job per section, cards earn existence
 
-For each finding: what's wrong, what will happen if it ships unresolved, and the specific fix. Be opinionated. No hedging." -s read-only -c 'model_reasoning_effort="high"' --enable web_search_cached 2>"$TMPERR_DESIGN"
+For each finding: what's wrong, what will happen if it ships unresolved, and the specific fix. Be opinionated. No hedging." -C "$(git rev-parse --show-toplevel)" -s read-only -c 'model_reasoning_effort="high"' --enable web_search_cached 2>"$TMPERR_DESIGN"
 ```
-Use a 5-minute timeout (`timeout: 300000`). After the command completes, read stderr:
+Usa un timeout de 5 minutos (`timeout: 300000`). Después de que el comando termine, lee stderr:
 ```bash
 cat "$TMPERR_DESIGN" && rm -f "$TMPERR_DESIGN"
 ```
 
-2. **Claude design subagent** (via Agent tool):
-Dispatch a subagent with this prompt:
+2. **Subagente de diseño de Claude** (vía herramienta Agent):
+Despacha un subagente con este prompt:
 "Read the plan file at [plan-file-path]. You are an independent senior product designer reviewing this plan. You have NOT seen any prior review. Evaluate:
 
 1. Information hierarchy: what does the user see first, second, third? Is it right?
@@ -487,48 +489,48 @@ Dispatch a subagent with this prompt:
 
 For each finding: what's wrong, severity (critical/high/medium), and the fix."
 
-**Error handling (all non-blocking):**
-- **Auth failure:** If stderr contains "auth", "login", "unauthorized", or "API key": "Codex authentication failed. Run `codex login` to authenticate."
-- **Timeout:** "Codex timed out after 5 minutes."
-- **Empty response:** "Codex returned no response."
-- On any Codex error: proceed with Claude subagent output only, tagged `[single-model]`.
-- If Claude subagent also fails: "Outside voices unavailable — continuing with primary review."
+**Manejo de errores (todo no bloqueante):**
+- **Fallo de autenticación:** Si stderr contiene "auth", "login", "unauthorized" o "API key": "Fallo de autenticación de Codex. Ejecuta `codex login` para autenticarte."
+- **Timeout:** "Codex expiró después de 5 minutos."
+- **Respuesta vacía:** "Codex no devolvió respuesta."
+- Ante cualquier error de Codex: procede solo con la salida del subagente de Claude, etiquetada `[single-model]`.
+- Si el subagente de Claude también falla: "Voces externas no disponibles — continuando con la revisión principal."
 
-Present Codex output under a `CODEX SAYS (design critique):` header.
-Present subagent output under a `CLAUDE SUBAGENT (design completeness):` header.
+Presenta la salida de Codex bajo un encabezado `CODEX DICE (diseño crítica):`.
+Presenta la salida del subagente bajo un encabezado `SUBAGENTE DE CLAUDE (diseño completitud):`.
 
-**Synthesis — Litmus scorecard:**
+**Síntesis — Cuadro de mando litmus:**
 
 ```
-DESIGN OUTSIDE VOICES — LITMUS SCORECARD:
+VOCES EXTERNAS DE DISEÑO — CUADRO DE MANDO LITMUS:
 ═══════════════════════════════════════════════════════════════
-  Check                                    Claude  Codex  Consensus
+  Verificación                               Claude  Codex  Consenso
   ─────────────────────────────────────── ─────── ─────── ─────────
-  1. Brand unmistakable in first screen?   —       —      —
-  2. One strong visual anchor?             —       —      —
-  3. Scannable by headlines only?          —       —      —
-  4. Each section has one job?             —       —      —
-  5. Cards actually necessary?             —       —      —
-  6. Motion improves hierarchy?            —       —      —
-  7. Premium without decorative shadows?   —       —      —
+  1. ¿Marca inconfundible en 1.ª pantalla?  —       —      —
+  2. ¿Un ancla visual fuerte?               —       —      —
+  3. ¿Escaneable solo por titulares?         —       —      —
+  4. ¿Cada sección tiene un trabajo?         —       —      —
+  5. ¿Las tarjetas son realmente necesarias? —       —      —
+  6. ¿El movimiento mejora la jerarquía?     —       —      —
+  7. ¿Premium sin sombras decorativas?       —       —      —
   ─────────────────────────────────────── ─────── ─────── ─────────
-  Hard rejections triggered:               —       —      —
+  Rechazos duros activados:                  —       —      —
 ═══════════════════════════════════════════════════════════════
 ```
 
-Fill in each cell from the Codex and subagent outputs. CONFIRMED = both agree. DISAGREE = models differ. NOT SPEC'D = not enough info to evaluate.
+Rellena cada celda a partir de las salidas de Codex y el subagente. CONFIRMED = ambos coinciden. DISAGREE = los modelos difieren. NOT SPEC'D = no hay suficiente información para evaluar.
 
-**Pass integration (respects existing 7-pass contract):**
-- Hard rejections → raised as the FIRST items in Pass 1, tagged `[HARD REJECTION]`
-- Litmus DISAGREE items → raised in the relevant pass with both perspectives
-- Litmus CONFIRMED failures → pre-loaded as known issues in the relevant pass
-- Passes can skip discovery and go straight to fixing for pre-identified issues
+**Integración con pases (respeta el contrato existente de 7 pases):**
+- Rechazos duros → se plantean como los PRIMEROS elementos en el Pase 1, etiquetados `[HARD REJECTION]`
+- Elementos litmus DISAGREE → se plantean en el pase relevante con ambas perspectivas
+- Fallos litmus CONFIRMED → precargados como incidencias conocidas en el pase relevante
+- Los pases pueden omitir el descubrimiento e ir directamente a corregir para incidencias pre-identificadas
 
-**Log the result:**
+**Registrar el resultado:**
 ```bash
 ~/.claude/skills/gstack/bin/gstack-review-log '{"skill":"design-outside-voices","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","status":"STATUS","source":"SOURCE","commit":"'"$(git rev-parse --short HEAD)"'"}'
 ```
-Replace STATUS with "clean" or "issues_found", SOURCE with "codex+subagent", "codex-only", "subagent-only", or "unavailable".
+Sustituye STATUS con "clean" o "issues_found", SOURCE con "codex+subagent", "codex-only", "subagent-only", o "unavailable".
 
 ## El Método de Calificación 0-10
 
@@ -579,14 +581,14 @@ Aplica diseño con horizonte temporal: 5 seg visceral, 5 min conductual, 5 años
 Califica 0-10: ¿Describe el plan una UI específica e intencional — o patrones genéricos?
 CORREGIR A 10: Reescribe descripciones vagas de UI con alternativas específicas.
 
-### Design Hard Rules
+### Reglas Duras de Diseño
 
-**Classifier — determine rule set before evaluating:**
-- **MARKETING/LANDING PAGE** (hero-driven, brand-forward, conversion-focused) → apply Landing Page Rules
-- **APP UI** (workspace-driven, data-dense, task-focused: dashboards, admin, settings) → apply App UI Rules
-- **HYBRID** (marketing shell with app-like sections) → apply Landing Page Rules to hero/marketing sections, App UI Rules to functional sections
+**Clasificador — determina el conjunto de reglas antes de evaluar:**
+- **MARKETING/LANDING PAGE** (orientado a hero, marca primero, enfocado en conversión) → aplicar Reglas de Landing Page
+- **APP UI** (orientado a workspace, denso en datos, enfocado en tareas: dashboards, admin, configuración) → aplicar Reglas de App UI
+- **HYBRID** (carcasa de marketing con secciones tipo app) → aplicar Reglas de Landing Page a secciones hero/marketing, Reglas de App UI a secciones funcionales
 
-**Hard rejection criteria** (instant-fail patterns — flag if ANY apply):
+**Criterios de rechazo duro** (patrones de fallo instantáneo — señalizar si ALGUNO aplica):
 1. Generic SaaS card grid as first impression
 2. Beautiful image with weak brand
 3. Strong headline with no clear action
@@ -595,7 +597,7 @@ CORREGIR A 10: Reescribe descripciones vagas de UI con alternativas específicas
 6. Carousel with no narrative purpose
 7. App UI made of stacked cards instead of layout
 
-**Litmus checks** (answer YES/NO for each — used for cross-model consensus scoring):
+**Verificaciones litmus** (responder SÍ/NO para cada una — usadas para puntuación de consenso cross-model):
 1. Brand/product unmistakable in first screen?
 2. One strong visual anchor present?
 3. Page understandable by scanning headlines only?
@@ -604,37 +606,37 @@ CORREGIR A 10: Reescribe descripciones vagas de UI con alternativas específicas
 6. Does motion improve hierarchy or atmosphere?
 7. Would design feel premium with all decorative shadows removed?
 
-**Landing page rules** (apply when classifier = MARKETING/LANDING):
-- First viewport reads as one composition, not a dashboard
-- Brand-first hierarchy: brand > headline > body > CTA
-- Typography: expressive, purposeful — no default stacks (Inter, Roboto, Arial, system)
-- No flat single-color backgrounds — use gradients, images, subtle patterns
-- Hero: full-bleed, edge-to-edge, no inset/tiled/rounded variants
-- Hero budget: brand, one headline, one supporting sentence, one CTA group, one image
-- No cards in hero. Cards only when card IS the interaction
-- One job per section: one purpose, one headline, one short supporting sentence
-- Motion: 2-3 intentional motions minimum (entrance, scroll-linked, hover/reveal)
-- Color: define CSS variables, avoid purple-on-white defaults, one accent color default
-- Copy: product language not design commentary. "If deleting 30% improves it, keep deleting"
-- Beautiful defaults: composition-first, brand as loudest text, two typefaces max, cardless by default, first viewport as poster not document
+**Reglas de landing page** (aplicar cuando clasificador = MARKETING/LANDING):
+- El primer viewport se lee como una composición, no un dashboard
+- Jerarquía marca primero: marca > titular > cuerpo > CTA
+- Tipografía: expresiva, con propósito — sin stacks por defecto (Inter, Roboto, Arial, system)
+- Sin fondos planos de un solo color — usar gradientes, imágenes, patrones sutiles
+- Hero: de borde a borde, sin variantes con inset/mosaico/redondeado
+- Presupuesto del hero: marca, un titular, una oración de apoyo, un grupo de CTA, una imagen
+- Sin tarjetas en el hero. Tarjetas solo cuando la tarjeta ES la interacción
+- Un trabajo por sección: un propósito, un titular, una oración corta de apoyo
+- Movimiento: mínimo 2-3 movimientos intencionales (entrada, vinculado al scroll, hover/revelación)
+- Color: definir variables CSS, evitar defaults púrpura sobre blanco, un color de acento por defecto
+- Copy: lenguaje de producto no comentario de diseño. "Si eliminar el 30% lo mejora, sigue eliminando"
+- Defaults hermosos: composición primero, marca como texto más prominente, máximo dos tipografías, sin tarjetas por defecto, primer viewport como póster no documento
 
-**App UI rules** (apply when classifier = APP UI):
-- Calm surface hierarchy, strong typography, few colors
-- Dense but readable, minimal chrome
-- Organize: primary workspace, navigation, secondary context, one accent
-- Avoid: dashboard-card mosaics, thick borders, decorative gradients, ornamental icons
-- Copy: utility language — orientation, status, action. Not mood/brand/aspiration
-- Cards only when card IS the interaction
-- Section headings state what area is or what user can do ("Selected KPIs", "Plan status")
+**Reglas de App UI** (aplicar cuando clasificador = APP UI):
+- Jerarquía de superficies tranquila, tipografía fuerte, pocos colores
+- Denso pero legible, cromo mínimo
+- Organizar: workspace principal, navegación, contexto secundario, un acento
+- Evitar: mosaicos de tarjetas de dashboard, bordes gruesos, gradientes decorativos, iconos ornamentales
+- Copy: lenguaje utilitario — orientación, estado, acción. No humor/marca/aspiración
+- Tarjetas solo cuando la tarjeta ES la interacción
+- Encabezados de sección indican qué es el área o qué puede hacer el usuario ("KPIs seleccionados", "Estado del plan")
 
-**Universal rules** (apply to ALL types):
-- Define CSS variables for color system
-- No default font stacks (Inter, Roboto, Arial, system)
-- One job per section
-- "If deleting 30% of the copy improves it, keep deleting"
-- Cards earn their existence — no decorative card grids
+**Reglas universales** (aplicar a TODOS los tipos):
+- Definir variables CSS para el sistema de color
+- Sin stacks de fuentes por defecto (Inter, Roboto, Arial, system)
+- Un trabajo por sección
+- "Si eliminar el 30% del copy lo mejora, sigue eliminando"
+- Las tarjetas se ganan su existencia — sin grids decorativos de tarjetas
 
-**AI Slop blacklist** (the 10 patterns that scream "AI-generated"):
+**Lista negra de Contenido Genérico de IA** (los 10 patrones que gritan "generado por IA"):
 1. Purple/violet/indigo gradient backgrounds or blue-to-purple color schemes
 2. **The 3-column feature grid:** icon-in-colored-circle + bold title + 2-line description, repeated 3x symmetrically. THE most recognizable AI layout.
 3. Icons in colored circles as section decoration (SaaS starter template look)
@@ -646,7 +648,7 @@ CORREGIR A 10: Reescribe descripciones vagas de UI con alternativas específicas
 9. Generic hero copy ("Welcome to [X]", "Unlock the power of...", "Your all-in-one solution for...")
 10. Cookie-cutter section rhythm (hero → 3 features → testimonials → pricing → CTA, every section same height)
 
-Source: [OpenAI "Designing Delightful Frontends with GPT-5.4"](https://developers.openai.com/blog/designing-delightful-frontends-with-gpt-5-4) (Mar 2026) + gstack design methodology.
+Fuente: [OpenAI "Designing Delightful Frontends with GPT-5.4"](https://developers.openai.com/blog/designing-delightful-frontends-with-gpt-5-4) (Mar 2026) + metodología de diseño gstack.
 - "Tarjetas con iconos" → ¿qué diferencia estas de cualquier plantilla SaaS?
 - "Sección hero" → ¿qué hace que este hero se sienta como ESTE producto?
 - "UI limpia y moderna" → sin significado. Reemplaza con decisiones de diseño reales.
@@ -758,117 +760,123 @@ Sustituye los valores del Resumen de Finalización:
 - **decisions_made**: número de decisiones de diseño añadidas al plan
 - **COMMIT**: salida de `git rev-parse --short HEAD`
 
-## Review Readiness Dashboard
+## Panel de Estado de Revisiones
 
-After completing the review, read the review log and config to display the dashboard.
+Después de completar la revisión, lee el registro de revisión y la configuración para mostrar el panel.
 
 ```bash
 ~/.claude/skills/gstack/bin/gstack-review-read
 ```
 
-Parse the output. Find the most recent entry for each skill (plan-ceo-review, plan-eng-review, review, plan-design-review, design-review-lite, adversarial-review, codex-review, codex-plan-review). Ignore entries with timestamps older than 7 days. For the Eng Review row, show whichever is more recent between `review` (diff-scoped pre-landing review) and `plan-eng-review` (plan-stage architecture review). Append "(DIFF)" or "(PLAN)" to the status to distinguish. For the Adversarial row, show whichever is more recent between `adversarial-review` (new auto-scaled) and `codex-review` (legacy). For Design Review, show whichever is more recent between `plan-design-review` (full visual audit) and `design-review-lite` (code-level check). Append "(FULL)" or "(LITE)" to the status to distinguish. Display:
+Analiza la salida. Encuentra la entrada más reciente de cada skill (plan-ceo-review, plan-eng-review, review, plan-design-review, design-review-lite, adversarial-review, codex-review, codex-plan-review). Ignora las entradas con timestamps de más de 7 días de antigüedad. Para la fila de Revisión de Ingeniería, muestra la más reciente entre `review` (revisión pre-landing del diff) y `plan-eng-review` (revisión de arquitectura en fase de planificación). Agrega "(DIFF)" o "(PLAN)" al estado para distinguir. Para la fila de Adversarial, muestra la más reciente entre `adversarial-review` (nuevo auto-escalado) y `codex-review` (legacy). Para Revisión de Diseño, muestra la más reciente entre `plan-design-review` (auditoría visual completa) y `design-review-lite` (verificación a nivel de código). Agrega "(FULL)" o "(LITE)" al estado para distinguir. Para la fila de Voz Externa, muestra la entrada más reciente de `codex-plan-review` — esta captura las voces externas tanto de /plan-ceo-review como de /plan-eng-review.
+
+**Atribución de origen:** Si la entrada más reciente de un skill tiene un campo \`"via"\`, agrégalo a la etiqueta de estado entre paréntesis. Ejemplos: `plan-eng-review` con `via:"autoplan"` se muestra como "LIMPIA (PLAN vía /autoplan)". `review` con `via:"ship"` se muestra como "LIMPIA (DIFF vía /ship)". Las entradas sin campo `via` se muestran como "LIMPIA (PLAN)" o "LIMPIA (DIFF)" como antes.
+
+Nota: las entradas `autoplan-voices` y `design-outside-voices` son solo de auditoría (datos forenses para análisis de consenso cross-model). No aparecen en el panel y ningún consumidor las verifica.
+
+Muestra:
 
 ```
 +====================================================================+
-|                    REVIEW READINESS DASHBOARD                       |
+|                    PANEL DE ESTADO DE REVISIONES                     |
 +====================================================================+
-| Review          | Runs | Last Run            | Status    | Required |
-|-----------------|------|---------------------|-----------|----------|
-| Eng Review      |  1   | 2026-03-16 15:00    | CLEAR     | YES      |
-| CEO Review      |  0   | —                   | —         | no       |
-| Design Review   |  0   | —                   | —         | no       |
-| Adversarial     |  0   | —                   | —         | no       |
-| Outside Voice   |  0   | —                   | —         | no       |
+| Revisión        | Ejecuciones | Última Ejecución    | Estado    | Requerida |
+|-----------------|-------------|---------------------|-----------|-----------|
+| Rev. Ingeniería |  1          | 2026-03-16 15:00    | LIMPIA    | SÍ        |
+| Rev. CEO        |  0          | —                   | —         | no        |
+| Rev. Diseño     |  0          | —                   | —         | no        |
+| Adversarial     |  0          | —                   | —         | no        |
+| Voz Externa     |  0          | —                   | —         | no        |
 +--------------------------------------------------------------------+
-| VERDICT: CLEARED — Eng Review passed                                |
+| VEREDICTO: APROBADO — Revisión de Ingeniería superada               |
 +====================================================================+
 ```
 
-**Review tiers:**
-- **Eng Review (required by default):** The only review that gates shipping. Covers architecture, code quality, tests, performance. Can be disabled globally with \`gstack-config set skip_eng_review true\` (the "don't bother me" setting).
-- **CEO Review (optional):** Use your judgment. Recommend it for big product/business changes, new user-facing features, or scope decisions. Skip for bug fixes, refactors, infra, and cleanup.
-- **Design Review (optional):** Use your judgment. Recommend it for UI/UX changes. Skip for backend-only, infra, or prompt-only changes.
-- **Adversarial Review (automatic):** Auto-scales by diff size. Small diffs (<50 lines) skip adversarial. Medium diffs (50–199) get cross-model adversarial. Large diffs (200+) get all 4 passes: Claude structured, Codex structured, Claude adversarial subagent, Codex adversarial. No configuration needed.
-- **Outside Voice (optional):** Independent plan review from a different AI model. Offered after all review sections complete in /plan-ceo-review and /plan-eng-review. Falls back to Claude subagent if Codex is unavailable. Never gates shipping.
+**Niveles de revisión:**
+- **Revisión de Ingeniería (requerida por defecto):** La única revisión que bloquea el envío. Cubre arquitectura, calidad de código, tests, rendimiento. Se puede desactivar globalmente con \`gstack-config set skip_eng_review true\` (la opción "no me molestes").
+- **Revisión CEO (opcional):** Usa tu criterio. Recomiéndala para cambios importantes de producto/negocio, nuevas funcionalidades visibles al usuario, o decisiones de alcance. Omítela para correcciones de bugs, refactorizaciones, infraestructura y limpieza.
+- **Revisión de Diseño (opcional):** Usa tu criterio. Recomiéndala para cambios de UI/UX. Omítela para cambios solo de backend, infraestructura o solo de prompts.
+- **Revisión Adversarial (automática):** Se escala automáticamente según el tamaño del diff. Diffs pequeños (<50 líneas) omiten la revisión adversarial. Diffs medianos (50–199) obtienen revisión adversarial cross-model. Diffs grandes (200+) obtienen los 4 pases: Claude estructurado, Codex estructurado, subagente adversarial de Claude, Codex adversarial. No requiere configuración.
+- **Voz Externa (opcional):** Revisión independiente del plan desde un modelo de IA diferente. Se ofrece después de completar todas las secciones de revisión en /plan-ceo-review y /plan-eng-review. Recurre al subagente de Claude si Codex no está disponible. Nunca bloquea el envío.
 
-**Verdict logic:**
-- **CLEARED**: Eng Review has >= 1 entry within 7 days from either \`review\` or \`plan-eng-review\` with status "clean" (or \`skip_eng_review\` is \`true\`)
-- **NOT CLEARED**: Eng Review missing, stale (>7 days), or has open issues
-- CEO, Design, and Codex reviews are shown for context but never block shipping
-- If \`skip_eng_review\` config is \`true\`, Eng Review shows "SKIPPED (global)" and verdict is CLEARED
+**Lógica del veredicto:**
+- **APROBADO**: La Revisión de Ingeniería tiene >= 1 entrada dentro de 7 días de \`review\` o \`plan-eng-review\` con estado "clean" (o \`skip_eng_review\` es \`true\`)
+- **NO APROBADO**: Revisión de Ingeniería faltante, obsoleta (>7 días) o con incidencias abiertas
+- Las revisiones de CEO, Diseño y Codex se muestran como contexto pero nunca bloquean el envío
+- Si la configuración \`skip_eng_review\` es \`true\`, la Revisión de Ingeniería muestra "OMITIDA (global)" y el veredicto es APROBADO
 
-**Staleness detection:** After displaying the dashboard, check if any existing reviews may be stale:
-- Parse the \`---HEAD---\` section from the bash output to get the current HEAD commit hash
-- For each review entry that has a \`commit\` field: compare it against the current HEAD. If different, count elapsed commits: \`git rev-list --count STORED_COMMIT..HEAD\`. Display: "Note: {skill} review from {date} may be stale — {N} commits since review"
-- For entries without a \`commit\` field (legacy entries): display "Note: {skill} review from {date} has no commit tracking — consider re-running for accurate staleness detection"
-- If all reviews match the current HEAD, do not display any staleness notes
+**Detección de obsolescencia:** Después de mostrar el panel, comprueba si alguna revisión existente puede estar obsoleta:
+- Analiza la sección \`---HEAD---\` de la salida de bash para obtener el hash del commit HEAD actual
+- Para cada entrada de revisión que tenga un campo \`commit\`: compáralo con el HEAD actual. Si es diferente, cuenta los commits transcurridos: \`git rev-list --count STORED_COMMIT..HEAD\`. Muestra: "Nota: la revisión de {skill} del {date} puede estar obsoleta — {N} commits desde la revisión"
+- Para entradas sin campo \`commit\` (entradas legacy): muestra "Nota: la revisión de {skill} del {date} no tiene seguimiento de commits — considera re-ejecutarla para una detección precisa de obsolescencia"
+- Si todas las revisiones coinciden con el HEAD actual, no muestres notas de obsolescencia
 
-## Plan File Review Report
+## Informe de Revisión del Archivo de Plan
 
-After displaying the Review Readiness Dashboard in conversation output, also update the
-**plan file** itself so review status is visible to anyone reading the plan.
+Después de mostrar el Panel de Estado de Revisiones en la salida de la conversación, también actualiza
+el **archivo de plan** para que el estado de la revisión sea visible para cualquiera que lea el plan.
 
-### Detect the plan file
+### Detectar el archivo de plan
 
-1. Check if there is an active plan file in this conversation (the host provides plan file
-   paths in system messages — look for plan file references in the conversation context).
-2. If not found, skip this section silently — not every review runs in plan mode.
+1. Comprueba si hay un archivo de plan activo en esta conversación (el host proporciona rutas
+   de archivos de plan en mensajes del sistema — busca referencias a archivos de plan en el contexto de la conversación).
+2. Si no se encuentra, omite esta sección silenciosamente — no todas las revisiones se ejecutan en modo plan.
 
-### Generate the report
+### Generar el informe
 
-Read the review log output you already have from the Review Readiness Dashboard step above.
-Parse each JSONL entry. Each skill logs different fields:
+Lee la salida del registro de revisión que ya tienes del paso del Panel de Estado de Revisiones anterior.
+Analiza cada entrada JSONL. Cada skill registra campos diferentes:
 
 - **plan-ceo-review**: \`status\`, \`unresolved\`, \`critical_gaps\`, \`mode\`, \`scope_proposed\`, \`scope_accepted\`, \`scope_deferred\`, \`commit\`
-  → Findings: "{scope_proposed} proposals, {scope_accepted} accepted, {scope_deferred} deferred"
-  → If scope fields are 0 or missing (HOLD/REDUCTION mode): "mode: {mode}, {critical_gaps} critical gaps"
+  → Hallazgos: "{scope_proposed} propuestas, {scope_accepted} aceptadas, {scope_deferred} diferidas"
+  → Si los campos de scope son 0 o no existen (modo HOLD/REDUCTION): "modo: {mode}, {critical_gaps} brechas críticas"
 - **plan-eng-review**: \`status\`, \`unresolved\`, \`critical_gaps\`, \`issues_found\`, \`mode\`, \`commit\`
-  → Findings: "{issues_found} issues, {critical_gaps} critical gaps"
+  → Hallazgos: "{issues_found} incidencias, {critical_gaps} brechas críticas"
 - **plan-design-review**: \`status\`, \`initial_score\`, \`overall_score\`, \`unresolved\`, \`decisions_made\`, \`commit\`
-  → Findings: "score: {initial_score}/10 → {overall_score}/10, {decisions_made} decisions"
+  → Hallazgos: "puntuación: {initial_score}/10 → {overall_score}/10, {decisions_made} decisiones"
 - **codex-review**: \`status\`, \`gate\`, \`findings\`, \`findings_fixed\`
-  → Findings: "{findings} findings, {findings_fixed}/{findings} fixed"
+  → Hallazgos: "{findings} hallazgos, {findings_fixed}/{findings} corregidos"
 
-All fields needed for the Findings column are now present in the JSONL entries.
-For the review you just completed, you may use richer details from your own Completion
-Summary. For prior reviews, use the JSONL fields directly — they contain all required data.
+Todos los campos necesarios para la columna de Hallazgos están ahora presentes en las entradas JSONL.
+Para la revisión que acabas de completar, puedes usar detalles más ricos de tu propio Resumen
+de Finalización. Para revisiones anteriores, usa los campos JSONL directamente — contienen todos los datos necesarios.
 
-Produce this markdown table:
+Genera esta tabla markdown:
 
 \`\`\`markdown
-## GSTACK REVIEW REPORT
+## INFORME DE REVISIÓN GSTACK
 
-| Review | Trigger | Why | Runs | Status | Findings |
-|--------|---------|-----|------|--------|----------|
-| CEO Review | \`/plan-ceo-review\` | Scope & strategy | {runs} | {status} | {findings} |
-| Codex Review | \`/codex review\` | Independent 2nd opinion | {runs} | {status} | {findings} |
-| Eng Review | \`/plan-eng-review\` | Architecture & tests (required) | {runs} | {status} | {findings} |
-| Design Review | \`/plan-design-review\` | UI/UX gaps | {runs} | {status} | {findings} |
+| Revisión | Disparador | Por qué | Ejecuciones | Estado | Hallazgos |
+|----------|------------|---------|-------------|--------|-----------|
+| Rev. CEO | \`/plan-ceo-review\` | Alcance y estrategia | {runs} | {status} | {findings} |
+| Rev. Codex | \`/codex review\` | 2.ª opinión independiente | {runs} | {status} | {findings} |
+| Rev. Ingeniería | \`/plan-eng-review\` | Arquitectura y tests (requerida) | {runs} | {status} | {findings} |
+| Rev. Diseño | \`/plan-design-review\` | Brechas de UI/UX | {runs} | {status} | {findings} |
 \`\`\`
 
-Below the table, add these lines (omit any that are empty/not applicable):
+Debajo de la tabla, agrega estas líneas (omite las que estén vacías o no apliquen):
 
-- **CODEX:** (only if codex-review ran) — one-line summary of codex fixes
-- **CROSS-MODEL:** (only if both Claude and Codex reviews exist) — overlap analysis
-- **UNRESOLVED:** total unresolved decisions across all reviews
-- **VERDICT:** list reviews that are CLEAR (e.g., "CEO + ENG CLEARED — ready to implement").
-  If Eng Review is not CLEAR and not skipped globally, append "eng review required".
+- **CODEX:** (solo si se ejecutó codex-review) — resumen en una línea de las correcciones de Codex
+- **CROSS-MODEL:** (solo si existen revisiones tanto de Claude como de Codex) — análisis de solapamiento
+- **SIN RESOLVER:** total de decisiones sin resolver en todas las revisiones
+- **VEREDICTO:** lista las revisiones que están APROBADAS (ej.: "CEO + ING APROBADAS — listo para implementar").
+  Si la Revisión de Ingeniería no está APROBADA y no está omitida globalmente, agrega "revisión de ingeniería requerida".
 
-### Write to the plan file
+### Escribir en el archivo de plan
 
-**PLAN MODE EXCEPTION — ALWAYS RUN:** This writes to the plan file, which is the one
-file you are allowed to edit in plan mode. The plan file review report is part of the
-plan's living status.
+**EXCEPCIÓN DE MODO PLAN — EJECUTAR SIEMPRE:** Esto escribe en el archivo de plan, que es el único
+archivo que se permite editar en modo plan. El informe de revisión del archivo de plan es parte del
+estado vivo del plan.
 
-- Search the plan file for a \`## GSTACK REVIEW REPORT\` section **anywhere** in the file
-  (not just at the end — content may have been added after it).
-- If found, **replace it** entirely using the Edit tool. Match from \`## GSTACK REVIEW REPORT\`
-  through either the next \`## \` heading or end of file, whichever comes first. This ensures
-  content added after the report section is preserved, not eaten. If the Edit fails
-  (e.g., concurrent edit changed the content), re-read the plan file and retry once.
-- If no such section exists, **append it** to the end of the plan file.
-- Always place it as the very last section in the plan file. If it was found mid-file,
-  move it: delete the old location and append at the end.
+- Busca en el archivo de plan una sección \`## INFORME DE REVISIÓN GSTACK\` **en cualquier parte** del archivo
+  (no solo al final — puede haberse agregado contenido después).
+- Si se encuentra, **reemplázala** completamente usando la herramienta Edit. Busca desde \`## INFORME DE REVISIÓN GSTACK\`
+  hasta el siguiente encabezado \`## \` o el final del archivo, lo que ocurra primero. Esto asegura que
+  el contenido agregado después de la sección del informe se preserve, no se consuma. Si el Edit falla
+  (ej.: una edición concurrente cambió el contenido), vuelve a leer el archivo de plan e intenta una vez más.
+- Si no existe tal sección, **agrégala** al final del archivo de plan.
+- Siempre colócala como la última sección del archivo de plan. Si se encontró a mitad del archivo,
+  muévela: elimina la ubicación antigua y agrégala al final.
 
 ## Próximos Pasos — Encadenamiento de Revisiones
 

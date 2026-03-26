@@ -64,26 +64,15 @@ Estás ejecutando el flujo `/ship`. Este es un flujo **no interactivo, completam
 
 Si la Revisión de Ingeniería NO es "CLEAR":
 
-1. **Verificar si existe una anulación previa en esta rama:**
-   ```bash
-   {{SLUG_EVAL}}
-   grep '"skill":"ship-review-override"' ~/.gstack/projects/$SLUG/$BRANCH-reviews.jsonl 2>/dev/null || echo "NO_OVERRIDE"
-   ```
-   Si existe una anulación, mostrar el panel y anotar "Puerta de revisión previamente aceptada — continuando." NO preguntar de nuevo.
+Imprimir: "No se encontró revisión de ingeniería previa — ship ejecutará su propia revisión pre-landing en el Paso 3.5."
 
-2. **Si no existe anulación,** usar AskUserQuestion:
-   - Mostrar que la Revisión de Ingeniería falta o tiene problemas abiertos
-   - RECOMMENDATION: Elegir C si el cambio es obviamente trivial (< 20 líneas, corrección de erratas, solo configuración); Elegir B para cambios más grandes
-   - Opciones: A) Enviar de todos modos  B) Abortar — ejecutar /review o /plan-eng-review primero  C) El cambio es demasiado pequeño para necesitar revisión de ingeniería
-   - Si falta la Revisión del CEO, mencionar como informativo ("Revisión del CEO no ejecutada — recomendada para cambios de producto") pero NO bloquear
-   - Para Revisión de Diseño: ejecutar `source <(~/.claude/skills/gstack/bin/gstack-diff-scope <base> 2>/dev/null)`. Si `SCOPE_FRONTEND=true` y no existe revisión de diseño (plan-design-review o design-review-lite) en el panel, mencionar: "Revisión de Diseño no ejecutada — este PR cambia código frontend. La verificación de diseño lite se ejecutará automáticamente en el Paso 3.5, pero considere ejecutar /design-review para una auditoría visual completa post-implementación." Nunca bloquear de todos modos.
+Verificar tamaño del diff: `git diff <base>...HEAD --stat | tail -1`. Si el diff es >200 líneas, añadir: "Nota: Este es un diff grande. Considera ejecutar `/plan-eng-review` o `/autoplan` para una revisión a nivel de arquitectura antes de enviar."
 
-3. **Si el usuario elige A o C,** persistir la decisión para que futuras ejecuciones de `/ship` en esta rama omitan la puerta:
-   ```bash
-   {{SLUG_EVAL}}
-   echo '{"skill":"ship-review-override","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","decision":"USER_CHOICE"}' >> ~/.gstack/projects/$SLUG/$BRANCH-reviews.jsonl
-   ```
-   Sustituir USER_CHOICE con "ship_anyway" o "not_relevant".
+Si falta la Revisión del CEO, mencionar como informativo ("Revisión del CEO no ejecutada — recomendada para cambios de producto") pero NO bloquear.
+
+Para Revisión de Diseño: ejecutar `source <(~/.claude/skills/gstack/bin/gstack-diff-scope <base> 2>/dev/null)`. Si `SCOPE_FRONTEND=true` y no existe revisión de diseño (plan-design-review o design-review-lite) en el panel, mencionar: "Revisión de Diseño no ejecutada — este PR cambia código frontend. La verificación de diseño lite se ejecutará automáticamente en el Paso 3.5, pero considere ejecutar /design-review para una auditoría visual completa post-implementación." Nunca bloquear de todos modos.
+
+Continuar al Paso 1.5 — NO bloquear ni preguntar. Ship ejecuta su propia revisión en el Paso 3.5.
 
 ---
 
@@ -99,12 +88,13 @@ Si el diff introduce un nuevo artefacto independiente (binario CLI, paquete de b
 2. Si se detecta un nuevo artefacto, verificar si existe un flujo de release:
    ```bash
    ls .github/workflows/ 2>/dev/null | grep -iE 'release|publish|dist'
+   grep -qE 'release|publish|deploy' .gitlab-ci.yml 2>/dev/null && echo "GITLAB_CI_RELEASE"
    ```
 
 3. **Si no existe pipeline de release y se añadió un nuevo artefacto:** Usar AskUserQuestion:
    - "Este PR añade un nuevo binario/herramienta pero no hay pipeline de CI/CD para compilarlo y publicarlo.
      Los usuarios no podrán descargar el artefacto después del merge."
-   - A) Añadir un flujo de release ahora (GitHub Actions compilación multiplataforma + GitHub Releases)
+   - A) Añadir un flujo de release ahora (pipeline de release CI/CD — GitHub Actions o GitLab CI según la plataforma)
    - B) Diferir — añadir a TODOS.md
    - C) No es necesario — esto es interno/solo web, el despliegue existente lo cubre
 
@@ -272,6 +262,13 @@ Revisar el diff buscando problemas estructurales que los tests no detectan.
 8. Mostrar resumen: `Pre-Landing Review: N problemas — M auto-corregidos, K consultados (J corregidos, L omitidos)`
 
    Si no se encontraron problemas: `Pre-Landing Review: No issues found.`
+
+9. Persistir el resultado de la revisión en el log de revisiones:
+```bash
+~/.claude/skills/gstack/bin/gstack-review-log '{"skill":"review","timestamp":"TIMESTAMP","status":"STATUS","issues_found":N,"critical":N,"informational":N,"commit":"'"$(git rev-parse --short HEAD)"'","via":"ship"}'
+```
+Sustituir TIMESTAMP (ISO 8601), STATUS ("clean" si no hay problemas, "issues_found" en caso contrario),
+y los valores N con los conteos del resumen anterior. El campo `via:"ship"` distingue de ejecuciones independientes de `/review`.
 
 Guardar la salida de la revisión — va en el cuerpo del PR en el Paso 8.
 
@@ -484,12 +481,13 @@ git push -u origin <branch-name>
 
 ---
 
-## Paso 8: Crear PR
+## Paso 8: Crear PR/MR
 
-Crear un pull request usando `gh`:
+Crear un pull request (GitHub) o merge request (GitLab) usando la plataforma detectada en el Paso 0.
 
-```bash
-gh pr create --base <base> --title "<tipo>: <resumen>" --body "$(cat <<'EOF'
+El cuerpo del PR/MR debe contener estas secciones:
+
+```
 ## Resumen
 <puntos del CHANGELOG>
 
@@ -533,11 +531,30 @@ gh pr create --base <base> --title "<tipo>: <resumen>" --body "$(cat <<'EOF'
 - [x] Todos los tests de Vitest pasan (N tests)
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
+```
+
+**If GitHub:**
+
+```bash
+gh pr create --base <base> --title "<type>: <summary>" --body "$(cat <<'EOF'
+<PR body from above>
 EOF
 )"
 ```
 
-**Mostrar la URL del PR** — luego continuar al Paso 8.5.
+**Si es GitLab:**
+
+```bash
+glab mr create -b <base> -t "<type>: <summary>" -d "$(cat <<'EOF'
+<cuerpo del MR de arriba>
+EOF
+)"
+```
+
+**Si ningún CLI está disponible:**
+Imprimir el nombre de la rama, la URL del remoto e indicar al usuario que cree el PR/MR manualmente vía la interfaz web. No detenerse — el código está subido y listo.
+
+**Mostrar la URL del PR/MR** — luego continuar al Paso 8.5.
 
 ---
 

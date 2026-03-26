@@ -19,7 +19,7 @@ allowed-tools:
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
 <!-- Regenerate: bun run gen:skill-docs -->
 
-## Preamble (run first)
+## Preámbulo (ejecutar primero)
 
 ```bash
 _UPD=$(~/.claude/skills/gstack/bin/gstack-update-check 2>/dev/null || .claude/skills/gstack/bin/gstack-update-check 2>/dev/null || true)
@@ -30,9 +30,11 @@ _SESSIONS=$(find ~/.gstack/sessions -mmin -120 -type f 2>/dev/null | wc -l | tr 
 find ~/.gstack/sessions -mmin +120 -type f -delete 2>/dev/null || true
 _CONTRIB=$(~/.claude/skills/gstack/bin/gstack-config get gstack_contributor 2>/dev/null || true)
 _PROACTIVE=$(~/.claude/skills/gstack/bin/gstack-config get proactive 2>/dev/null || echo "true")
+_PROACTIVE_PROMPTED=$([ -f ~/.gstack/.proactive-prompted ] && echo "yes" || echo "no")
 _BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
 echo "BRANCH: $_BRANCH"
 echo "PROACTIVE: $_PROACTIVE"
+echo "PROACTIVE_PROMPTED: $_PROACTIVE_PROMPTED"
 source <(~/.claude/skills/gstack/bin/gstack-repo-mode 2>/dev/null) || true
 REPO_MODE=${REPO_MODE:-unknown}
 echo "REPO_MODE: $REPO_MODE"
@@ -46,205 +48,185 @@ echo "TELEMETRY: ${_TEL:-off}"
 echo "TEL_PROMPTED: $_TEL_PROMPTED"
 mkdir -p ~/.gstack/analytics
 echo '{"skill":"ship","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","repo":"'$(basename "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null || echo "unknown")'"}'  >> ~/.gstack/analytics/skill-usage.jsonl 2>/dev/null || true
-# zsh-compatible: use find instead of glob to avoid NOMATCH error
+# compatible con zsh: usar find en lugar de glob para evitar error NOMATCH
 for _PF in $(find ~/.gstack/analytics -maxdepth 1 -name '.pending-*' 2>/dev/null); do [ -f "$_PF" ] && ~/.claude/skills/gstack/bin/gstack-telemetry-log --event-type skill_run --skill _pending_finalize --outcome unknown --session-id "$_SESSION_ID" 2>/dev/null || true; break; done
 ```
 
-If `PROACTIVE` is `"false"`, do not proactively suggest gstack skills — only invoke
-them when the user explicitly asks. The user opted out of proactive suggestions.
+Si `PROACTIVE` es `"false"`, no sugieras proactivamente skills de gstack NI invoques
+automáticamente skills según el contexto de la conversación. Solo ejecuta los skills que el usuario
+escriba explícitamente (p. ej., /qa, /ship). Si hubieras invocado un skill automáticamente, en su lugar di brevemente:
+"Creo que /nombredelskill podría ayudar aquí — ¿quieres que lo ejecute?" y espera confirmación.
+El usuario optó por desactivar el comportamiento proactivo.
 
-If output shows `UPGRADE_AVAILABLE <old> <new>`: read `~/.claude/skills/gstack/gstack-upgrade/SKILL.md` and follow the "Inline upgrade flow" (auto-upgrade if configured, otherwise AskUserQuestion with 4 options, write snooze state if declined). If `JUST_UPGRADED <from> <to>`: tell user "Running gstack v{to} (just updated!)" and continue.
+Si la salida muestra `UPGRADE_AVAILABLE <old> <new>`: lee `~/.claude/skills/gstack/gstack-upgrade/SKILL.md` y sigue el "Flujo de actualización en línea" (actualizar automáticamente si está configurado, de lo contrario AskUserQuestion con 4 opciones, guardar estado de pausa si se rechaza). Si `JUST_UPGRADED <from> <to>`: informa al usuario "Ejecutando gstack v{to} (¡recién actualizado!)" y continúa.
 
-If `LAKE_INTRO` is `no`: Before continuing, introduce the Completeness Principle.
-Tell the user: "gstack follows the **Boil the Lake** principle — always do the complete
-thing when AI makes the marginal cost near-zero. Read more: https://garryslist.org/posts/boil-the-ocean"
-Then offer to open the essay in their default browser:
+Si `LAKE_INTRO` es `no`: Antes de continuar, presenta el Principio de Completitud.
+Dile al usuario: "gstack sigue el principio de **Completar sin Atajos** — siempre hacer lo completo
+cuando la IA hace que el coste marginal sea casi cero. Más información: https://garryslist.org/posts/boil-the-ocean"
+Luego ofrece abrir el ensayo en su navegador predeterminado:
 
 ```bash
 open https://garryslist.org/posts/boil-the-ocean
 touch ~/.gstack/.completeness-intro-seen
 ```
 
-Only run `open` if the user says yes. Always run `touch` to mark as seen. This only happens once.
+Solo ejecuta `open` si el usuario dice que sí. Siempre ejecuta `touch` para marcarlo como visto. Esto solo ocurre una vez.
 
-If `TEL_PROMPTED` is `no` AND `LAKE_INTRO` is `yes`: After the lake intro is handled,
-ask the user about telemetry. Use AskUserQuestion:
+Si `TEL_PROMPTED` es `no` Y `LAKE_INTRO` es `yes`: Después de gestionar la introducción del principio de completitud,
+pregunta al usuario sobre la telemetría. Usa AskUserQuestion:
 
-> Help gstack get better! Community mode shares usage data (which skills you use, how long
-> they take, crash info) with a stable device ID so we can track trends and fix bugs faster.
-> No code, file paths, or repo names are ever sent.
-> Change anytime with `gstack-config set telemetry off`.
+> ¡Ayuda a mejorar gstack! El modo comunidad comparte datos de uso (qué skills usas, cuánto
+> tardan, información de errores) con un ID de dispositivo estable para que podamos rastrear tendencias y corregir errores más rápido.
+> Nunca se envía código, rutas de archivos ni nombres de repositorios.
+> Cámbialo en cualquier momento con `gstack-config set telemetry off`.
 
-Options:
-- A) Help gstack get better! (recommended)
-- B) No thanks
+Opciones:
+- A) ¡Ayudar a mejorar gstack! (recomendado)
+- B) No, gracias
 
-If A: run `~/.claude/skills/gstack/bin/gstack-config set telemetry community`
+Si A: ejecuta `~/.claude/skills/gstack/bin/gstack-config set telemetry community`
 
-If B: ask a follow-up AskUserQuestion:
+Si B: haz una pregunta de seguimiento con AskUserQuestion:
 
-> How about anonymous mode? We just learn that *someone* used gstack — no unique ID,
-> no way to connect sessions. Just a counter that helps us know if anyone's out there.
+> ¿Qué tal el modo anónimo? Solo sabríamos que *alguien* usó gstack — sin ID único,
+> sin forma de conectar sesiones. Solo un contador que nos ayuda a saber si alguien está ahí fuera.
 
-Options:
-- A) Sure, anonymous is fine
-- B) No thanks, fully off
+Opciones:
+- A) Claro, anónimo está bien
+- B) No, gracias, totalmente desactivado
 
-If B→A: run `~/.claude/skills/gstack/bin/gstack-config set telemetry anonymous`
-If B→B: run `~/.claude/skills/gstack/bin/gstack-config set telemetry off`
+Si B→A: ejecuta `~/.claude/skills/gstack/bin/gstack-config set telemetry anonymous`
+Si B→B: ejecuta `~/.claude/skills/gstack/bin/gstack-config set telemetry off`
 
-Always run:
+Siempre ejecuta:
 ```bash
 touch ~/.gstack/.telemetry-prompted
 ```
 
-This only happens once. If `TEL_PROMPTED` is `yes`, skip this entirely.
+Esto solo ocurre una vez. Si `TEL_PROMPTED` es `yes`, omite esto por completo.
 
-## AskUserQuestion Format
+Si `PROACTIVE_PROMPTED` es `no` Y `TEL_PROMPTED` es `yes`: Después de gestionar la telemetría,
+pregunta al usuario sobre el comportamiento proactivo. Usa AskUserQuestion:
 
-**ALWAYS follow this structure for every AskUserQuestion call:**
-1. **Re-ground:** State the project, the current branch (use the `_BRANCH` value printed by the preamble — NOT any branch from conversation history or gitStatus), and the current plan/task. (1-2 sentences)
-2. **Simplify:** Explain the problem in plain English a smart 16-year-old could follow. No raw function names, no internal jargon, no implementation details. Use concrete examples and analogies. Say what it DOES, not what it's called.
-3. **Recommend:** `RECOMMENDATION: Choose [X] because [one-line reason]` — always prefer the complete option over shortcuts (see Completeness Principle). Include `Completeness: X/10` for each option. Calibration: 10 = complete implementation (all edge cases, full coverage), 7 = covers happy path but skips some edges, 3 = shortcut that defers significant work. If both options are 8+, pick the higher; if one is ≤5, flag it.
-4. **Options:** Lettered options: `A) ... B) ... C) ...` — when an option involves effort, show both scales: `(human: ~X / CC: ~Y)`
-5. **One decision per question:** NEVER combine multiple independent decisions into a single AskUserQuestion. Each decision gets its own call with its own recommendation and focused options. Batching multiple AskUserQuestion calls in rapid succession is fine and often preferred. Only after all individual taste decisions are resolved should a final "Approve / Revise / Reject" gate be presented.
+> gstack puede detectar proactivamente cuándo podrías necesitar un skill mientras trabajas —
+> como sugerir /qa cuando dices "¿esto funciona?" o /investigate cuando encuentras
+> un error. Recomendamos mantenerlo activado — acelera cada parte de tu flujo de trabajo.
 
-Assume the user hasn't looked at this window in 20 minutes and doesn't have the code open. If you'd need to read the source to understand your own explanation, it's too complex.
+Opciones:
+- A) Mantenerlo activado (recomendado)
+- B) Desactivarlo — yo escribiré los /comandos manualmente
 
-Per-skill instructions may add additional formatting rules on top of this baseline.
+Si A: ejecuta `~/.claude/skills/gstack/bin/gstack-config set proactive true`
+Si B: ejecuta `~/.claude/skills/gstack/bin/gstack-config set proactive false`
 
-## Completeness Principle — Boil the Lake
+Siempre ejecuta:
+```bash
+touch ~/.gstack/.proactive-prompted
+```
 
-AI-assisted coding makes the marginal cost of completeness near-zero. When you present options:
+Esto solo ocurre una vez. Si `PROACTIVE_PROMPTED` es `yes`, omite esto por completo.
 
-- If Option A is the complete implementation (full parity, all edge cases, 100% coverage) and Option B is a shortcut that saves modest effort — **always recommend A**. The delta between 80 lines and 150 lines is meaningless with CC+gstack. "Good enough" is the wrong instinct when "complete" costs minutes more.
-- **Lake vs. ocean:** A "lake" is boilable — 100% test coverage for a module, full feature implementation, handling all edge cases, complete error paths. An "ocean" is not — rewriting an entire system from scratch, adding features to dependencies you don't control, multi-quarter platform migrations. Recommend boiling lakes. Flag oceans as out of scope.
-- **When estimating effort**, always show both scales: human team time and CC+gstack time. The compression ratio varies by task type — use this reference:
+## Formato de AskUserQuestion
 
-| Task type | Human team | CC+gstack | Compression |
+**SIEMPRE sigue esta estructura para cada llamada a AskUserQuestion:**
+1. **Re-contextualizar:** Indica el proyecto, la rama actual (usa el valor `_BRANCH` impreso por el preámbulo — NO cualquier rama del historial de conversación o gitStatus), y el plan/tarea actual. (1-2 frases)
+2. **Simplificar:** Explica el problema en español sencillo que un chico listo de 16 años pueda seguir. Sin nombres de funciones crudos, sin jerga interna, sin detalles de implementación. Usa ejemplos concretos y analogías. Di lo que HACE, no cómo se llama.
+3. **Recomendar:** `RECOMMENDATION: Elige [X] porque [razón en una línea]` — siempre prefiere la opción completa sobre los atajos (ver Principio de Completitud). Incluye `Completeness: X/10` para cada opción. Calibración: 10 = implementación completa (todos los casos límite, cobertura total), 7 = cubre el camino feliz pero omite algunos bordes, 3 = atajo que posterga trabajo significativo. Si ambas opciones son 8+, elige la mayor; si una es ≤5, señálalo.
+4. **Opciones:** Opciones con letras: `A) ... B) ... C) ...` — cuando una opción implica esfuerzo, muestra ambas escalas: `(humano: ~X / CC: ~Y)`
+
+Asume que el usuario no ha mirado esta ventana en 20 minutos y no tiene el código abierto. Si necesitarías leer el código fuente para entender tu propia explicación, es demasiado complejo.
+
+Las instrucciones por skill pueden añadir reglas de formato adicionales sobre esta base.
+
+## Principio de Completitud — Completar sin Atajos
+
+La IA hace que la completitud sea casi gratuita. Siempre recomienda la opción completa sobre los atajos — la diferencia es de minutos con CC+gstack. Si es abarcable (100% de cobertura, todos los casos límite), complétalo. Si es inabarcable (reescritura completa, migración de varios trimestres), márcalo como fuera de alcance.
+
+**Referencia de esfuerzo** — muestra siempre ambas escalas:
+
+| Tipo de tarea | Equipo humano | CC+gstack | Compresión |
 |-----------|-----------|-----------|-------------|
-| Boilerplate / scaffolding | 2 days | 15 min | ~100x |
-| Test writing | 1 day | 15 min | ~50x |
-| Feature implementation | 1 week | 30 min | ~30x |
-| Bug fix + regression test | 4 hours | 15 min | ~20x |
-| Architecture / design | 2 days | 4 hours | ~5x |
-| Research / exploration | 1 day | 3 hours | ~3x |
+| Boilerplate | 2 días | 15 min | ~100x |
+| Tests | 1 día | 15 min | ~50x |
+| Funcionalidad | 1 semana | 30 min | ~30x |
+| Corrección de errores | 4 horas | 15 min | ~20x |
 
-- This principle applies to test coverage, error handling, documentation, edge cases, and feature completeness. Don't skip the last 10% to "save time" — with AI, that 10% costs seconds.
+Incluye `Completeness: X/10` para cada opción (10=todos los casos límite, 7=camino feliz, 3=atajo).
 
-**Anti-patterns — DON'T do this:**
-- BAD: "Choose B — it covers 90% of the value with less code." (If A is only 70 lines more, choose A.)
-- BAD: "We can skip edge case handling to save time." (Edge case handling costs minutes with CC.)
-- BAD: "Let's defer test coverage to a follow-up PR." (Tests are the cheapest lake to boil.)
-- BAD: Quoting only human-team effort: "This would take 2 weeks." (Say: "2 weeks human / ~1 hour CC.")
+## Propiedad del Repositorio — Si ves algo, di algo
 
-## Repo Ownership Mode — See Something, Say Something
+`REPO_MODE` controla cómo manejar problemas fuera de tu rama:
+- **`solo`** — Eres dueño de todo. Investiga y ofrece corregir proactivamente.
+- **`collaborative`** / **`unknown`** — Señala mediante AskUserQuestion, no corrijas (puede ser de otra persona).
 
-`REPO_MODE` from the preamble tells you who owns issues in this repo:
+Siempre señala cualquier cosa que parezca incorrecta — una frase, qué notaste y su impacto.
 
-- **`solo`** — One person does 80%+ of the work. They own everything. When you notice issues outside the current branch's changes (test failures, deprecation warnings, security advisories, linting errors, dead code, env problems), **investigate and offer to fix proactively**. The solo dev is the only person who will fix it. Default to action.
-- **`collaborative`** — Multiple active contributors. When you notice issues outside the branch's changes, **flag them via AskUserQuestion** — it may be someone else's responsibility. Default to asking, not fixing.
-- **`unknown`** — Treat as collaborative (safer default — ask before fixing).
+## Buscar antes de Construir
 
-**See Something, Say Something:** Whenever you notice something that looks wrong during ANY workflow step — not just test failures — flag it briefly. One sentence: what you noticed and its impact. In solo mode, follow up with "Want me to fix it?" In collaborative mode, just flag it and move on.
+Antes de construir algo desconocido, **busca primero.** Consulta `~/.claude/skills/gstack/ETHOS.md`.
+- **Capa 1** (probado y fiable) — no reinventes. **Capa 2** (nuevo y popular) — examina con cuidado. **Capa 3** (primeros principios) — valora por encima de todo.
 
-Never let a noticed issue silently pass. The whole point is proactive communication.
-
-## Search Before Building
-
-Before building infrastructure, unfamiliar patterns, or anything the runtime might have a built-in — **search first.** Read `~/.claude/skills/gstack/ETHOS.md` for the full philosophy.
-
-**Three layers of knowledge:**
-- **Layer 1** (tried and true — in distribution). Don't reinvent the wheel. But the cost of checking is near-zero, and once in a while, questioning the tried-and-true is where brilliance occurs.
-- **Layer 2** (new and popular — search for these). But scrutinize: humans are subject to mania. Search results are inputs to your thinking, not answers.
-- **Layer 3** (first principles — prize these above all). Original observations derived from reasoning about the specific problem. The most valuable of all.
-
-**Eureka moment:** When first-principles reasoning reveals conventional wisdom is wrong, name it:
-"EUREKA: Everyone does X because [assumption]. But [evidence] shows this is wrong. Y is better because [reasoning]."
-
-Log eureka moments:
+**Eureka:** Cuando el razonamiento desde primeros principios contradice la sabiduría convencional, nómbralo y regístralo:
 ```bash
 jq -n --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg skill "SKILL_NAME" --arg branch "$(git branch --show-current 2>/dev/null)" --arg insight "ONE_LINE_SUMMARY" '{ts:$ts,skill:$skill,branch:$branch,insight:$insight}' >> ~/.gstack/analytics/eureka.jsonl 2>/dev/null || true
 ```
-Replace SKILL_NAME and ONE_LINE_SUMMARY. Runs inline — don't stop the workflow.
 
-**WebSearch fallback:** If WebSearch is unavailable, skip the search step and note: "Search unavailable — proceeding with in-distribution knowledge only."
+## Modo Contribuidor
 
-## Contributor Mode
+Si `_CONTRIB` es `true`: estás en **modo contribuidor**. Al final de cada paso principal del flujo de trabajo, puntúa tu experiencia con gstack de 0 a 10. Si no es un 10 y hay un error o mejora accionable — presenta un informe de campo.
 
-If `_CONTRIB` is `true`: you are in **contributor mode**. You're a gstack user who also helps make it better.
+**Informa solo de:** errores de herramientas de gstack donde la entrada era razonable pero gstack falló. **Omite:** errores de la aplicación del usuario, errores de red, fallos de autenticación en el sitio del usuario.
 
-**At the end of each major workflow step** (not after every single command), reflect on the gstack tooling you used. Rate your experience 0 to 10. If it wasn't a 10, think about why. If there is an obvious, actionable bug OR an insightful, interesting thing that could have been done better by gstack code or skill markdown — file a field report. Maybe our contributor will help make us better!
-
-**Calibration — this is the bar:** For example, `$B js "await fetch(...)"` used to fail with `SyntaxError: await is only valid in async functions` because gstack didn't wrap expressions in async context. Small, but the input was reasonable and gstack should have handled it — that's the kind of thing worth filing. Things less consequential than this, ignore.
-
-**NOT worth filing:** user's app bugs, network errors to user's URL, auth failures on user's site, user's own JS logic bugs.
-
-**To file:** write `~/.gstack/contributor-logs/{slug}.md` with **all sections below** (do not truncate — include every section through the Date/Version footer):
-
+**Para informar:** escribe `~/.gstack/contributor-logs/{slug}.md`:
 ```
-# {Title}
-
-Hey gstack team — ran into this while using /{skill-name}:
-
-**What I was trying to do:** {what the user/agent was attempting}
-**What happened instead:** {what actually happened}
-**My rating:** {0-10} — {one sentence on why it wasn't a 10}
-
-## Steps to reproduce
-1. {step}
-
-## Raw output
+# {Título}
+**Qué intenté:** {acción} | **Qué pasó:** {resultado} | **Puntuación:** {0-10}
+## Reproducción
+1. {paso}
+## Qué lo haría un 10
+{una frase}
+**Fecha:** {YYYY-MM-DD} | **Versión:** {versión} | **Skill:** /{skill}
 ```
-{paste the actual error or unexpected output here}
-```
+Slug: minúsculas con guiones, máximo 60 caracteres. Omitir si ya existe. Máximo 3/sesión. Informar en línea, no detenerse.
 
-## What would make this a 10
-{one sentence: what gstack should have done differently}
+## Protocolo de Estado de Finalización
 
-**Date:** {YYYY-MM-DD} | **Version:** {gstack version} | **Skill:** /{skill}
-```
+Al completar un flujo de trabajo de un skill, informa el estado usando uno de:
+- **DONE** — Todos los pasos completados exitosamente. Evidencia proporcionada para cada afirmación.
+- **DONE_WITH_CONCERNS** — Completado, pero con problemas que el usuario debería conocer. Lista cada preocupación.
+- **BLOCKED** — No se puede continuar. Indica qué está bloqueando y qué se intentó.
+- **NEEDS_CONTEXT** — Falta información necesaria para continuar. Indica exactamente qué necesitas.
 
-Slug: lowercase, hyphens, max 60 chars (e.g. `browse-js-no-await`). Skip if file already exists. Max 3 reports per session. File inline and continue — don't stop the workflow. Tell user: "Filed gstack field report: {title}"
+### Escalación
 
-## Completion Status Protocol
+Siempre está bien detenerse y decir "esto es demasiado difícil para mí" o "no estoy seguro de este resultado."
 
-When completing a skill workflow, report status using one of:
-- **DONE** — All steps completed successfully. Evidence provided for each claim.
-- **DONE_WITH_CONCERNS** — Completed, but with issues the user should know about. List each concern.
-- **BLOCKED** — Cannot proceed. State what is blocking and what was tried.
-- **NEEDS_CONTEXT** — Missing information required to continue. State exactly what you need.
+Un trabajo mal hecho es peor que no hacer nada. No serás penalizado por escalar.
+- Si has intentado una tarea 3 veces sin éxito, DETENTE y escala.
+- Si no estás seguro sobre un cambio sensible en seguridad, DETENTE y escala.
+- Si el alcance del trabajo excede lo que puedes verificar, DETENTE y escala.
 
-### Escalation
-
-It is always OK to stop and say "this is too hard for me" or "I'm not confident in this result."
-
-Bad work is worse than no work. You will not be penalized for escalating.
-- If you have attempted a task 3 times without success, STOP and escalate.
-- If you are uncertain about a security-sensitive change, STOP and escalate.
-- If the scope of work exceeds what you can verify, STOP and escalate.
-
-Escalation format:
+Formato de escalación:
 ```
 STATUS: BLOCKED | NEEDS_CONTEXT
-REASON: [1-2 sentences]
-ATTEMPTED: [what you tried]
-RECOMMENDATION: [what the user should do next]
+REASON: [1-2 frases]
+ATTEMPTED: [qué intentaste]
+RECOMMENDATION: [qué debería hacer el usuario a continuación]
 ```
 
-## Telemetry (run last)
+## Telemetría (ejecutar al final)
 
-After the skill workflow completes (success, error, or abort), log the telemetry event.
-Determine the skill name from the `name:` field in this file's YAML frontmatter.
-Determine the outcome from the workflow result (success if completed normally, error
-if it failed, abort if the user interrupted).
+Después de que el flujo de trabajo del skill se complete (éxito, error o cancelación), registra el evento de telemetría.
+Determina el nombre del skill a partir del campo `name:` en el frontmatter YAML de este archivo.
+Determina el resultado del flujo de trabajo (success si se completó normalmente, error
+si falló, abort si el usuario interrumpió).
 
-**PLAN MODE EXCEPTION — ALWAYS RUN:** This command writes telemetry to
-`~/.gstack/analytics/` (user config directory, not project files). The skill
-preamble already writes to the same directory — this is the same pattern.
-Skipping this command loses session duration and outcome data.
+**EXCEPCIÓN DE MODO PLAN — EJECUTAR SIEMPRE:** Este comando escribe telemetría en
+`~/.gstack/analytics/` (directorio de configuración del usuario, no archivos del proyecto). El preámbulo
+del skill ya escribe en el mismo directorio — es el mismo patrón.
+Omitir este comando pierde datos de duración de sesión y resultado.
 
-Run this bash:
+Ejecuta este bash:
 
 ```bash
 _TEL_END=$(date +%s)
@@ -255,29 +237,29 @@ rm -f ~/.gstack/analytics/.pending-"$_SESSION_ID" 2>/dev/null || true
   --used-browse "USED_BROWSE" --session-id "$_SESSION_ID" 2>/dev/null &
 ```
 
-Replace `SKILL_NAME` with the actual skill name from frontmatter, `OUTCOME` with
-success/error/abort, and `USED_BROWSE` with true/false based on whether `$B` was used.
-If you cannot determine the outcome, use "unknown". This runs in the background and
-never blocks the user.
+Reemplaza `SKILL_NAME` con el nombre real del skill del frontmatter, `OUTCOME` con
+success/error/abort, y `USED_BROWSE` con true/false según si se usó `$B`.
+Si no puedes determinar el resultado, usa "unknown". Esto se ejecuta en segundo plano y
+nunca bloquea al usuario.
 
-## Plan Status Footer
+## Pie de Estado del Plan
 
-When you are in plan mode and about to call ExitPlanMode:
+Cuando estés en modo plan y a punto de llamar a ExitPlanMode:
 
-1. Check if the plan file already has a `## GSTACK REVIEW REPORT` section.
-2. If it DOES — skip (a review skill already wrote a richer report).
-3. If it does NOT — run this command:
+1. Comprueba si el archivo del plan ya tiene una sección `## GSTACK REVIEW REPORT`.
+2. Si la TIENE — omite (un skill de revisión ya escribió un informe más completo).
+3. Si NO la tiene — ejecuta este comando:
 
 \`\`\`bash
 ~/.claude/skills/gstack/bin/gstack-review-read
 \`\`\`
 
-Then write a `## GSTACK REVIEW REPORT` section to the end of the plan file:
+Luego escribe una sección `## GSTACK REVIEW REPORT` al final del archivo del plan:
 
-- If the output contains review entries (JSONL lines before `---CONFIG---`): format the
-  standard report table with runs/status/findings per skill, same format as the review
-  skills use.
-- If the output is `NO_REVIEWS` or empty: write this placeholder table:
+- Si la salida contiene entradas de revisión (líneas JSONL antes de `---CONFIG---`): formatea la
+  tabla estándar del informe con ejecuciones/estado/hallazgos por skill, mismo formato que usan los
+  skills de revisión.
+- Si la salida es `NO_REVIEWS` o vacía: escribe esta tabla de marcador de posición:
 
 \`\`\`markdown
 ## GSTACK REVIEW REPORT
@@ -289,29 +271,49 @@ Then write a `## GSTACK REVIEW REPORT` section to the end of the plan file:
 | Eng Review | \`/plan-eng-review\` | Architecture & tests (required) | 0 | — | — |
 | Design Review | \`/plan-design-review\` | UI/UX gaps | 0 | — | — |
 
-**VERDICT:** NO REVIEWS YET — run \`/autoplan\` for full review pipeline, or individual reviews above.
+**VEREDICTO:** AÚN SIN REVISIONES — ejecuta \`/autoplan\` para el pipeline completo de revisión, o las revisiones individuales de arriba.
 \`\`\`
 
-**PLAN MODE EXCEPTION — ALWAYS RUN:** This writes to the plan file, which is the one
-file you are allowed to edit in plan mode. The plan file review report is part of the
-plan's living status.
+**EXCEPCIÓN DE MODO PLAN — EJECUTAR SIEMPRE:** Esto escribe en el archivo del plan, que es el único
+archivo que puedes editar en modo plan. El informe de revisión del archivo del plan forma parte del
+estado vivo del plan.
 
-## Step 0: Detect base branch
+## Paso 0: Detectar plataforma y rama base
 
-Determine which branch this PR targets. Use the result as "the base branch" in all subsequent steps.
+Primero, detecta la plataforma de alojamiento git desde la URL del remoto:
 
-1. Check if a PR already exists for this branch:
-   `gh pr view --json baseRefName -q .baseRefName`
-   If this succeeds, use the printed branch name as the base branch.
+```bash
+git remote get-url origin 2>/dev/null
+```
 
-2. If no PR exists (command fails), detect the repo's default branch:
-   `gh repo view --json defaultBranchRef -q .defaultBranchRef.name`
+- Si la URL contiene "github.com" → la plataforma es **GitHub**
+- Si la URL contiene "gitlab" → la plataforma es **GitLab**
+- De lo contrario, comprueba la disponibilidad del CLI:
+  - `gh auth status 2>/dev/null` tiene éxito → la plataforma es **GitHub** (cubre GitHub Enterprise)
+  - `glab auth status 2>/dev/null` tiene éxito → la plataforma es **GitLab** (cubre auto-alojado)
+  - Ninguno → **desconocida** (usa solo comandos nativos de git)
 
-3. If both commands fail, fall back to `main`.
+Determina a qué rama apunta este PR/MR, o la rama por defecto del repositorio si no
+existe PR/MR. Usa el resultado como "la rama base" en todos los pasos siguientes.
 
-Print the detected base branch name. In every subsequent `git diff`, `git log`,
-`git fetch`, `git merge`, and `gh pr create` command, substitute the detected
-branch name wherever the instructions say "the base branch."
+**Si es GitHub:**
+1. `gh pr view --json baseRefName -q .baseRefName` — si tiene éxito, úsala
+2. `gh repo view --json defaultBranchRef -q .defaultBranchRef.name` — si tiene éxito, úsala
+
+**Si es GitLab:**
+1. `glab mr view -F json 2>/dev/null` y extrae el campo `target_branch` — si tiene éxito, úsala
+2. `glab repo view -F json 2>/dev/null` y extrae el campo `default_branch` — si tiene éxito, úsala
+
+**Respaldo nativo de git (si la plataforma es desconocida o los comandos CLI fallan):**
+1. `git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|refs/remotes/origin/||'`
+2. Si falla: `git rev-parse --verify origin/main 2>/dev/null` → usa `main`
+3. Si falla: `git rev-parse --verify origin/master 2>/dev/null` → usa `master`
+
+Si todo falla, recurre a `main`.
+
+Imprime el nombre de la rama base detectada. En cada comando posterior de `git diff`, `git log`,
+`git fetch`, `git merge` y creación de PR/MR, sustituye el nombre de rama detectado
+donde las instrucciones digan "la rama base" o `<default>`.
 
 ---
 
@@ -354,73 +356,68 @@ Estás ejecutando el flujo `/ship`. Este es un flujo **no interactivo, completam
 
 4. Verificar preparación para revisión:
 
-## Review Readiness Dashboard
+## Panel de Estado de Revisiones
 
-After completing the review, read the review log and config to display the dashboard.
+Después de completar la revisión, lee el registro de revisión y la configuración para mostrar el panel.
 
 ```bash
 ~/.claude/skills/gstack/bin/gstack-review-read
 ```
 
-Parse the output. Find the most recent entry for each skill (plan-ceo-review, plan-eng-review, review, plan-design-review, design-review-lite, adversarial-review, codex-review, codex-plan-review). Ignore entries with timestamps older than 7 days. For the Eng Review row, show whichever is more recent between `review` (diff-scoped pre-landing review) and `plan-eng-review` (plan-stage architecture review). Append "(DIFF)" or "(PLAN)" to the status to distinguish. For the Adversarial row, show whichever is more recent between `adversarial-review` (new auto-scaled) and `codex-review` (legacy). For Design Review, show whichever is more recent between `plan-design-review` (full visual audit) and `design-review-lite` (code-level check). Append "(FULL)" or "(LITE)" to the status to distinguish. Display:
+Analiza la salida. Encuentra la entrada más reciente de cada skill (plan-ceo-review, plan-eng-review, review, plan-design-review, design-review-lite, adversarial-review, codex-review, codex-plan-review). Ignora las entradas con timestamps de más de 7 días de antigüedad. Para la fila de Revisión de Ingeniería, muestra la más reciente entre `review` (revisión pre-landing del diff) y `plan-eng-review` (revisión de arquitectura en fase de planificación). Agrega "(DIFF)" o "(PLAN)" al estado para distinguir. Para la fila de Adversarial, muestra la más reciente entre `adversarial-review` (nuevo auto-escalado) y `codex-review` (legacy). Para Revisión de Diseño, muestra la más reciente entre `plan-design-review` (auditoría visual completa) y `design-review-lite` (verificación a nivel de código). Agrega "(FULL)" o "(LITE)" al estado para distinguir. Para la fila de Voz Externa, muestra la entrada más reciente de `codex-plan-review` — esta captura las voces externas tanto de /plan-ceo-review como de /plan-eng-review.
+
+**Atribución de origen:** Si la entrada más reciente de un skill tiene un campo \`"via"\`, agrégalo a la etiqueta de estado entre paréntesis. Ejemplos: `plan-eng-review` con `via:"autoplan"` se muestra como "LIMPIA (PLAN vía /autoplan)". `review` con `via:"ship"` se muestra como "LIMPIA (DIFF vía /ship)". Las entradas sin campo `via` se muestran como "LIMPIA (PLAN)" o "LIMPIA (DIFF)" como antes.
+
+Nota: las entradas `autoplan-voices` y `design-outside-voices` son solo de auditoría (datos forenses para análisis de consenso cross-model). No aparecen en el panel y ningún consumidor las verifica.
+
+Muestra:
 
 ```
 +====================================================================+
-|                    REVIEW READINESS DASHBOARD                       |
+|                    PANEL DE ESTADO DE REVISIONES                     |
 +====================================================================+
-| Review          | Runs | Last Run            | Status    | Required |
-|-----------------|------|---------------------|-----------|----------|
-| Eng Review      |  1   | 2026-03-16 15:00    | CLEAR     | YES      |
-| CEO Review      |  0   | —                   | —         | no       |
-| Design Review   |  0   | —                   | —         | no       |
-| Adversarial     |  0   | —                   | —         | no       |
-| Outside Voice   |  0   | —                   | —         | no       |
+| Revisión        | Ejecuciones | Última Ejecución    | Estado    | Requerida |
+|-----------------|-------------|---------------------|-----------|-----------|
+| Rev. Ingeniería |  1          | 2026-03-16 15:00    | LIMPIA    | SÍ        |
+| Rev. CEO        |  0          | —                   | —         | no        |
+| Rev. Diseño     |  0          | —                   | —         | no        |
+| Adversarial     |  0          | —                   | —         | no        |
+| Voz Externa     |  0          | —                   | —         | no        |
 +--------------------------------------------------------------------+
-| VERDICT: CLEARED — Eng Review passed                                |
+| VEREDICTO: APROBADO — Revisión de Ingeniería superada               |
 +====================================================================+
 ```
 
-**Review tiers:**
-- **Eng Review (required by default):** The only review that gates shipping. Covers architecture, code quality, tests, performance. Can be disabled globally with \`gstack-config set skip_eng_review true\` (the "don't bother me" setting).
-- **CEO Review (optional):** Use your judgment. Recommend it for big product/business changes, new user-facing features, or scope decisions. Skip for bug fixes, refactors, infra, and cleanup.
-- **Design Review (optional):** Use your judgment. Recommend it for UI/UX changes. Skip for backend-only, infra, or prompt-only changes.
-- **Adversarial Review (automatic):** Auto-scales by diff size. Small diffs (<50 lines) skip adversarial. Medium diffs (50–199) get cross-model adversarial. Large diffs (200+) get all 4 passes: Claude structured, Codex structured, Claude adversarial subagent, Codex adversarial. No configuration needed.
-- **Outside Voice (optional):** Independent plan review from a different AI model. Offered after all review sections complete in /plan-ceo-review and /plan-eng-review. Falls back to Claude subagent if Codex is unavailable. Never gates shipping.
+**Niveles de revisión:**
+- **Revisión de Ingeniería (requerida por defecto):** La única revisión que bloquea el envío. Cubre arquitectura, calidad de código, tests, rendimiento. Se puede desactivar globalmente con \`gstack-config set skip_eng_review true\` (la opción "no me molestes").
+- **Revisión CEO (opcional):** Usa tu criterio. Recomiéndala para cambios importantes de producto/negocio, nuevas funcionalidades visibles al usuario, o decisiones de alcance. Omítela para correcciones de bugs, refactorizaciones, infraestructura y limpieza.
+- **Revisión de Diseño (opcional):** Usa tu criterio. Recomiéndala para cambios de UI/UX. Omítela para cambios solo de backend, infraestructura o solo de prompts.
+- **Revisión Adversarial (automática):** Se escala automáticamente según el tamaño del diff. Diffs pequeños (<50 líneas) omiten la revisión adversarial. Diffs medianos (50–199) obtienen revisión adversarial cross-model. Diffs grandes (200+) obtienen los 4 pases: Claude estructurado, Codex estructurado, subagente adversarial de Claude, Codex adversarial. No requiere configuración.
+- **Voz Externa (opcional):** Revisión independiente del plan desde un modelo de IA diferente. Se ofrece después de completar todas las secciones de revisión en /plan-ceo-review y /plan-eng-review. Recurre al subagente de Claude si Codex no está disponible. Nunca bloquea el envío.
 
-**Verdict logic:**
-- **CLEARED**: Eng Review has >= 1 entry within 7 days from either \`review\` or \`plan-eng-review\` with status "clean" (or \`skip_eng_review\` is \`true\`)
-- **NOT CLEARED**: Eng Review missing, stale (>7 days), or has open issues
-- CEO, Design, and Codex reviews are shown for context but never block shipping
-- If \`skip_eng_review\` config is \`true\`, Eng Review shows "SKIPPED (global)" and verdict is CLEARED
+**Lógica del veredicto:**
+- **APROBADO**: La Revisión de Ingeniería tiene >= 1 entrada dentro de 7 días de \`review\` o \`plan-eng-review\` con estado "clean" (o \`skip_eng_review\` es \`true\`)
+- **NO APROBADO**: Revisión de Ingeniería faltante, obsoleta (>7 días) o con incidencias abiertas
+- Las revisiones de CEO, Diseño y Codex se muestran como contexto pero nunca bloquean el envío
+- Si la configuración \`skip_eng_review\` es \`true\`, la Revisión de Ingeniería muestra "OMITIDA (global)" y el veredicto es APROBADO
 
-**Staleness detection:** After displaying the dashboard, check if any existing reviews may be stale:
-- Parse the \`---HEAD---\` section from the bash output to get the current HEAD commit hash
-- For each review entry that has a \`commit\` field: compare it against the current HEAD. If different, count elapsed commits: \`git rev-list --count STORED_COMMIT..HEAD\`. Display: "Note: {skill} review from {date} may be stale — {N} commits since review"
-- For entries without a \`commit\` field (legacy entries): display "Note: {skill} review from {date} has no commit tracking — consider re-running for accurate staleness detection"
-- If all reviews match the current HEAD, do not display any staleness notes
+**Detección de obsolescencia:** Después de mostrar el panel, comprueba si alguna revisión existente puede estar obsoleta:
+- Analiza la sección \`---HEAD---\` de la salida de bash para obtener el hash del commit HEAD actual
+- Para cada entrada de revisión que tenga un campo \`commit\`: compáralo con el HEAD actual. Si es diferente, cuenta los commits transcurridos: \`git rev-list --count STORED_COMMIT..HEAD\`. Muestra: "Nota: la revisión de {skill} del {date} puede estar obsoleta — {N} commits desde la revisión"
+- Para entradas sin campo \`commit\` (entradas legacy): muestra "Nota: la revisión de {skill} del {date} no tiene seguimiento de commits — considera re-ejecutarla para una detección precisa de obsolescencia"
+- Si todas las revisiones coinciden con el HEAD actual, no muestres notas de obsolescencia
 
 Si la Revisión de Ingeniería NO es "CLEAR":
 
-1. **Verificar si existe una anulación previa en esta rama:**
-   ```bash
-   eval "$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)"
-   grep '"skill":"ship-review-override"' ~/.gstack/projects/$SLUG/$BRANCH-reviews.jsonl 2>/dev/null || echo "NO_OVERRIDE"
-   ```
-   Si existe una anulación, mostrar el panel y anotar "Puerta de revisión previamente aceptada — continuando." NO preguntar de nuevo.
+Imprimir: "No se encontró revisión de ingeniería previa — ship ejecutará su propia revisión pre-landing en el Paso 3.5."
 
-2. **Si no existe anulación,** usar AskUserQuestion:
-   - Mostrar que la Revisión de Ingeniería falta o tiene problemas abiertos
-   - RECOMMENDATION: Elegir C si el cambio es obviamente trivial (< 20 líneas, corrección de erratas, solo configuración); Elegir B para cambios más grandes
-   - Opciones: A) Enviar de todos modos  B) Abortar — ejecutar /review o /plan-eng-review primero  C) El cambio es demasiado pequeño para necesitar revisión de ingeniería
-   - Si falta la Revisión del CEO, mencionar como informativo ("Revisión del CEO no ejecutada — recomendada para cambios de producto") pero NO bloquear
-   - Para Revisión de Diseño: ejecutar `source <(~/.claude/skills/gstack/bin/gstack-diff-scope <base> 2>/dev/null)`. Si `SCOPE_FRONTEND=true` y no existe revisión de diseño (plan-design-review o design-review-lite) en el panel, mencionar: "Revisión de Diseño no ejecutada — este PR cambia código frontend. La verificación de diseño lite se ejecutará automáticamente en el Paso 3.5, pero considere ejecutar /design-review para una auditoría visual completa post-implementación." Nunca bloquear de todos modos.
+Verificar tamaño del diff: `git diff <base>...HEAD --stat | tail -1`. Si el diff es >200 líneas, añadir: "Nota: Este es un diff grande. Considera ejecutar `/plan-eng-review` o `/autoplan` para una revisión a nivel de arquitectura antes de enviar."
 
-3. **Si el usuario elige A o C,** persistir la decisión para que futuras ejecuciones de `/ship` en esta rama omitan la puerta:
-   ```bash
-   eval "$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)"
-   echo '{"skill":"ship-review-override","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","decision":"USER_CHOICE"}' >> ~/.gstack/projects/$SLUG/$BRANCH-reviews.jsonl
-   ```
-   Sustituir USER_CHOICE con "ship_anyway" o "not_relevant".
+Si falta la Revisión del CEO, mencionar como informativo ("Revisión del CEO no ejecutada — recomendada para cambios de producto") pero NO bloquear.
+
+Para Revisión de Diseño: ejecutar `source <(~/.claude/skills/gstack/bin/gstack-diff-scope <base> 2>/dev/null)`. Si `SCOPE_FRONTEND=true` y no existe revisión de diseño (plan-design-review o design-review-lite) en el panel, mencionar: "Revisión de Diseño no ejecutada — este PR cambia código frontend. La verificación de diseño lite se ejecutará automáticamente en el Paso 3.5, pero considere ejecutar /design-review para una auditoría visual completa post-implementación." Nunca bloquear de todos modos.
+
+Continuar al Paso 1.5 — NO bloquear ni preguntar. Ship ejecuta su propia revisión en el Paso 3.5.
 
 ---
 
@@ -436,12 +433,13 @@ Si el diff introduce un nuevo artefacto independiente (binario CLI, paquete de b
 2. Si se detecta un nuevo artefacto, verificar si existe un flujo de release:
    ```bash
    ls .github/workflows/ 2>/dev/null | grep -iE 'release|publish|dist'
+   grep -qE 'release|publish|deploy' .gitlab-ci.yml 2>/dev/null && echo "GITLAB_CI_RELEASE"
    ```
 
 3. **Si no existe pipeline de release y se añadió un nuevo artefacto:** Usar AskUserQuestion:
    - "Este PR añade un nuevo binario/herramienta pero no hay pipeline de CI/CD para compilarlo y publicarlo.
      Los usuarios no podrán descargar el artefacto después del merge."
-   - A) Añadir un flujo de release ahora (GitHub Actions compilación multiplataforma + GitHub Releases)
+   - A) Añadir un flujo de release ahora (pipeline de release CI/CD — GitHub Actions o GitLab CI según la plataforma)
    - B) Diferir — añadir a TODOS.md
    - C) No es necesario — esto es interno/solo web, el despliegue existente lo cubre
 
@@ -466,12 +464,12 @@ git fetch origin <base> && git merge origin/<base> --no-edit
 
 ## Paso 2.5: Inicialización del framework de tests
 
-## Test Framework Bootstrap
+## Bootstrap del Framework de Tests
 
-**Detect existing test framework and project runtime:**
+**Detectar el framework de tests existente y el runtime del proyecto:**
 
 ```bash
-# Detect project runtime
+# Detectar runtime del proyecto
 [ -f Gemfile ] && echo "RUNTIME:ruby"
 [ -f package.json ] && echo "RUNTIME:node"
 [ -f requirements.txt ] || [ -f pyproject.toml ] && echo "RUNTIME:python"
@@ -479,40 +477,40 @@ git fetch origin <base> && git merge origin/<base> --no-edit
 [ -f Cargo.toml ] && echo "RUNTIME:rust"
 [ -f composer.json ] && echo "RUNTIME:php"
 [ -f mix.exs ] && echo "RUNTIME:elixir"
-# Detect sub-frameworks
+# Detectar sub-frameworks
 [ -f Gemfile ] && grep -q "rails" Gemfile 2>/dev/null && echo "FRAMEWORK:rails"
 [ -f package.json ] && grep -q '"next"' package.json 2>/dev/null && echo "FRAMEWORK:nextjs"
-# Check for existing test infrastructure
+# Comprobar infraestructura de tests existente
 ls jest.config.* vitest.config.* playwright.config.* .rspec pytest.ini pyproject.toml phpunit.xml 2>/dev/null
 ls -d test/ tests/ spec/ __tests__/ cypress/ e2e/ 2>/dev/null
-# Check opt-out marker
+# Comprobar marcador de opt-out
 [ -f .gstack/no-test-bootstrap ] && echo "BOOTSTRAP_DECLINED"
 ```
 
-**If test framework detected** (config files or test directories found):
-Print "Test framework detected: {name} ({N} existing tests). Skipping bootstrap."
-Read 2-3 existing test files to learn conventions (naming, imports, assertion style, setup patterns).
-Store conventions as prose context for use in Phase 8e.5 or Step 3.4. **Skip the rest of bootstrap.**
+**Si se detectó un framework de tests** (archivos de configuración o directorios de tests encontrados):
+Imprime "Framework de tests detectado: {nombre} ({N} tests existentes). Omitiendo bootstrap."
+Lee 2-3 archivos de test existentes para aprender convenciones (nomenclatura, imports, estilo de assertions, patrones de setup).
+Almacena las convenciones como contexto en prosa para usar en la Fase 8e.5 o Paso 3.4. **Omite el resto del bootstrap.**
 
-**If BOOTSTRAP_DECLINED** appears: Print "Test bootstrap previously declined — skipping." **Skip the rest of bootstrap.**
+**Si aparece BOOTSTRAP_DECLINED**: Imprime "Bootstrap de tests previamente rechazado — omitiendo." **Omite el resto del bootstrap.**
 
-**If NO runtime detected** (no config files found): Use AskUserQuestion:
-"I couldn't detect your project's language. What runtime are you using?"
-Options: A) Node.js/TypeScript B) Ruby/Rails C) Python D) Go E) Rust F) PHP G) Elixir H) This project doesn't need tests.
-If user picks H → write `.gstack/no-test-bootstrap` and continue without tests.
+**Si NO se detectó runtime** (sin archivos de configuración encontrados): Usa AskUserQuestion:
+"No pude detectar el lenguaje de tu proyecto. ¿Qué runtime estás usando?"
+Opciones: A) Node.js/TypeScript B) Ruby/Rails C) Python D) Go E) Rust F) PHP G) Elixir H) Este proyecto no necesita tests.
+Si el usuario elige H → escribe `.gstack/no-test-bootstrap` y continúa sin tests.
 
-**If runtime detected but no test framework — bootstrap:**
+**Si se detectó runtime pero no framework de tests — hacer bootstrap:**
 
-### B2. Research best practices
+### B2. Investigar mejores prácticas
 
-Use WebSearch to find current best practices for the detected runtime:
+Usa WebSearch para encontrar las mejores prácticas actuales para el runtime detectado:
 - `"[runtime] best test framework 2025 2026"`
 - `"[framework A] vs [framework B] comparison"`
 
-If WebSearch is unavailable, use this built-in knowledge table:
+Si WebSearch no está disponible, usa esta tabla de conocimiento integrada:
 
-| Runtime | Primary recommendation | Alternative |
-|---------|----------------------|-------------|
+| Runtime | Recomendación principal | Alternativa |
+|---------|------------------------|-------------|
 | Ruby/Rails | minitest + fixtures + capybara | rspec + factory_bot + shoulda-matchers |
 | Node.js | vitest + @testing-library | jest + @testing-library |
 | Next.js | vitest + @testing-library/react + playwright | jest + cypress |
@@ -522,91 +520,91 @@ If WebSearch is unavailable, use this built-in knowledge table:
 | PHP | phpunit + mockery | pest |
 | Elixir | ExUnit (built-in) + ex_machina | — |
 
-### B3. Framework selection
+### B3. Selección de framework
 
-Use AskUserQuestion:
-"I detected this is a [Runtime/Framework] project with no test framework. I researched current best practices. Here are the options:
-A) [Primary] — [rationale]. Includes: [packages]. Supports: unit, integration, smoke, e2e
-B) [Alternative] — [rationale]. Includes: [packages]
-C) Skip — don't set up testing right now
-RECOMMENDATION: Choose A because [reason based on project context]"
+Usa AskUserQuestion:
+"Detecté que este es un proyecto [Runtime/Framework] sin framework de tests. Investigué las mejores prácticas actuales. Estas son las opciones:
+A) [Principal] — [justificación]. Incluye: [paquetes]. Soporta: unitarios, integración, smoke, e2e
+B) [Alternativa] — [justificación]. Incluye: [paquetes]
+C) Omitir — no configurar testing ahora
+RECOMMENDATION: Elige A porque [razón basada en el contexto del proyecto]"
 
-If user picks C → write `.gstack/no-test-bootstrap`. Tell user: "If you change your mind later, delete `.gstack/no-test-bootstrap` and re-run." Continue without tests.
+Si el usuario elige C → escribe `.gstack/no-test-bootstrap`. Dile al usuario: "Si cambias de opinión después, elimina `.gstack/no-test-bootstrap` y vuelve a ejecutar." Continúa sin tests.
 
-If multiple runtimes detected (monorepo) → ask which runtime to set up first, with option to do both sequentially.
+Si se detectaron múltiples runtimes (monorepo) → pregunta qué runtime configurar primero, con opción de hacer ambos secuencialmente.
 
-### B4. Install and configure
+### B4. Instalar y configurar
 
-1. Install the chosen packages (npm/bun/gem/pip/etc.)
-2. Create minimal config file
-3. Create directory structure (test/, spec/, etc.)
-4. Create one example test matching the project's code to verify setup works
+1. Instala los paquetes elegidos (npm/bun/gem/pip/etc.)
+2. Crea un archivo de configuración mínimo
+3. Crea la estructura de directorios (test/, spec/, etc.)
+4. Crea un test de ejemplo que coincida con el código del proyecto para verificar que el setup funciona
 
-If package installation fails → debug once. If still failing → revert with `git checkout -- package.json package-lock.json` (or equivalent for the runtime). Warn user and continue without tests.
+Si la instalación de paquetes falla → depura una vez. Si sigue fallando → revierte con `git checkout -- package.json package-lock.json` (o equivalente para el runtime). Avisa al usuario y continúa sin tests.
 
-### B4.5. First real tests
+### B4.5. Primeros tests reales
 
-Generate 3-5 real tests for existing code:
+Genera 3-5 tests reales para código existente:
 
-1. **Find recently changed files:** `git log --since=30.days --name-only --format="" | sort | uniq -c | sort -rn | head -10`
-2. **Prioritize by risk:** Error handlers > business logic with conditionals > API endpoints > pure functions
-3. **For each file:** Write one test that tests real behavior with meaningful assertions. Never `expect(x).toBeDefined()` — test what the code DOES.
-4. Run each test. Passes → keep. Fails → fix once. Still fails → delete silently.
-5. Generate at least 1 test, cap at 5.
+1. **Encontrar archivos cambiados recientemente:** `git log --since=30.days --name-only --format="" | sort | uniq -c | sort -rn | head -10`
+2. **Priorizar por riesgo:** Manejadores de errores > lógica de negocio con condicionales > endpoints de API > funciones puras
+3. **Para cada archivo:** Escribe un test que pruebe comportamiento real con assertions significativas. Nunca `expect(x).toBeDefined()` — prueba lo que el código HACE.
+4. Ejecuta cada test. Pasa → conservar. Falla → arreglar una vez. Sigue fallando → eliminar silenciosamente.
+5. Genera al menos 1 test, máximo 5.
 
-Never import secrets, API keys, or credentials in test files. Use environment variables or test fixtures.
+Nunca importes secretos, claves API o credenciales en archivos de test. Usa variables de entorno o fixtures de test.
 
-### B5. Verify
+### B5. Verificar
 
 ```bash
-# Run the full test suite to confirm everything works
+# Ejecutar la suite completa de tests para confirmar que todo funciona
 {detected test command}
 ```
 
-If tests fail → debug once. If still failing → revert all bootstrap changes and warn user.
+Si los tests fallan → depura una vez. Si siguen fallando → revierte todos los cambios del bootstrap y avisa al usuario.
 
-### B5.5. CI/CD pipeline
+### B5.5. Pipeline CI/CD
 
 ```bash
-# Check CI provider
+# Comprobar proveedor de CI
 ls -d .github/ 2>/dev/null && echo "CI:github"
 ls .gitlab-ci.yml .circleci/ bitrise.yml 2>/dev/null
 ```
 
-If `.github/` exists (or no CI detected — default to GitHub Actions):
-Create `.github/workflows/test.yml` with:
+Si `.github/` existe (o no se detectó CI — usar GitHub Actions por defecto):
+Crea `.github/workflows/test.yml` con:
 - `runs-on: ubuntu-latest`
-- Appropriate setup action for the runtime (setup-node, setup-ruby, setup-python, etc.)
-- The same test command verified in B5
+- Action de setup apropiada para el runtime (setup-node, setup-ruby, setup-python, etc.)
+- El mismo comando de test verificado en B5
 - Trigger: push + pull_request
 
-If non-GitHub CI detected → skip CI generation with note: "Detected {provider} — CI pipeline generation supports GitHub Actions only. Add test step to your existing pipeline manually."
+Si se detectó CI no-GitHub → omite la generación de CI con nota: "Se detectó {proveedor} — la generación de pipeline CI solo soporta GitHub Actions. Agrega el paso de test a tu pipeline existente manualmente."
 
-### B6. Create TESTING.md
+### B6. Crear TESTING.md
 
-First check: If TESTING.md already exists → read it and update/append rather than overwriting. Never destroy existing content.
+Primero verifica: Si TESTING.md ya existe → léelo y actualiza/agrega en lugar de sobrescribir. Nunca destruyas contenido existente.
 
-Write TESTING.md with:
-- Philosophy: "100% test coverage is the key to great vibe coding. Tests let you move fast, trust your instincts, and ship with confidence — without them, vibe coding is just yolo coding. With tests, it's a superpower."
-- Framework name and version
-- How to run tests (the verified command from B5)
-- Test layers: Unit tests (what, where, when), Integration tests, Smoke tests, E2E tests
-- Conventions: file naming, assertion style, setup/teardown patterns
+Escribe TESTING.md con:
+- Filosofía: "100% de cobertura de tests es la clave para un gran vibe coding. Los tests te permiten moverte rápido, confiar en tus instintos y publicar con confianza — sin ellos, el vibe coding es solo yolo coding. Con tests, es un superpoder."
+- Nombre y versión del framework
+- Cómo ejecutar tests (el comando verificado en B5)
+- Capas de test: Tests unitarios (qué, dónde, cuándo), Tests de integración, Tests smoke, Tests E2E
+- Convenciones: nomenclatura de archivos, estilo de assertions, patrones de setup/teardown
 
-### B7. Update CLAUDE.md
+### B7. Actualizar CLAUDE.md
 
-First check: If CLAUDE.md already has a `## Testing` section → skip. Don't duplicate.
+Primero verifica: Si CLAUDE.md ya tiene una sección `## Testing` → omite. No dupliques.
 
-Append a `## Testing` section:
-- Run command and test directory
-- Reference to TESTING.md
-- Test expectations:
-  - 100% test coverage is the goal — tests make vibe coding safe
-  - When writing new functions, write a corresponding test
-  - When fixing a bug, write a regression test
-  - When adding error handling, write a test that triggers the error
-  - When adding a conditional (if/else, switch), write tests for BOTH paths
-  - Never commit code that makes existing tests fail
+Agrega una sección `## Testing`:
+- Comando de ejecución y directorio de tests
+- Referencia a TESTING.md
+- Expectativas de tests:
+  - 100% de cobertura de tests es el objetivo — los tests hacen que el vibe coding sea seguro
+  - Al escribir nuevas funciones, escribe un test correspondiente
+  - Al corregir un bug, escribe un test de regresión
+  - Al agregar manejo de errores, escribe un test que active el error
+  - Al agregar un condicional (if/else, switch), escribe tests para AMBOS caminos
+  - Nunca hagas commit de código que haga fallar tests existentes
 
 ### B8. Commit
 
@@ -614,7 +612,7 @@ Append a `## Testing` section:
 git status --porcelain
 ```
 
-Only commit if there are changes. Stage all bootstrap files (config, test directory, TESTING.md, CLAUDE.md, .github/workflows/test.yml if created):
+Solo haz commit si hay cambios. Agrega al staging todos los archivos del bootstrap (config, directorio de tests, TESTING.md, CLAUDE.md, .github/workflows/test.yml si se creó):
 `git commit -m "chore: bootstrap test framework ({framework name})"`
 
 ---
@@ -639,101 +637,109 @@ Una vez que ambas terminen, leer los archivos de salida y verificar éxito/fallo
 
 **Si algún test falla:** NO detenerse inmediatamente. Aplicar la Clasificación de Propiedad de Fallos de Test:
 
-## Test Failure Ownership Triage
+## Triaje de Fallos en Tests
 
-When tests fail, do NOT immediately stop. First, determine ownership:
+Cuando los tests fallan, NO te detengas inmediatamente. Primero, determina la propiedad:
 
-### Step T1: Classify each failure
+### Paso T1: Clasifica cada fallo
 
-For each failing test:
+Para cada test fallido:
 
-1. **Get the files changed on this branch:**
+1. **Obtén los archivos modificados en esta rama:**
    ```bash
    git diff origin/<base>...HEAD --name-only
    ```
 
-2. **Classify the failure:**
-   - **In-branch** if: the failing test file itself was modified on this branch, OR the test output references code that was changed on this branch, OR you can trace the failure to a change in the branch diff.
-   - **Likely pre-existing** if: neither the test file nor the code it tests was modified on this branch, AND the failure is unrelated to any branch change you can identify.
-   - **When ambiguous, default to in-branch.** It is safer to stop the developer than to let a broken test ship. Only classify as pre-existing when you are confident.
+2. **Clasifica el fallo:**
+   - **En la rama** si: el archivo del test fallido fue modificado en esta rama, O la salida del test hace referencia a código que fue cambiado en esta rama, O puedes rastrear el fallo hasta un cambio en el diff de la rama.
+   - **Probablemente preexistente** si: ni el archivo del test ni el código que prueba fueron modificados en esta rama, Y el fallo no está relacionado con ningún cambio de la rama que puedas identificar.
+   - **Cuando sea ambiguo, clasifícalo como de la rama.** Es más seguro detener al desarrollador que dejar pasar un test roto. Solo clasifica como preexistente cuando estés seguro.
 
-   This classification is heuristic — use your judgment reading the diff and the test output. You do not have a programmatic dependency graph.
+   Esta clasificación es heurística — usa tu criterio leyendo el diff y la salida del test. No tienes un grafo de dependencias programático.
 
-### Step T2: Handle in-branch failures
+### Paso T2: Gestiona los fallos de la rama
 
-**STOP.** These are your failures. Show them and do not proceed. The developer must fix their own broken tests before shipping.
+**DETENTE.** Estos son tus fallos. Muéstralos y no continúes. El desarrollador debe corregir sus propios tests rotos antes de enviar.
 
-### Step T3: Handle pre-existing failures
+### Paso T3: Gestiona los fallos preexistentes
 
-Check `REPO_MODE` from the preamble output.
+Consulta `REPO_MODE` de la salida del preámbulo.
 
-**If REPO_MODE is `solo`:**
+**Si REPO_MODE es `solo`:**
 
-Use AskUserQuestion:
+Usa AskUserQuestion:
 
-> These test failures appear pre-existing (not caused by your branch changes):
+> Estos fallos de tests parecen preexistentes (no causados por los cambios de tu rama):
 >
-> [list each failure with file:line and brief error description]
+> [lista cada fallo con archivo:línea y breve descripción del error]
 >
-> Since this is a solo repo, you're the only one who will fix these.
+> Como este es un repositorio en solitario, eres la única persona que los corregirá.
 >
-> RECOMMENDATION: Choose A — fix now while the context is fresh. Completeness: 9/10.
-> A) Investigate and fix now (human: ~2-4h / CC: ~15min) — Completeness: 10/10
-> B) Add as P0 TODO — fix after this branch lands — Completeness: 7/10
-> C) Skip — I know about this, ship anyway — Completeness: 3/10
+> RECOMMENDATION: Elige A — corregir ahora mientras el contexto está fresco. Completeness: 9/10.
+> A) Investigar y corregir ahora (humano: ~2-4h / CC: ~15min) — Completeness: 10/10
+> B) Añadir como TODO P0 — corregir después de que esta rama se integre — Completeness: 7/10
+> C) Omitir — ya lo sé, enviar de todos modos — Completeness: 3/10
 
-**If REPO_MODE is `collaborative` or `unknown`:**
+**Si REPO_MODE es `collaborative` o `unknown`:**
 
-Use AskUserQuestion:
+Usa AskUserQuestion:
 
-> These test failures appear pre-existing (not caused by your branch changes):
+> Estos fallos de tests parecen preexistentes (no causados por los cambios de tu rama):
 >
-> [list each failure with file:line and brief error description]
+> [lista cada fallo con archivo:línea y breve descripción del error]
 >
-> This is a collaborative repo — these may be someone else's responsibility.
+> Este es un repositorio colaborativo — estos pueden ser responsabilidad de otra persona.
 >
-> RECOMMENDATION: Choose B — assign it to whoever broke it so the right person fixes it. Completeness: 9/10.
-> A) Investigate and fix now anyway — Completeness: 10/10
-> B) Blame + assign GitHub issue to the author — Completeness: 9/10
-> C) Add as P0 TODO — Completeness: 7/10
-> D) Skip — ship anyway — Completeness: 3/10
+> RECOMMENDATION: Elige B — asígnalo a quien lo rompió para que la persona correcta lo corrija. Completeness: 9/10.
+> A) Investigar y corregir ahora de todos modos — Completeness: 10/10
+> B) Blame + asignar issue de GitHub al autor — Completeness: 9/10
+> C) Añadir como TODO P0 — Completeness: 7/10
+> D) Omitir — enviar de todos modos — Completeness: 3/10
 
-### Step T4: Execute the chosen action
+### Paso T4: Ejecuta la acción elegida
 
-**If "Investigate and fix now":**
-- Switch to /investigate mindset: root cause first, then minimal fix.
-- Fix the pre-existing failure.
-- Commit the fix separately from the branch's changes: `git commit -m "fix: pre-existing test failure in <test-file>"`
-- Continue with the workflow.
+**Si "Investigar y corregir ahora":**
+- Cambia a mentalidad /investigate: primero la causa raíz, luego la corrección mínima.
+- Corrige el fallo preexistente.
+- Haz commit de la corrección por separado de los cambios de la rama: `git commit -m "fix: pre-existing test failure in <test-file>"`
+- Continúa con el flujo de trabajo.
 
-**If "Add as P0 TODO":**
-- If `TODOS.md` exists, add the entry following the format in `review/TODOS-format.md` (or `.claude/skills/review/TODOS-format.md`).
-- If `TODOS.md` does not exist, create it with the standard header and add the entry.
-- Entry should include: title, the error output, which branch it was noticed on, and priority P0.
-- Continue with the workflow — treat the pre-existing failure as non-blocking.
+**Si "Añadir como TODO P0":**
+- Si `TODOS.md` existe, añade la entrada siguiendo el formato en `review/TODOS-format.md` (o `.claude/skills/review/TODOS-format.md`).
+- Si `TODOS.md` no existe, créalo con la cabecera estándar y añade la entrada.
+- La entrada debe incluir: título, la salida del error, en qué rama se detectó, y prioridad P0.
+- Continúa con el flujo de trabajo — trata el fallo preexistente como no bloqueante.
 
-**If "Blame + assign GitHub issue" (collaborative only):**
-- Find who likely broke it. Check BOTH the test file AND the production code it tests:
+**Si "Blame + asignar issue de GitHub" (solo colaborativo):**
+- Encuentra quién probablemente lo rompió. Comprueba TANTO el archivo del test COMO el código de producción que prueba:
   ```bash
-  # Who last touched the failing test?
+  # ¿Quién tocó por última vez el test fallido?
   git log --format="%an (%ae)" -1 -- <failing-test-file>
-  # Who last touched the production code the test covers? (often the actual breaker)
+  # ¿Quién tocó por última vez el código de producción que cubre el test? (a menudo el verdadero causante)
   git log --format="%an (%ae)" -1 -- <source-file-under-test>
   ```
-  If these are different people, prefer the production code author — they likely introduced the regression.
-- Create a GitHub issue assigned to that person:
-  ```bash
-  gh issue create \
-    --title "Pre-existing test failure: <test-name>" \
-    --body "Found failing on branch <current-branch>. Failure is pre-existing.\n\n**Error:**\n```\n<first 10 lines>\n```\n\n**Last modified by:** <author>\n**Noticed by:** gstack /ship on <date>" \
-    --assignee "<github-username>"
-  ```
-- If `gh` is not available or `--assignee` fails (user not in org, etc.), create the issue without assignee and note who should look at it in the body.
-- Continue with the workflow.
+  Si son personas diferentes, prefiere al autor del código de producción — probablemente introdujo la regresión.
+- Crea un issue asignado a esa persona (usa la plataforma detectada en el Paso 0):
+  - **Si es GitHub:**
+    ```bash
+    gh issue create \
+      --title "Pre-existing test failure: <test-name>" \
+      --body "Found failing on branch <current-branch>. Failure is pre-existing.\n\n**Error:**\n```\n<first 10 lines>\n```\n\n**Last modified by:** <author>\n**Noticed by:** gstack /ship on <date>" \
+      --assignee "<github-username>"
+    ```
+  - **Si es GitLab:**
+    ```bash
+    glab issue create \
+      -t "Pre-existing test failure: <test-name>" \
+      -d "Found failing on branch <current-branch>. Failure is pre-existing.\n\n**Error:**\n```\n<first 10 lines>\n```\n\n**Last modified by:** <author>\n**Noticed by:** gstack /ship on <date>" \
+      -a "<gitlab-username>"
+    ```
+- Si ningún CLI está disponible o `--assignee`/`-a` falla (usuario no está en la org, etc.), crea el issue sin asignado y menciona en el cuerpo quién debería revisarlo.
+- Continúa con el flujo de trabajo.
 
-**If "Skip":**
-- Continue with the workflow.
-- Note in output: "Pre-existing test failure skipped: <test-name>"
+**Si "Omitir":**
+- Continúa con el flujo de trabajo.
+- Indica en la salida: "Fallo de test preexistente omitido: <nombre-del-test>"
 
 **Después de la clasificación:** Si quedan fallos de la rama sin corregir, **DETENERSE**. No continuar. Si todos los fallos eran preexistentes y se gestionaron (corregidos, marcados como TODO, asignados u omitidos), continuar al Paso 3.25.
 
@@ -805,202 +811,235 @@ Si se necesitan ejecutar múltiples suites, ejecutarlas secuencialmente (cada un
 
 ## Paso 3.4: Auditoría de cobertura de tests
 
-100% coverage is the goal — every untested path is a path where bugs hide and vibe coding becomes yolo coding. Evaluate what was ACTUALLY coded (from the diff), not what was planned.
+El objetivo es 100% de cobertura — cada camino sin probar es un camino donde los bugs se esconden y el vibe coding se convierte en yolo coding. Evalúa lo que se CODIFICÓ REALMENTE (del diff), no lo que se planificó.
 
-### Test Framework Detection
+### Detección del Framework de Tests
 
-Before analyzing coverage, detect the project's test framework:
+Antes de analizar la cobertura, detecta el framework de tests del proyecto:
 
-1. **Read CLAUDE.md** — look for a `## Testing` section with test command and framework name. If found, use that as the authoritative source.
-2. **If CLAUDE.md has no testing section, auto-detect:**
+1. **Lee CLAUDE.md** — busca una sección `## Testing` con el comando de test y nombre del framework. Si se encuentra, úsalo como la fuente autoritativa.
+2. **Si CLAUDE.md no tiene sección de testing, auto-detectar:**
 
 ```bash
-# Detect project runtime
+# Detectar runtime del proyecto
 [ -f Gemfile ] && echo "RUNTIME:ruby"
 [ -f package.json ] && echo "RUNTIME:node"
 [ -f requirements.txt ] || [ -f pyproject.toml ] && echo "RUNTIME:python"
 [ -f go.mod ] && echo "RUNTIME:go"
 [ -f Cargo.toml ] && echo "RUNTIME:rust"
-# Check for existing test infrastructure
+# Comprobar infraestructura de tests existente
 ls jest.config.* vitest.config.* playwright.config.* cypress.config.* .rspec pytest.ini phpunit.xml 2>/dev/null
 ls -d test/ tests/ spec/ __tests__/ cypress/ e2e/ 2>/dev/null
 ```
 
-3. **If no framework detected:** falls through to the Test Framework Bootstrap step (Step 2.5) which handles full setup.
+3. **Si no se detectó framework:** cae al paso de Bootstrap del Framework de Tests (Paso 2.5) que maneja la configuración completa.
 
-**0. Before/after test count:**
+**0. Conteo antes/después de tests:**
 
 ```bash
-# Count test files before any generation
+# Contar archivos de test antes de cualquier generación
 find . -name '*.test.*' -o -name '*.spec.*' -o -name '*_test.*' -o -name '*_spec.*' | grep -v node_modules | wc -l
 ```
 
-Store this number for the PR body.
+Almacena este número para el cuerpo del PR.
 
-**1. Trace every codepath changed** using `git diff origin/<base>...HEAD`:
+**1. Trazar cada ruta de código cambiada** usando `git diff origin/<base>...HEAD`:
 
-Read every changed file. For each one, trace how data flows through the code — don't just list functions, actually follow the execution:
+Lee cada archivo cambiado. Para cada uno, traza cómo los datos fluyen a través del código — no solo listes funciones, sigue realmente la ejecución:
 
-1. **Read the diff.** For each changed file, read the full file (not just the diff hunk) to understand context.
-2. **Trace data flow.** Starting from each entry point (route handler, exported function, event listener, component render), follow the data through every branch:
-   - Where does input come from? (request params, props, database, API call)
-   - What transforms it? (validation, mapping, computation)
-   - Where does it go? (database write, API response, rendered output, side effect)
-   - What can go wrong at each step? (null/undefined, invalid input, network failure, empty collection)
-3. **Diagram the execution.** For each changed file, draw an ASCII diagram showing:
-   - Every function/method that was added or modified
-   - Every conditional branch (if/else, switch, ternary, guard clause, early return)
-   - Every error path (try/catch, rescue, error boundary, fallback)
-   - Every call to another function (trace into it — does IT have untested branches?)
-   - Every edge: what happens with null input? Empty array? Invalid type?
+1. **Lee el diff.** Para cada archivo cambiado, lee el archivo completo (no solo el fragmento del diff) para entender el contexto.
+2. **Traza el flujo de datos.** Comenzando desde cada punto de entrada (manejador de ruta, función exportada, listener de eventos, render de componente), sigue los datos a través de cada rama:
+   - ¿De dónde viene la entrada? (parámetros de request, props, base de datos, llamada API)
+   - ¿Qué la transforma? (validación, mapeo, cómputo)
+   - ¿A dónde va? (escritura en base de datos, respuesta API, salida renderizada, efecto secundario)
+   - ¿Qué puede salir mal en cada paso? (null/undefined, entrada inválida, fallo de red, colección vacía)
+3. **Diagrama la ejecución.** Para cada archivo cambiado, dibuja un diagrama ASCII mostrando:
+   - Cada función/método que fue agregado o modificado
+   - Cada rama condicional (if/else, switch, ternario, cláusula guard, retorno temprano)
+   - Cada ruta de error (try/catch, rescue, boundary de error, fallback)
+   - Cada llamada a otra función (trázala — ¿ELLA tiene ramas sin probar?)
+   - Cada borde: ¿qué pasa con entrada null? ¿Array vacío? ¿Tipo inválido?
 
-This is the critical step — you're building a map of every line of code that can execute differently based on input. Every branch in this diagram needs a test.
+Este es el paso crítico — estás construyendo un mapa de cada línea de código que puede ejecutarse de manera diferente según la entrada. Cada rama en este diagrama necesita un test.
 
-**2. Map user flows, interactions, and error states:**
+**2. Mapear flujos de usuario, interacciones y estados de error:**
 
-Code coverage isn't enough — you need to cover how real users interact with the changed code. For each changed feature, think through:
+La cobertura de código no es suficiente — necesitas cubrir cómo los usuarios reales interactúan con el código cambiado. Para cada funcionalidad cambiada, piensa en:
 
-- **User flows:** What sequence of actions does a user take that touches this code? Map the full journey (e.g., "user clicks 'Pay' → form validates → API call → success/failure screen"). Each step in the journey needs a test.
-- **Interaction edge cases:** What happens when the user does something unexpected?
-  - Double-click/rapid resubmit
-  - Navigate away mid-operation (back button, close tab, click another link)
-  - Submit with stale data (page sat open for 30 minutes, session expired)
-  - Slow connection (API takes 10 seconds — what does the user see?)
-  - Concurrent actions (two tabs, same form)
-- **Error states the user can see:** For every error the code handles, what does the user actually experience?
-  - Is there a clear error message or a silent failure?
-  - Can the user recover (retry, go back, fix input) or are they stuck?
-  - What happens with no network? With a 500 from the API? With invalid data from the server?
-- **Empty/zero/boundary states:** What does the UI show with zero results? With 10,000 results? With a single character input? With maximum-length input?
+- **Flujos de usuario:** ¿Qué secuencia de acciones toma un usuario que toca este código? Mapea el recorrido completo (ej.: "el usuario hace clic en 'Pagar' → el formulario valida → llamada API → pantalla de éxito/fallo"). Cada paso del recorrido necesita un test.
+- **Casos extremos de interacción:** ¿Qué pasa cuando el usuario hace algo inesperado?
+  - Doble clic/re-envío rápido
+  - Navegar lejos a mitad de operación (botón atrás, cerrar pestaña, clic en otro enlace)
+  - Enviar con datos obsoletos (la página estuvo abierta 30 minutos, sesión expirada)
+  - Conexión lenta (la API tarda 10 segundos — ¿qué ve el usuario?)
+  - Acciones concurrentes (dos pestañas, mismo formulario)
+- **Estados de error que el usuario puede ver:** Para cada error que el código maneja, ¿qué experimenta realmente el usuario?
+  - ¿Hay un mensaje de error claro o un fallo silencioso?
+  - ¿Puede el usuario recuperarse (reintentar, volver, corregir entrada) o está atascado?
+  - ¿Qué pasa sin red? ¿Con un 500 de la API? ¿Con datos inválidos del servidor?
+- **Estados vacío/cero/límite:** ¿Qué muestra la UI con cero resultados? ¿Con 10,000 resultados? ¿Con una entrada de un solo carácter? ¿Con entrada de longitud máxima?
 
-Add these to your diagram alongside the code branches. A user flow with no test is just as much a gap as an untested if/else.
+Agrega estos a tu diagrama junto con las ramas de código. Un flujo de usuario sin test es una brecha tan grande como un if/else sin probar.
 
-**3. Check each branch against existing tests:**
+**3. Verificar cada rama contra los tests existentes:**
 
-Go through your diagram branch by branch — both code paths AND user flows. For each one, search for a test that exercises it:
-- Function `processPayment()` → look for `billing.test.ts`, `billing.spec.ts`, `test/billing_test.rb`
-- An if/else → look for tests covering BOTH the true AND false path
-- An error handler → look for a test that triggers that specific error condition
-- A call to `helperFn()` that has its own branches → those branches need tests too
-- A user flow → look for an integration or E2E test that walks through the journey
-- An interaction edge case → look for a test that simulates the unexpected action
+Recorre tu diagrama rama por rama — tanto rutas de código COMO flujos de usuario. Para cada uno, busca un test que lo ejercite:
+- Función `processPayment()` → busca `billing.test.ts`, `billing.spec.ts`, `test/billing_test.rb`
+- Un if/else → busca tests que cubran AMBOS caminos verdadero Y falso
+- Un manejador de errores → busca un test que active esa condición específica de error
+- Una llamada a `helperFn()` que tiene sus propias ramas → esas ramas necesitan tests también
+- Un flujo de usuario → busca un test de integración o E2E que recorra el camino
+- Un caso extremo de interacción → busca un test que simule la acción inesperada
 
-Quality scoring rubric:
-- ★★★  Tests behavior with edge cases AND error paths
-- ★★   Tests correct behavior, happy path only
-- ★    Smoke test / existence check / trivial assertion (e.g., "it renders", "it doesn't throw")
+Rúbrica de puntuación de calidad:
+- ★★★  Prueba comportamiento con casos extremos Y rutas de error
+- ★★   Prueba comportamiento correcto, solo camino feliz
+- ★    Test smoke / verificación de existencia / assertion trivial (ej.: "renderiza", "no lanza excepción")
 
-### E2E Test Decision Matrix
+### Matriz de Decisión de Tests E2E
 
-When checking each branch, also determine whether a unit test or E2E/integration test is the right tool:
+Al verificar cada rama, también determina si un test unitario o un test E2E/integración es la herramienta correcta:
 
-**RECOMMEND E2E (mark as [→E2E] in the diagram):**
-- Common user flow spanning 3+ components/services (e.g., signup → verify email → first login)
-- Integration point where mocking hides real failures (e.g., API → queue → worker → DB)
-- Auth/payment/data-destruction flows — too important to trust unit tests alone
+**RECOMENDAR E2E (marcar como [→E2E] en el diagrama):**
+- Flujo común de usuario que abarca 3+ componentes/servicios (ej.: registro → verificar email → primer login)
+- Punto de integración donde el mocking oculta fallos reales (ej.: API → cola → worker → BD)
+- Flujos de auth/pago/destrucción-de-datos — demasiado importantes para confiar solo en tests unitarios
 
-**RECOMMEND EVAL (mark as [→EVAL] in the diagram):**
-- Critical LLM call that needs a quality eval (e.g., prompt change → test output still meets quality bar)
-- Changes to prompt templates, system instructions, or tool definitions
+**RECOMENDAR EVAL (marcar como [→EVAL] en el diagrama):**
+- Llamada crítica a LLM que necesita una evaluación de calidad (ej.: cambio de prompt → verificar que la salida cumple la barra de calidad)
+- Cambios en plantillas de prompt, instrucciones del sistema o definiciones de herramientas
 
-**STICK WITH UNIT TESTS:**
-- Pure function with clear inputs/outputs
-- Internal helper with no side effects
-- Edge case of a single function (null input, empty array)
-- Obscure/rare flow that isn't customer-facing
+**MANTENER TESTS UNITARIOS:**
+- Función pura con entradas/salidas claras
+- Helper interno sin efectos secundarios
+- Caso extremo de una sola función (entrada null, array vacío)
+- Flujo oscuro/raro que no es de cara al cliente
 
-### REGRESSION RULE (mandatory)
+### REGLA DE REGRESIÓN (obligatoria)
 
-**IRON RULE:** When the coverage audit identifies a REGRESSION — code that previously worked but the diff broke — a regression test is written immediately. No AskUserQuestion. No skipping. Regressions are the highest-priority test because they prove something broke.
+**REGLA DE HIERRO:** Cuando la auditoría de cobertura identifica una REGRESIÓN — código que antes funcionaba pero el diff rompió — un test de regresión se escribe inmediatamente. Sin AskUserQuestion. Sin omitir. Las regresiones son el test de mayor prioridad porque prueban que algo se rompió.
 
-A regression is when:
-- The diff modifies existing behavior (not new code)
-- The existing test suite (if any) doesn't cover the changed path
-- The change introduces a new failure mode for existing callers
+Una regresión ocurre cuando:
+- El diff modifica comportamiento existente (no código nuevo)
+- La suite de tests existente (si la hay) no cubre la ruta cambiada
+- El cambio introduce un nuevo modo de fallo para llamadores existentes
 
-When uncertain whether a change is a regression, err on the side of writing the test.
+Ante la duda sobre si un cambio es una regresión, opta por escribir el test.
 
-Format: commit as `test: regression test for {what broke}`
+Formato: commit como `test: regression test for {what broke}`
 
-**4. Output ASCII coverage diagram:**
+**4. Generar diagrama ASCII de cobertura:**
 
-Include BOTH code paths and user flows in the same diagram. Mark E2E-worthy and eval-worthy paths:
+Incluye TANTO rutas de código COMO flujos de usuario en el mismo diagrama. Marca las rutas que ameritan E2E y eval:
 
 ```
-CODE PATH COVERAGE
+COBERTURA DE RUTAS DE CÓDIGO
 ===========================
 [+] src/services/billing.ts
     │
     ├── processPayment()
-    │   ├── [★★★ TESTED] Happy path + card declined + timeout — billing.test.ts:42
-    │   ├── [GAP]         Network timeout — NO TEST
-    │   └── [GAP]         Invalid currency — NO TEST
+    │   ├── [★★★ PROBADO] Camino feliz + tarjeta rechazada + timeout — billing.test.ts:42
+    │   ├── [GAP]          Timeout de red — SIN TEST
+    │   └── [GAP]          Moneda inválida — SIN TEST
     │
     └── refundPayment()
-        ├── [★★  TESTED] Full refund — billing.test.ts:89
-        └── [★   TESTED] Partial refund (checks non-throw only) — billing.test.ts:101
+        ├── [★★  PROBADO] Reembolso total — billing.test.ts:89
+        └── [★   PROBADO] Reembolso parcial (solo verifica que no lanza) — billing.test.ts:101
 
-USER FLOW COVERAGE
+COBERTURA DE FLUJOS DE USUARIO
 ===========================
-[+] Payment checkout flow
+[+] Flujo de pago en checkout
     │
-    ├── [★★★ TESTED] Complete purchase — checkout.e2e.ts:15
-    ├── [GAP] [→E2E] Double-click submit — needs E2E, not just unit
-    ├── [GAP]         Navigate away during payment — unit test sufficient
-    └── [★   TESTED]  Form validation errors (checks render only) — checkout.test.ts:40
+    ├── [★★★ PROBADO] Compra completa — checkout.e2e.ts:15
+    ├── [GAP] [→E2E] Doble clic en enviar — necesita E2E, no solo unitario
+    ├── [GAP]         Navegar lejos durante el pago — test unitario suficiente
+    └── [★   PROBADO] Errores de validación del formulario (solo verifica render) — checkout.test.ts:40
 
-[+] Error states
+[+] Estados de error
     │
-    ├── [★★  TESTED] Card declined message — billing.test.ts:58
-    ├── [GAP]         Network timeout UX (what does user see?) — NO TEST
-    └── [GAP]         Empty cart submission — NO TEST
+    ├── [★★  PROBADO] Mensaje de tarjeta rechazada — billing.test.ts:58
+    ├── [GAP]          UX de timeout de red (¿qué ve el usuario?) — SIN TEST
+    └── [GAP]          Envío con carrito vacío — SIN TEST
 
-[+] LLM integration
+[+] Integración LLM
     │
-    └── [GAP] [→EVAL] Prompt template change — needs eval test
+    └── [GAP] [→EVAL] Cambio de plantilla de prompt — necesita test eval
 
 ─────────────────────────────────
-COVERAGE: 5/13 paths tested (38%)
-  Code paths: 3/5 (60%)
-  User flows: 2/8 (25%)
-QUALITY:  ★★★: 2  ★★: 2  ★: 1
-GAPS: 8 paths need tests (2 need E2E, 1 needs eval)
+COBERTURA: 5/13 rutas probadas (38%)
+  Rutas de código: 3/5 (60%)
+  Flujos de usuario: 2/8 (25%)
+CALIDAD:  ★★★: 2  ★★: 2  ★: 1
+BRECHAS: 8 rutas necesitan tests (2 necesitan E2E, 1 necesita eval)
 ─────────────────────────────────
 ```
 
-**Fast path:** All paths covered → "Step 3.4: All new code paths have test coverage ✓" Continue.
+**Camino rápido:** Todas las rutas cubiertas → "Paso 3.4: Todas las nuevas rutas de código tienen cobertura de tests ✓" Continuar.
 
-**5. Generate tests for uncovered paths:**
+**5. Generar tests para rutas sin cobertura:**
 
-If test framework detected (or bootstrapped in Step 2.5):
-- Prioritize error handlers and edge cases first (happy paths are more likely already tested)
-- Read 2-3 existing test files to match conventions exactly
-- Generate unit tests. Mock all external dependencies (DB, API, Redis).
-- For paths marked [→E2E]: generate integration/E2E tests using the project's E2E framework (Playwright, Cypress, Capybara, etc.)
-- For paths marked [→EVAL]: generate eval tests using the project's eval framework, or flag for manual eval if none exists
-- Write tests that exercise the specific uncovered path with real assertions
-- Run each test. Passes → commit as `test: coverage for {feature}`
-- Fails → fix once. Still fails → revert, note gap in diagram.
+Si se detectó un framework de tests (o se hizo bootstrap en el Paso 2.5):
+- Prioriza manejadores de errores y casos extremos primero (los caminos felices son más probablemente ya testeados)
+- Lee 2-3 archivos de test existentes para coincidir exactamente con las convenciones
+- Genera tests unitarios. Mockea todas las dependencias externas (BD, API, Redis).
+- Para rutas marcadas [→E2E]: genera tests de integración/E2E usando el framework E2E del proyecto (Playwright, Cypress, Capybara, etc.)
+- Para rutas marcadas [→EVAL]: genera tests eval usando el framework eval del proyecto, o marca para eval manual si no existe ninguno
+- Escribe tests que ejerciten la ruta específica sin cobertura con assertions reales
+- Ejecuta cada test. Pasa → commit como `test: coverage for {feature}`
+- Falla → arregla una vez. Sigue fallando → revierte, anota brecha en el diagrama.
 
-Caps: 30 code paths max, 20 tests generated max (code + user flow combined), 2-min per-test exploration cap.
+Límites: máximo 30 rutas de código, máximo 20 tests generados (código + flujo de usuario combinados), límite de 2 min de exploración por test.
 
-If no test framework AND user declined bootstrap → diagram only, no generation. Note: "Test generation skipped — no test framework configured."
+Si no hay framework de tests Y el usuario rechazó el bootstrap → solo diagrama, sin generación. Nota: "Generación de tests omitida — no hay framework de tests configurado."
 
-**Diff is test-only changes:** Skip Step 3.4 entirely: "No new application code paths to audit."
+**El diff solo contiene cambios de tests:** Omite el Paso 3.4 por completo: "Sin nuevas rutas de código de aplicación para auditar."
 
-**6. After-count and coverage summary:**
+**6. Conteo final y resumen de cobertura:**
 
 ```bash
-# Count test files after generation
+# Contar archivos de test después de la generación
 find . -name '*.test.*' -o -name '*.spec.*' -o -name '*_test.*' -o -name '*_spec.*' | grep -v node_modules | wc -l
 ```
 
-For PR body: `Tests: {before} → {after} (+{delta} new)`
-Coverage line: `Test Coverage Audit: N new code paths. M covered (X%). K tests generated, J committed.`
+Para el cuerpo del PR: `Tests: {antes} → {después} (+{delta} nuevos)`
+Línea de cobertura: `Auditoría de Cobertura de Tests: N nuevas rutas de código. M cubiertas (X%). K tests generados, J committeados.`
 
-### Test Plan Artifact
+**7. Gate de cobertura:**
 
-After producing the coverage diagram, write a test plan artifact so `/qa` and `/qa-only` can consume it:
+Antes de proceder, revisa CLAUDE.md buscando una sección `## Test Coverage` con campos `Minimum:` y `Target:`. Si se encuentran, usa esos porcentajes. De lo contrario usa los defaults: Mínimo = 60%, Objetivo = 80%.
+
+Usando el porcentaje de cobertura del diagrama en el subpaso 4 (la línea `COBERTURA: X/Y (Z%)`):
+
+- **>= objetivo:** Aprobado. "Gate de cobertura: APROBADO ({X}%)." Continuar.
+- **>= mínimo, < objetivo:** Usa AskUserQuestion:
+  - "La cobertura evaluada por IA es {X}%. {N} rutas de código están sin probar. El objetivo es {target}%."
+  - RECOMMENDATION: Elige A porque las rutas de código sin probar son donde se esconden los bugs de producción.
+  - Opciones:
+    A) Generar más tests para las brechas restantes (recomendado)
+    B) Enviar de todos modos — acepto el riesgo de cobertura
+    C) Estas rutas no necesitan tests — marcar como intencionalmente sin cobertura
+  - Si A: Vuelve al subpaso 5 (generar tests) apuntando a las brechas restantes. Después del segundo pase, si sigue debajo del objetivo, presenta AskUserQuestion de nuevo con números actualizados. Máximo 2 pases de generación en total.
+  - Si B: Continuar. Incluir en el cuerpo del PR: "Gate de cobertura: {X}% — usuario aceptó el riesgo."
+  - Si C: Continuar. Incluir en el cuerpo del PR: "Gate de cobertura: {X}% — {N} rutas intencionalmente sin cobertura."
+
+- **< mínimo:** Usa AskUserQuestion:
+  - "La cobertura evaluada por IA es críticamente baja ({X}%). {N} de {M} rutas de código no tienen tests. El umbral mínimo es {minimum}%."
+  - RECOMMENDATION: Elige A porque menos de {minimum}% significa que hay más código sin probar que probado.
+  - Opciones:
+    A) Generar tests para las brechas restantes (recomendado)
+    B) Anular — enviar con baja cobertura (entiendo el riesgo)
+  - Si A: Vuelve al subpaso 5. Máximo 2 pases. Si sigue debajo del mínimo después de 2 pases, presenta la opción de anulación de nuevo.
+  - Si B: Continuar. Incluir en el cuerpo del PR: "Gate de cobertura: ANULADO en {X}%."
+
+**Porcentaje de cobertura indeterminado:** Si el diagrama de cobertura no produce un porcentaje numérico claro (salida ambigua, error de parsing), **omite el gate** con: "Gate de cobertura: no se pudo determinar el porcentaje — omitiendo." No asumas 0% ni bloquees.
+
+**Diffs solo de tests:** Omite el gate (igual que el camino rápido existente).
+
+**100% de cobertura:** "Gate de cobertura: APROBADO (100%)." Continuar.
+
+### Artefacto del Plan de Tests
+
+Después de producir el diagrama de cobertura, escribe un artefacto de plan de tests para que `/qa` y `/qa-only` puedan consumirlo:
 
 ```bash
 eval "$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)" && mkdir -p ~/.gstack/projects/$SLUG
@@ -1008,25 +1047,25 @@ USER=$(whoami)
 DATETIME=$(date +%Y%m%d-%H%M%S)
 ```
 
-Write to `~/.gstack/projects/{slug}/{user}-{branch}-ship-test-plan-{datetime}.md`:
+Escribe en `~/.gstack/projects/{slug}/{user}-{branch}-ship-test-plan-{datetime}.md`:
 
 ```markdown
-# Test Plan
-Generated by /ship on {date}
-Branch: {branch}
+# Plan de Tests
+Generado por /ship el {date}
+Rama: {branch}
 Repo: {owner/repo}
 
-## Affected Pages/Routes
-- {URL path} — {what to test and why}
+## Páginas/Rutas Afectadas
+- {ruta URL} — {qué probar y por qué}
 
-## Key Interactions to Verify
-- {interaction description} on {page}
+## Interacciones Clave a Verificar
+- {descripción de interacción} en {página}
 
-## Edge Cases
-- {edge case} on {page}
+## Casos Extremos
+- {caso extremo} en {página}
 
-## Critical Paths
-- {end-to-end flow that must work}
+## Rutas Críticas
+- {flujo extremo a extremo que debe funcionar}
 ```
 
 ---
@@ -1218,60 +1257,60 @@ Revisar el diff buscando problemas estructurales que los tests no detectan.
    - **Pasada 1 (CRITICAL):** Seguridad SQL y de Datos, Límite de Confianza de Salida LLM
    - **Pasada 2 (INFORMATIONAL):** Todas las categorías restantes
 
-## Design Review (conditional, diff-scoped)
+## Revisión de Diseño (condicional, alcance del diff)
 
-Check if the diff touches frontend files using `gstack-diff-scope`:
+Comprueba si el diff toca archivos de frontend usando `gstack-diff-scope`:
 
 ```bash
 source <(~/.claude/skills/gstack/bin/gstack-diff-scope <base> 2>/dev/null)
 ```
 
-**If `SCOPE_FRONTEND=false`:** Skip design review silently. No output.
+**Si `SCOPE_FRONTEND=false`:** Omite la revisión de diseño silenciosamente. Sin salida.
 
-**If `SCOPE_FRONTEND=true`:**
+**Si `SCOPE_FRONTEND=true`:**
 
-1. **Check for DESIGN.md.** If `DESIGN.md` or `design-system.md` exists in the repo root, read it. All design findings are calibrated against it — patterns blessed in DESIGN.md are not flagged. If not found, use universal design principles.
+1. **Buscar DESIGN.md.** Si `DESIGN.md` o `design-system.md` existe en la raíz del repositorio, léelo. Todos los hallazgos de diseño se calibran contra él — los patrones aprobados en DESIGN.md no se señalizan. Si no se encuentra, usa principios universales de diseño.
 
-2. **Read `.claude/skills/review/design-checklist.md`.** If the file cannot be read, skip design review with a note: "Design checklist not found — skipping design review."
+2. **Leer `.claude/skills/review/design-checklist.md`.** Si el archivo no se puede leer, omite la revisión de diseño con una nota: "Checklist de diseño no encontrado — omitiendo revisión de diseño."
 
-3. **Read each changed frontend file** (full file, not just diff hunks). Frontend files are identified by the patterns listed in the checklist.
+3. **Leer cada archivo de frontend cambiado** (archivo completo, no solo fragmentos del diff). Los archivos de frontend se identifican por los patrones listados en el checklist.
 
-4. **Apply the design checklist** against the changed files. For each item:
-   - **[HIGH] mechanical CSS fix** (`outline: none`, `!important`, `font-size < 16px`): classify as AUTO-FIX
-   - **[HIGH/MEDIUM] design judgment needed**: classify as ASK
-   - **[LOW] intent-based detection**: present as "Possible — verify visually or run /design-review"
+4. **Aplicar el checklist de diseño** contra los archivos cambiados. Para cada elemento:
+   - **[HIGH] corrección mecánica de CSS** (`outline: none`, `!important`, `font-size < 16px`): clasificar como AUTO-FIX
+   - **[HIGH/MEDIUM] se necesita criterio de diseño**: clasificar como ASK
+   - **[LOW] detección basada en intención**: presentar como "Posible — verificar visualmente o ejecutar /design-review"
 
-5. **Include findings** in the review output under a "Design Review" header, following the output format in the checklist. Design findings merge with code review findings into the same Fix-First flow.
+5. **Incluir hallazgos** en la salida de revisión bajo un encabezado "Revisión de Diseño", siguiendo el formato de salida del checklist. Los hallazgos de diseño se fusionan con los hallazgos de revisión de código en el mismo flujo Fix-First.
 
-6. **Log the result** for the Review Readiness Dashboard:
+6. **Registrar el resultado** para el Panel de Estado de Revisiones:
 
 ```bash
 ~/.claude/skills/gstack/bin/gstack-review-log '{"skill":"design-review-lite","timestamp":"TIMESTAMP","status":"STATUS","findings":N,"auto_fixed":M,"commit":"COMMIT"}'
 ```
 
-Substitute: TIMESTAMP = ISO 8601 datetime, STATUS = "clean" if 0 findings or "issues_found", N = total findings, M = auto-fixed count, COMMIT = output of `git rev-parse --short HEAD`.
+Sustituye: TIMESTAMP = fecha y hora ISO 8601, STATUS = "clean" si 0 hallazgos o "issues_found", N = hallazgos totales, M = cantidad de auto-correcciones, COMMIT = salida de `git rev-parse --short HEAD`.
 
-7. **Codex design voice** (optional, automatic if available):
+7. **Voz de diseño de Codex** (opcional, automática si está disponible):
 
 ```bash
 which codex 2>/dev/null && echo "CODEX_AVAILABLE" || echo "CODEX_NOT_AVAILABLE"
 ```
 
-If Codex is available, run a lightweight design check on the diff:
+Si Codex está disponible, ejecuta una verificación de diseño ligera sobre el diff:
 
 ```bash
 TMPERR_DRL=$(mktemp /tmp/codex-drl-XXXXXXXX)
-codex exec "Review the git diff on this branch. Run 7 litmus checks (YES/NO each): 1. Brand/product unmistakable in first screen? 2. One strong visual anchor present? 3. Page understandable by scanning headlines only? 4. Each section has one job? 5. Are cards actually necessary? 6. Does motion improve hierarchy or atmosphere? 7. Would design feel premium with all decorative shadows removed? Flag any hard rejections: 1. Generic SaaS card grid as first impression 2. Beautiful image with weak brand 3. Strong headline with no clear action 4. Busy imagery behind text 5. Sections repeating same mood statement 6. Carousel with no narrative purpose 7. App UI made of stacked cards instead of layout 5 most important design findings only. Reference file:line." -s read-only -c 'model_reasoning_effort="high"' --enable web_search_cached 2>"$TMPERR_DRL"
+codex exec "Review the git diff on this branch. Run 7 litmus checks (YES/NO each): 1. Brand/product unmistakable in first screen? 2. One strong visual anchor present? 3. Page understandable by scanning headlines only? 4. Each section has one job? 5. Are cards actually necessary? 6. Does motion improve hierarchy or atmosphere? 7. Would design feel premium with all decorative shadows removed? Flag any hard rejections: 1. Generic SaaS card grid as first impression 2. Beautiful image with weak brand 3. Strong headline with no clear action 4. Busy imagery behind text 5. Sections repeating same mood statement 6. Carousel with no narrative purpose 7. App UI made of stacked cards instead of layout 5 most important design findings only. Reference file:line." -C "$(git rev-parse --show-toplevel)" -s read-only -c 'model_reasoning_effort="high"' --enable web_search_cached 2>"$TMPERR_DRL"
 ```
 
-Use a 5-minute timeout (`timeout: 300000`). After the command completes, read stderr:
+Usa un timeout de 5 minutos (`timeout: 300000`). Después de que el comando termine, lee stderr:
 ```bash
 cat "$TMPERR_DRL" && rm -f "$TMPERR_DRL"
 ```
 
-**Error handling:** All errors are non-blocking. On auth failure, timeout, or empty response — skip with a brief note and continue.
+**Manejo de errores:** Todos los errores son no bloqueantes. Ante fallo de autenticación, timeout o respuesta vacía — omite con una breve nota y continúa.
 
-Present Codex output under a `CODEX (design):` header, merged with the checklist findings above.
+Presenta la salida de Codex bajo un encabezado `CODEX (diseño):`, fusionado con los hallazgos del checklist anterior.
 
    Incluir cualquier hallazgo de diseño junto con los hallazgos de revisión de código. Siguen el mismo flujo de Corregir-Primero a continuación.
 
@@ -1294,6 +1333,13 @@ Present Codex output under a `CODEX (design):` header, merged with the checklist
 8. Mostrar resumen: `Pre-Landing Review: N problemas — M auto-corregidos, K consultados (J corregidos, L omitidos)`
 
    Si no se encontraron problemas: `Pre-Landing Review: No issues found.`
+
+9. Persistir el resultado de la revisión en el log de revisiones:
+```bash
+~/.claude/skills/gstack/bin/gstack-review-log '{"skill":"review","timestamp":"TIMESTAMP","status":"STATUS","issues_found":N,"critical":N,"informational":N,"commit":"'"$(git rev-parse --short HEAD)"'","via":"ship"}'
+```
+Sustituir TIMESTAMP (ISO 8601), STATUS ("clean" si no hay problemas, "issues_found" en caso contrario),
+y los valores N con los conteos del resumen anterior. El campo `via:"ship"` distingue de ejecuciones independientes de `/review`.
 
 Guardar la salida de la revisión — va en el cuerpo del PR en el Paso 8.
 
@@ -1338,139 +1384,139 @@ Para cada comentario clasificado:
 
 ---
 
-## Step 3.8: Adversarial review (auto-scaled)
+## Paso 3.8: Revisión adversarial (auto-escalada)
 
-Adversarial review thoroughness scales automatically based on diff size. No configuration needed.
+La exhaustividad de la revisión adversarial se escala automáticamente según el tamaño del diff. No requiere configuración.
 
-**Detect diff size and tool availability:**
+**Detectar tamaño del diff y disponibilidad de herramientas:**
 
 ```bash
 DIFF_INS=$(git diff origin/<base> --stat | tail -1 | grep -oE '[0-9]+ insertion' | grep -oE '[0-9]+' || echo "0")
 DIFF_DEL=$(git diff origin/<base> --stat | tail -1 | grep -oE '[0-9]+ deletion' | grep -oE '[0-9]+' || echo "0")
 DIFF_TOTAL=$((DIFF_INS + DIFF_DEL))
 which codex 2>/dev/null && echo "CODEX_AVAILABLE" || echo "CODEX_NOT_AVAILABLE"
-# Respect old opt-out
+# Respetar opt-out anterior
 OLD_CFG=$(~/.claude/skills/gstack/bin/gstack-config get codex_reviews 2>/dev/null || true)
 echo "DIFF_SIZE: $DIFF_TOTAL"
 echo "OLD_CFG: ${OLD_CFG:-not_set}"
 ```
 
-If `OLD_CFG` is `disabled`: skip this step silently. Continue to the next step.
+Si `OLD_CFG` es `disabled`: omite este paso silenciosamente. Continúa al siguiente paso.
 
-**User override:** If the user explicitly requested a specific tier (e.g., "run all passes", "paranoid review", "full adversarial", "do all 4 passes", "thorough review"), honor that request regardless of diff size. Jump to the matching tier section.
+**Anulación del usuario:** Si el usuario solicitó explícitamente un nivel específico (ej.: "ejecuta todos los pases", "revisión paranoica", "adversarial completo", "haz los 4 pases", "revisión exhaustiva"), honra esa solicitud independientemente del tamaño del diff. Salta a la sección del nivel correspondiente.
 
-**Auto-select tier based on diff size:**
-- **Small (< 50 lines changed):** Skip adversarial review entirely. Print: "Small diff ($DIFF_TOTAL lines) — adversarial review skipped." Continue to the next step.
-- **Medium (50–199 lines changed):** Run Codex adversarial challenge (or Claude adversarial subagent if Codex unavailable). Jump to the "Medium tier" section.
-- **Large (200+ lines changed):** Run all remaining passes — Codex structured review + Claude adversarial subagent + Codex adversarial. Jump to the "Large tier" section.
+**Auto-selección de nivel según tamaño del diff:**
+- **Pequeño (< 50 líneas cambiadas):** Omite la revisión adversarial por completo. Imprime: "Diff pequeño ($DIFF_TOTAL líneas) — revisión adversarial omitida." Continúa al siguiente paso.
+- **Mediano (50–199 líneas cambiadas):** Ejecuta el desafío adversarial de Codex (o subagente adversarial de Claude si Codex no está disponible). Salta a la sección "Nivel mediano".
+- **Grande (200+ líneas cambiadas):** Ejecuta todos los pases restantes — revisión estructurada de Codex + subagente adversarial de Claude + Codex adversarial. Salta a la sección "Nivel grande".
 
 ---
 
-### Medium tier (50–199 lines)
+### Nivel mediano (50–199 líneas)
 
-Claude's structured review already ran. Now add a **cross-model adversarial challenge**.
+La revisión estructurada de Claude ya se ejecutó. Ahora agrega un **desafío adversarial cross-model**.
 
-**If Codex is available:** run the Codex adversarial challenge. **If Codex is NOT available:** fall back to the Claude adversarial subagent instead.
+**Si Codex está disponible:** ejecuta el desafío adversarial de Codex. **Si Codex NO está disponible:** recurre al subagente adversarial de Claude.
 
 **Codex adversarial:**
 
 ```bash
 TMPERR_ADV=$(mktemp /tmp/codex-adv-XXXXXXXX)
-codex exec "Review the changes on this branch against the base branch. Run git diff origin/<base> to see the diff. Your job is to find ways this code will fail in production. Think like an attacker and a chaos engineer. Find edge cases, race conditions, security holes, resource leaks, failure modes, and silent data corruption paths. Be adversarial. Be thorough. No compliments — just the problems." -s read-only -c 'model_reasoning_effort="xhigh"' --enable web_search_cached 2>"$TMPERR_ADV"
+codex exec "Review the changes on this branch against the base branch. Run git diff origin/<base> to see the diff. Your job is to find ways this code will fail in production. Think like an attacker and a chaos engineer. Find edge cases, race conditions, security holes, resource leaks, failure modes, and silent data corruption paths. Be adversarial. Be thorough. No compliments — just the problems." -C "$(git rev-parse --show-toplevel)" -s read-only -c 'model_reasoning_effort="xhigh"' --enable web_search_cached 2>"$TMPERR_ADV"
 ```
 
-Set the Bash tool's `timeout` parameter to `300000` (5 minutes). Do NOT use the `timeout` shell command — it doesn't exist on macOS. After the command completes, read stderr:
+Configura el parámetro `timeout` de la herramienta Bash a `300000` (5 minutos). NO uses el comando shell `timeout` — no existe en macOS. Después de que el comando termine, lee stderr:
 ```bash
 cat "$TMPERR_ADV"
 ```
 
-Present the full output verbatim. This is informational — it never blocks shipping.
+Presenta la salida completa textualmente. Esto es informativo — nunca bloquea el envío.
 
-**Error handling:** All errors are non-blocking — adversarial review is a quality enhancement, not a prerequisite.
-- **Auth failure:** If stderr contains "auth", "login", "unauthorized", or "API key": "Codex authentication failed. Run \`codex login\` to authenticate."
-- **Timeout:** "Codex timed out after 5 minutes."
-- **Empty response:** "Codex returned no response. Stderr: <paste relevant error>."
+**Manejo de errores:** Todos los errores son no bloqueantes — la revisión adversarial es una mejora de calidad, no un prerrequisito.
+- **Fallo de autenticación:** Si stderr contiene "auth", "login", "unauthorized" o "API key": "Fallo de autenticación de Codex. Ejecuta \`codex login\` para autenticarte."
+- **Timeout:** "Codex expiró después de 5 minutos."
+- **Respuesta vacía:** "Codex no devolvió respuesta. Stderr: <pegar error relevante>."
 
-On any Codex error, fall back to the Claude adversarial subagent automatically.
+Ante cualquier error de Codex, recurre automáticamente al subagente adversarial de Claude.
 
-**Claude adversarial subagent** (fallback when Codex unavailable or errored):
+**Subagente adversarial de Claude** (respaldo cuando Codex no está disponible o falló):
 
-Dispatch via the Agent tool. The subagent has fresh context — no checklist bias from the structured review. This genuine independence catches things the primary reviewer is blind to.
+Despacha mediante la herramienta Agent. El subagente tiene contexto fresco — sin sesgo de checklist de la revisión estructurada. Esta independencia genuina detecta cosas ante las que el revisor principal es ciego.
 
-Subagent prompt:
-"Read the diff for this branch with `git diff origin/<base>`. Think like an attacker and a chaos engineer. Your job is to find ways this code will fail in production. Look for: edge cases, race conditions, security holes, resource leaks, failure modes, silent data corruption, logic errors that produce wrong results silently, error handling that swallows failures, and trust boundary violations. Be adversarial. Be thorough. No compliments — just the problems. For each finding, classify as FIXABLE (you know how to fix it) or INVESTIGATE (needs human judgment)."
+Prompt del subagente:
+"Lee el diff de esta rama con `git diff origin/<base>`. Piensa como un atacante y un ingeniero del caos. Tu trabajo es encontrar formas en que este código fallará en producción. Busca: casos extremos, condiciones de carrera, vulnerabilidades de seguridad, fugas de recursos, modos de fallo, corrupción silenciosa de datos, errores lógicos que producen resultados incorrectos silenciosamente, manejo de errores que traga fallos, y violaciones de límites de confianza. Sé adversarial. Sé exhaustivo. Sin halagos — solo los problemas. Para cada hallazgo, clasifica como FIXABLE (sabes cómo corregirlo) o INVESTIGATE (requiere juicio humano)."
 
-Present findings under an `ADVERSARIAL REVIEW (Claude subagent):` header. **FIXABLE findings** flow into the same Fix-First pipeline as the structured review. **INVESTIGATE findings** are presented as informational.
+Presenta los hallazgos bajo un encabezado `REVISIÓN ADVERSARIAL (subagente Claude):`. Los hallazgos **FIXABLE** fluyen al mismo pipeline Fix-First que la revisión estructurada. Los hallazgos **INVESTIGATE** se presentan como informativos.
 
-If the subagent fails or times out: "Claude adversarial subagent unavailable. Continuing without adversarial review."
+Si el subagente falla o expira: "Subagente adversarial de Claude no disponible. Continuando sin revisión adversarial."
 
-**Persist the review result:**
+**Persistir el resultado de la revisión:**
 ```bash
 ~/.claude/skills/gstack/bin/gstack-review-log '{"skill":"adversarial-review","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","status":"STATUS","source":"SOURCE","tier":"medium","commit":"'"$(git rev-parse --short HEAD)"'"}'
 ```
-Substitute STATUS: "clean" if no findings, "issues_found" if findings exist. SOURCE: "codex" if Codex ran, "claude" if subagent ran. If both failed, do NOT persist.
+Sustituye STATUS: "clean" si no hay hallazgos, "issues_found" si existen hallazgos. SOURCE: "codex" si se ejecutó Codex, "claude" si se ejecutó el subagente. Si ambos fallaron, NO persistas.
 
-**Cleanup:** Run `rm -f "$TMPERR_ADV"` after processing (if Codex was used).
+**Limpieza:** Ejecuta `rm -f "$TMPERR_ADV"` después de procesar (si se usó Codex).
 
 ---
 
-### Large tier (200+ lines)
+### Nivel grande (200+ líneas)
 
-Claude's structured review already ran. Now run **all three remaining passes** for maximum coverage:
+La revisión estructurada de Claude ya se ejecutó. Ahora ejecuta **los tres pases restantes** para máxima cobertura:
 
-**1. Codex structured review (if available):**
+**1. Revisión estructurada de Codex (si está disponible):**
 ```bash
 TMPERR=$(mktemp /tmp/codex-review-XXXXXXXX)
 codex review --base <base> -c 'model_reasoning_effort="xhigh"' --enable web_search_cached 2>"$TMPERR"
 ```
 
-Set the Bash tool's `timeout` parameter to `300000` (5 minutes). Do NOT use the `timeout` shell command — it doesn't exist on macOS. Present output under `CODEX SAYS (code review):` header.
-Check for `[P1]` markers: found → `GATE: FAIL`, not found → `GATE: PASS`.
+Configura el parámetro `timeout` de la herramienta Bash a `300000` (5 minutos). NO uses el comando shell `timeout` — no existe en macOS. Presenta la salida bajo el encabezado `CODEX DICE (revisión de código):`.
+Busca marcadores `[P1]`: encontrados → `GATE: FAIL`, no encontrados → `GATE: PASS`.
 
-If GATE is FAIL, use AskUserQuestion:
+Si GATE es FAIL, usa AskUserQuestion:
 ```
-Codex found N critical issues in the diff.
+Codex encontró N incidencias críticas en el diff.
 
-A) Investigate and fix now (recommended)
-B) Continue — review will still complete
+A) Investigar y corregir ahora (recomendado)
+B) Continuar — la revisión seguirá completándose
 ```
 
-If A: address the findings. After fixing, re-run tests (Step 3) since code has changed. Re-run `codex review` to verify.
+Si A: aborda los hallazgos. Después de corregir, re-ejecuta los tests (Paso 3) ya que el código ha cambiado. Re-ejecuta `codex review` para verificar.
 
-Read stderr for errors (same error handling as medium tier).
+Lee stderr para errores (mismo manejo de errores que el nivel mediano).
 
-After stderr: `rm -f "$TMPERR"`
+Después de stderr: `rm -f "$TMPERR"`
 
-**2. Claude adversarial subagent:** Dispatch a subagent with the adversarial prompt (same prompt as medium tier). This always runs regardless of Codex availability.
+**2. Subagente adversarial de Claude:** Despacha un subagente con el prompt adversarial (mismo prompt que el nivel mediano). Esto siempre se ejecuta independientemente de la disponibilidad de Codex.
 
-**3. Codex adversarial challenge (if available):** Run `codex exec` with the adversarial prompt (same as medium tier).
+**3. Desafío adversarial de Codex (si está disponible):** Ejecuta `codex exec` con el prompt adversarial (mismo que el nivel mediano).
 
-If Codex is not available for steps 1 and 3, note to the user: "Codex CLI not found — large-diff review ran Claude structured + Claude adversarial (2 of 4 passes). Install Codex for full 4-pass coverage: `npm install -g @openai/codex`"
+Si Codex no está disponible para los pasos 1 y 3, informa al usuario: "CLI de Codex no encontrado — la revisión de diff grande ejecutó Claude estructurado + Claude adversarial (2 de 4 pases). Instala Codex para cobertura completa de 4 pases: `npm install -g @openai/codex`"
 
-**Persist the review result AFTER all passes complete** (not after each sub-step):
+**Persistir el resultado de la revisión DESPUÉS de que todos los pases terminen** (no después de cada sub-paso):
 ```bash
 ~/.claude/skills/gstack/bin/gstack-review-log '{"skill":"adversarial-review","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","status":"STATUS","source":"SOURCE","tier":"large","gate":"GATE","commit":"'"$(git rev-parse --short HEAD)"'"}'
 ```
-Substitute: STATUS = "clean" if no findings across ALL passes, "issues_found" if any pass found issues. SOURCE = "both" if Codex ran, "claude" if only Claude subagent ran. GATE = the Codex structured review gate result ("pass"/"fail"), or "informational" if Codex was unavailable. If all passes failed, do NOT persist.
+Sustituye: STATUS = "clean" si no hay hallazgos en TODOS los pases, "issues_found" si algún pase encontró incidencias. SOURCE = "both" si se ejecutó Codex, "claude" si solo se ejecutó el subagente de Claude. GATE = resultado del gate de la revisión estructurada de Codex ("pass"/"fail"), o "informational" si Codex no estaba disponible. Si todos los pases fallaron, NO persistas.
 
 ---
 
-### Cross-model synthesis (medium and large tiers)
+### Síntesis cross-model (niveles mediano y grande)
 
-After all passes complete, synthesize findings across all sources:
+Después de que todos los pases terminen, sintetiza los hallazgos de todas las fuentes:
 
 ```
-ADVERSARIAL REVIEW SYNTHESIS (auto: TIER, N lines):
+SÍNTESIS DE REVISIÓN ADVERSARIAL (auto: NIVEL, N líneas):
 ════════════════════════════════════════════════════════════
-  High confidence (found by multiple sources): [findings agreed on by >1 pass]
-  Unique to Claude structured review: [from earlier step]
-  Unique to Claude adversarial: [from subagent, if ran]
-  Unique to Codex: [from codex adversarial or code review, if ran]
-  Models used: Claude structured ✓  Claude adversarial ✓/✗  Codex ✓/✗
+  Alta confianza (encontrado por múltiples fuentes): [hallazgos acordados por >1 pase]
+  Único de la revisión estructurada de Claude: [del paso anterior]
+  Único del adversarial de Claude: [del subagente, si se ejecutó]
+  Único de Codex: [del adversarial de codex o revisión de código, si se ejecutó]
+  Modelos usados: Claude estructurado ✓  Claude adversarial ✓/✗  Codex ✓/✗
 ════════════════════════════════════════════════════════════
 ```
 
-High-confidence findings (agreed on by multiple sources) should be prioritized for fixes.
+Los hallazgos de alta confianza (acordados por múltiples fuentes) deben priorizarse para corrección.
 
 ---
 
@@ -1640,12 +1686,13 @@ git push -u origin <branch-name>
 
 ---
 
-## Paso 8: Crear PR
+## Paso 8: Crear PR/MR
 
-Crear un pull request usando `gh`:
+Crear un pull request (GitHub) o merge request (GitLab) usando la plataforma detectada en el Paso 0.
 
-```bash
-gh pr create --base <base> --title "<tipo>: <resumen>" --body "$(cat <<'EOF'
+El cuerpo del PR/MR debe contener estas secciones:
+
+```
 ## Resumen
 <puntos del CHANGELOG>
 
@@ -1689,11 +1736,30 @@ gh pr create --base <base> --title "<tipo>: <resumen>" --body "$(cat <<'EOF'
 - [x] Todos los tests de Vitest pasan (N tests)
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
+```
+
+**If GitHub:**
+
+```bash
+gh pr create --base <base> --title "<type>: <summary>" --body "$(cat <<'EOF'
+<PR body from above>
 EOF
 )"
 ```
 
-**Mostrar la URL del PR** — luego continuar al Paso 8.5.
+**Si es GitLab:**
+
+```bash
+glab mr create -b <base> -t "<type>: <summary>" -d "$(cat <<'EOF'
+<cuerpo del MR de arriba>
+EOF
+)"
+```
+
+**Si ningún CLI está disponible:**
+Imprimir el nombre de la rama, la URL del remoto e indicar al usuario que cree el PR/MR manualmente vía la interfaz web. No detenerse — el código está subido y listo.
+
+**Mostrar la URL del PR/MR** — luego continuar al Paso 8.5.
 
 ---
 

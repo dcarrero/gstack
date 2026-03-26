@@ -250,14 +250,22 @@ Usa AskUserQuestion:
   git log --format="%an (%ae)" -1 -- <source-file-under-test>
   \`\`\`
   Si son personas diferentes, prefiere al autor del código de producción — probablemente introdujo la regresión.
-- Crea un issue de GitHub asignado a esa persona:
-  \`\`\`bash
-  gh issue create \\
-    --title "Pre-existing test failure: <test-name>" \\
-    --body "Found failing on branch <current-branch>. Failure is pre-existing.\\n\\n**Error:**\\n\`\`\`\\n<first 10 lines>\\n\`\`\`\\n\\n**Last modified by:** <author>\\n**Noticed by:** gstack /ship on <date>" \\
-    --assignee "<github-username>"
-  \`\`\`
-- Si \`gh\` no está disponible o \`--assignee\` falla (usuario no está en la org, etc.), crea el issue sin asignado y menciona en el cuerpo quién debería revisarlo.
+- Crea un issue asignado a esa persona (usa la plataforma detectada en el Paso 0):
+  - **Si es GitHub:**
+    \`\`\`bash
+    gh issue create \\
+      --title "Pre-existing test failure: <test-name>" \\
+      --body "Found failing on branch <current-branch>. Failure is pre-existing.\\n\\n**Error:**\\n\`\`\`\\n<first 10 lines>\\n\`\`\`\\n\\n**Last modified by:** <author>\\n**Noticed by:** gstack /ship on <date>" \\
+      --assignee "<github-username>"
+    \`\`\`
+  - **Si es GitLab:**
+    \`\`\`bash
+    glab issue create \\
+      -t "Pre-existing test failure: <test-name>" \\
+      -d "Found failing on branch <current-branch>. Failure is pre-existing.\\n\\n**Error:**\\n\`\`\`\\n<first 10 lines>\\n\`\`\`\\n\\n**Last modified by:** <author>\\n**Noticed by:** gstack /ship on <date>" \\
+      -a "<gitlab-username>"
+    \`\`\`
+- Si ningún CLI está disponible o \`--assignee\`/\`-a\` falla (usuario no está en la org, etc.), crea el issue sin asignado y menciona en el cuerpo quién debería revisarlo.
 - Continúa con el flujo de trabajo.
 
 **Si "Omitir":**

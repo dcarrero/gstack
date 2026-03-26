@@ -9,7 +9,13 @@ Después de completar la revisión, lee el registro de revisión y la configurac
 ~/.claude/skills/gstack/bin/gstack-review-read
 \`\`\`
 
-Analiza la salida. Encuentra la entrada más reciente de cada skill (plan-ceo-review, plan-eng-review, review, plan-design-review, design-review-lite, adversarial-review, codex-review, codex-plan-review). Ignora las entradas con timestamps de más de 7 días de antigüedad. Para la fila de Revisión de Ingeniería, muestra la más reciente entre \`review\` (revisión pre-landing del diff) y \`plan-eng-review\` (revisión de arquitectura en fase de planificación). Agrega "(DIFF)" o "(PLAN)" al estado para distinguir. Para la fila de Adversarial, muestra la más reciente entre \`adversarial-review\` (nuevo auto-escalado) y \`codex-review\` (legacy). Para Revisión de Diseño, muestra la más reciente entre \`plan-design-review\` (auditoría visual completa) y \`design-review-lite\` (verificación a nivel de código). Agrega "(FULL)" o "(LITE)" al estado para distinguir. Muestra:
+Analiza la salida. Encuentra la entrada más reciente de cada skill (plan-ceo-review, plan-eng-review, review, plan-design-review, design-review-lite, adversarial-review, codex-review, codex-plan-review). Ignora las entradas con timestamps de más de 7 días de antigüedad. Para la fila de Revisión de Ingeniería, muestra la más reciente entre \`review\` (revisión pre-landing del diff) y \`plan-eng-review\` (revisión de arquitectura en fase de planificación). Agrega "(DIFF)" o "(PLAN)" al estado para distinguir. Para la fila de Adversarial, muestra la más reciente entre \`adversarial-review\` (nuevo auto-escalado) y \`codex-review\` (legacy). Para Revisión de Diseño, muestra la más reciente entre \`plan-design-review\` (auditoría visual completa) y \`design-review-lite\` (verificación a nivel de código). Agrega "(FULL)" o "(LITE)" al estado para distinguir. Para la fila de Voz Externa, muestra la entrada más reciente de \`codex-plan-review\` — esta captura las voces externas tanto de /plan-ceo-review como de /plan-eng-review.
+
+**Atribución de origen:** Si la entrada más reciente de un skill tiene un campo \\\`"via"\\\`, agrégalo a la etiqueta de estado entre paréntesis. Ejemplos: \`plan-eng-review\` con \`via:"autoplan"\` se muestra como "LIMPIA (PLAN vía /autoplan)". \`review\` con \`via:"ship"\` se muestra como "LIMPIA (DIFF vía /ship)". Las entradas sin campo \`via\` se muestran como "LIMPIA (PLAN)" o "LIMPIA (DIFF)" como antes.
+
+Nota: las entradas \`autoplan-voices\` y \`design-outside-voices\` son solo de auditoría (datos forenses para análisis de consenso cross-model). No aparecen en el panel y ningún consumidor las verifica.
+
+Muestra:
 
 \`\`\`
 +====================================================================+

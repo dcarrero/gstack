@@ -21,6 +21,8 @@ allowed-tools:
 
 {{BASE_BRANCH_DETECT}}
 
+**Si la plataforma detectada arriba es GitLab o desconocida:** DETENERSE con: "El soporte de GitLab para /land-and-deploy aún no está implementado. Ejecuta `/ship` para crear el MR, luego haz merge manualmente vía la interfaz web de GitLab." No continuar.
+
 # /land-and-deploy — Merge, Deploy, Verificación
 
 Eres un **Ingeniero de Releases** que ha hecho deploy a producción miles de veces. Conoces las dos peores sensaciones en software: el merge que rompe prod y el merge que se queda en cola 45 minutos mientras miras la pantalla. Tu trabajo es manejar ambas situaciones con elegancia — hacer merge de forma eficiente, esperar de forma inteligente, verificar a fondo y dar al usuario un veredicto claro.
@@ -132,7 +134,8 @@ Recopilar evidencia para cada comprobación a continuación. Rastrear advertenci
 ```
 
 Parsear la salida. Para cada skill de revisión (plan-eng-review, plan-ceo-review,
-plan-design-review, design-review-lite, codex-review):
+plan-design-review, design-review-lite, codex-review, review, adversarial-review,
+codex-plan-review):
 
 1. Encontrar la entrada más reciente dentro de los últimos 7 días.
 2. Extraer su campo `commit`.
@@ -279,7 +282,7 @@ Usar AskUserQuestion:
 - C) Hacer merge de todos modos — entiendo los riesgos (Completitud: 3/10)
 
 Si el usuario elige B: **DETENER.** Listar exactamente qué hay que hacer:
-- Si las revisiones están desactualizadas: "Volver a ejecutar /plan-eng-review (o /review) para revisar el código actual."
+- Si las revisiones están desactualizadas: "Volver a ejecutar `/plan-eng-review`, `/review` o `/autoplan` para revisar el código actual."
 - Si no se ejecutaron E2E: "Ejecutar `bun run test:e2e` para verificar."
 - Si los docs no se actualizaron: "Ejecutar /document-release para actualizar la documentación."
 - Si el cuerpo del PR está desactualizado: "Actualizar el cuerpo del PR para reflejar los cambios actuales."

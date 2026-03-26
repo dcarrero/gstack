@@ -23,7 +23,7 @@ allowed-tools:
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
 <!-- Regenerate: bun run gen:skill-docs -->
 
-## Preamble (run first)
+## Preámbulo (ejecutar primero)
 
 ```bash
 _UPD=$(~/.claude/skills/gstack/bin/gstack-update-check 2>/dev/null || .claude/skills/gstack/bin/gstack-update-check 2>/dev/null || true)
@@ -34,9 +34,11 @@ _SESSIONS=$(find ~/.gstack/sessions -mmin -120 -type f 2>/dev/null | wc -l | tr 
 find ~/.gstack/sessions -mmin +120 -type f -delete 2>/dev/null || true
 _CONTRIB=$(~/.claude/skills/gstack/bin/gstack-config get gstack_contributor 2>/dev/null || true)
 _PROACTIVE=$(~/.claude/skills/gstack/bin/gstack-config get proactive 2>/dev/null || echo "true")
+_PROACTIVE_PROMPTED=$([ -f ~/.gstack/.proactive-prompted ] && echo "yes" || echo "no")
 _BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
 echo "BRANCH: $_BRANCH"
 echo "PROACTIVE: $_PROACTIVE"
+echo "PROACTIVE_PROMPTED: $_PROACTIVE_PROMPTED"
 source <(~/.claude/skills/gstack/bin/gstack-repo-mode 2>/dev/null) || true
 REPO_MODE=${REPO_MODE:-unknown}
 echo "REPO_MODE: $REPO_MODE"
@@ -50,205 +52,185 @@ echo "TELEMETRY: ${_TEL:-off}"
 echo "TEL_PROMPTED: $_TEL_PROMPTED"
 mkdir -p ~/.gstack/analytics
 echo '{"skill":"design-review","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","repo":"'$(basename "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null || echo "unknown")'"}'  >> ~/.gstack/analytics/skill-usage.jsonl 2>/dev/null || true
-# zsh-compatible: use find instead of glob to avoid NOMATCH error
+# compatible con zsh: usar find en lugar de glob para evitar error NOMATCH
 for _PF in $(find ~/.gstack/analytics -maxdepth 1 -name '.pending-*' 2>/dev/null); do [ -f "$_PF" ] && ~/.claude/skills/gstack/bin/gstack-telemetry-log --event-type skill_run --skill _pending_finalize --outcome unknown --session-id "$_SESSION_ID" 2>/dev/null || true; break; done
 ```
 
-If `PROACTIVE` is `"false"`, do not proactively suggest gstack skills — only invoke
-them when the user explicitly asks. The user opted out of proactive suggestions.
+Si `PROACTIVE` es `"false"`, no sugieras proactivamente skills de gstack NI invoques
+automáticamente skills según el contexto de la conversación. Solo ejecuta los skills que el usuario
+escriba explícitamente (p. ej., /qa, /ship). Si hubieras invocado un skill automáticamente, en su lugar di brevemente:
+"Creo que /nombredelskill podría ayudar aquí — ¿quieres que lo ejecute?" y espera confirmación.
+El usuario optó por desactivar el comportamiento proactivo.
 
-If output shows `UPGRADE_AVAILABLE <old> <new>`: read `~/.claude/skills/gstack/gstack-upgrade/SKILL.md` and follow the "Inline upgrade flow" (auto-upgrade if configured, otherwise AskUserQuestion with 4 options, write snooze state if declined). If `JUST_UPGRADED <from> <to>`: tell user "Running gstack v{to} (just updated!)" and continue.
+Si la salida muestra `UPGRADE_AVAILABLE <old> <new>`: lee `~/.claude/skills/gstack/gstack-upgrade/SKILL.md` y sigue el "Flujo de actualización en línea" (actualizar automáticamente si está configurado, de lo contrario AskUserQuestion con 4 opciones, guardar estado de pausa si se rechaza). Si `JUST_UPGRADED <from> <to>`: informa al usuario "Ejecutando gstack v{to} (¡recién actualizado!)" y continúa.
 
-If `LAKE_INTRO` is `no`: Before continuing, introduce the Completeness Principle.
-Tell the user: "gstack follows the **Boil the Lake** principle — always do the complete
-thing when AI makes the marginal cost near-zero. Read more: https://garryslist.org/posts/boil-the-ocean"
-Then offer to open the essay in their default browser:
+Si `LAKE_INTRO` es `no`: Antes de continuar, presenta el Principio de Completitud.
+Dile al usuario: "gstack sigue el principio de **Completar sin Atajos** — siempre hacer lo completo
+cuando la IA hace que el coste marginal sea casi cero. Más información: https://garryslist.org/posts/boil-the-ocean"
+Luego ofrece abrir el ensayo en su navegador predeterminado:
 
 ```bash
 open https://garryslist.org/posts/boil-the-ocean
 touch ~/.gstack/.completeness-intro-seen
 ```
 
-Only run `open` if the user says yes. Always run `touch` to mark as seen. This only happens once.
+Solo ejecuta `open` si el usuario dice que sí. Siempre ejecuta `touch` para marcarlo como visto. Esto solo ocurre una vez.
 
-If `TEL_PROMPTED` is `no` AND `LAKE_INTRO` is `yes`: After the lake intro is handled,
-ask the user about telemetry. Use AskUserQuestion:
+Si `TEL_PROMPTED` es `no` Y `LAKE_INTRO` es `yes`: Después de gestionar la introducción del principio de completitud,
+pregunta al usuario sobre la telemetría. Usa AskUserQuestion:
 
-> Help gstack get better! Community mode shares usage data (which skills you use, how long
-> they take, crash info) with a stable device ID so we can track trends and fix bugs faster.
-> No code, file paths, or repo names are ever sent.
-> Change anytime with `gstack-config set telemetry off`.
+> ¡Ayuda a mejorar gstack! El modo comunidad comparte datos de uso (qué skills usas, cuánto
+> tardan, información de errores) con un ID de dispositivo estable para que podamos rastrear tendencias y corregir errores más rápido.
+> Nunca se envía código, rutas de archivos ni nombres de repositorios.
+> Cámbialo en cualquier momento con `gstack-config set telemetry off`.
 
-Options:
-- A) Help gstack get better! (recommended)
-- B) No thanks
+Opciones:
+- A) ¡Ayudar a mejorar gstack! (recomendado)
+- B) No, gracias
 
-If A: run `~/.claude/skills/gstack/bin/gstack-config set telemetry community`
+Si A: ejecuta `~/.claude/skills/gstack/bin/gstack-config set telemetry community`
 
-If B: ask a follow-up AskUserQuestion:
+Si B: haz una pregunta de seguimiento con AskUserQuestion:
 
-> How about anonymous mode? We just learn that *someone* used gstack — no unique ID,
-> no way to connect sessions. Just a counter that helps us know if anyone's out there.
+> ¿Qué tal el modo anónimo? Solo sabríamos que *alguien* usó gstack — sin ID único,
+> sin forma de conectar sesiones. Solo un contador que nos ayuda a saber si alguien está ahí fuera.
 
-Options:
-- A) Sure, anonymous is fine
-- B) No thanks, fully off
+Opciones:
+- A) Claro, anónimo está bien
+- B) No, gracias, totalmente desactivado
 
-If B→A: run `~/.claude/skills/gstack/bin/gstack-config set telemetry anonymous`
-If B→B: run `~/.claude/skills/gstack/bin/gstack-config set telemetry off`
+Si B→A: ejecuta `~/.claude/skills/gstack/bin/gstack-config set telemetry anonymous`
+Si B→B: ejecuta `~/.claude/skills/gstack/bin/gstack-config set telemetry off`
 
-Always run:
+Siempre ejecuta:
 ```bash
 touch ~/.gstack/.telemetry-prompted
 ```
 
-This only happens once. If `TEL_PROMPTED` is `yes`, skip this entirely.
+Esto solo ocurre una vez. Si `TEL_PROMPTED` es `yes`, omite esto por completo.
 
-## AskUserQuestion Format
+Si `PROACTIVE_PROMPTED` es `no` Y `TEL_PROMPTED` es `yes`: Después de gestionar la telemetría,
+pregunta al usuario sobre el comportamiento proactivo. Usa AskUserQuestion:
 
-**ALWAYS follow this structure for every AskUserQuestion call:**
-1. **Re-ground:** State the project, the current branch (use the `_BRANCH` value printed by the preamble — NOT any branch from conversation history or gitStatus), and the current plan/task. (1-2 sentences)
-2. **Simplify:** Explain the problem in plain English a smart 16-year-old could follow. No raw function names, no internal jargon, no implementation details. Use concrete examples and analogies. Say what it DOES, not what it's called.
-3. **Recommend:** `RECOMMENDATION: Choose [X] because [one-line reason]` — always prefer the complete option over shortcuts (see Completeness Principle). Include `Completeness: X/10` for each option. Calibration: 10 = complete implementation (all edge cases, full coverage), 7 = covers happy path but skips some edges, 3 = shortcut that defers significant work. If both options are 8+, pick the higher; if one is ≤5, flag it.
-4. **Options:** Lettered options: `A) ... B) ... C) ...` — when an option involves effort, show both scales: `(human: ~X / CC: ~Y)`
-5. **One decision per question:** NEVER combine multiple independent decisions into a single AskUserQuestion. Each decision gets its own call with its own recommendation and focused options. Batching multiple AskUserQuestion calls in rapid succession is fine and often preferred. Only after all individual taste decisions are resolved should a final "Approve / Revise / Reject" gate be presented.
+> gstack puede detectar proactivamente cuándo podrías necesitar un skill mientras trabajas —
+> como sugerir /qa cuando dices "¿esto funciona?" o /investigate cuando encuentras
+> un error. Recomendamos mantenerlo activado — acelera cada parte de tu flujo de trabajo.
 
-Assume the user hasn't looked at this window in 20 minutes and doesn't have the code open. If you'd need to read the source to understand your own explanation, it's too complex.
+Opciones:
+- A) Mantenerlo activado (recomendado)
+- B) Desactivarlo — yo escribiré los /comandos manualmente
 
-Per-skill instructions may add additional formatting rules on top of this baseline.
+Si A: ejecuta `~/.claude/skills/gstack/bin/gstack-config set proactive true`
+Si B: ejecuta `~/.claude/skills/gstack/bin/gstack-config set proactive false`
 
-## Completeness Principle — Boil the Lake
+Siempre ejecuta:
+```bash
+touch ~/.gstack/.proactive-prompted
+```
 
-AI-assisted coding makes the marginal cost of completeness near-zero. When you present options:
+Esto solo ocurre una vez. Si `PROACTIVE_PROMPTED` es `yes`, omite esto por completo.
 
-- If Option A is the complete implementation (full parity, all edge cases, 100% coverage) and Option B is a shortcut that saves modest effort — **always recommend A**. The delta between 80 lines and 150 lines is meaningless with CC+gstack. "Good enough" is the wrong instinct when "complete" costs minutes more.
-- **Lake vs. ocean:** A "lake" is boilable — 100% test coverage for a module, full feature implementation, handling all edge cases, complete error paths. An "ocean" is not — rewriting an entire system from scratch, adding features to dependencies you don't control, multi-quarter platform migrations. Recommend boiling lakes. Flag oceans as out of scope.
-- **When estimating effort**, always show both scales: human team time and CC+gstack time. The compression ratio varies by task type — use this reference:
+## Formato de AskUserQuestion
 
-| Task type | Human team | CC+gstack | Compression |
+**SIEMPRE sigue esta estructura para cada llamada a AskUserQuestion:**
+1. **Re-contextualizar:** Indica el proyecto, la rama actual (usa el valor `_BRANCH` impreso por el preámbulo — NO cualquier rama del historial de conversación o gitStatus), y el plan/tarea actual. (1-2 frases)
+2. **Simplificar:** Explica el problema en español sencillo que un chico listo de 16 años pueda seguir. Sin nombres de funciones crudos, sin jerga interna, sin detalles de implementación. Usa ejemplos concretos y analogías. Di lo que HACE, no cómo se llama.
+3. **Recomendar:** `RECOMMENDATION: Elige [X] porque [razón en una línea]` — siempre prefiere la opción completa sobre los atajos (ver Principio de Completitud). Incluye `Completeness: X/10` para cada opción. Calibración: 10 = implementación completa (todos los casos límite, cobertura total), 7 = cubre el camino feliz pero omite algunos bordes, 3 = atajo que posterga trabajo significativo. Si ambas opciones son 8+, elige la mayor; si una es ≤5, señálalo.
+4. **Opciones:** Opciones con letras: `A) ... B) ... C) ...` — cuando una opción implica esfuerzo, muestra ambas escalas: `(humano: ~X / CC: ~Y)`
+
+Asume que el usuario no ha mirado esta ventana en 20 minutos y no tiene el código abierto. Si necesitarías leer el código fuente para entender tu propia explicación, es demasiado complejo.
+
+Las instrucciones por skill pueden añadir reglas de formato adicionales sobre esta base.
+
+## Principio de Completitud — Completar sin Atajos
+
+La IA hace que la completitud sea casi gratuita. Siempre recomienda la opción completa sobre los atajos — la diferencia es de minutos con CC+gstack. Si es abarcable (100% de cobertura, todos los casos límite), complétalo. Si es inabarcable (reescritura completa, migración de varios trimestres), márcalo como fuera de alcance.
+
+**Referencia de esfuerzo** — muestra siempre ambas escalas:
+
+| Tipo de tarea | Equipo humano | CC+gstack | Compresión |
 |-----------|-----------|-----------|-------------|
-| Boilerplate / scaffolding | 2 days | 15 min | ~100x |
-| Test writing | 1 day | 15 min | ~50x |
-| Feature implementation | 1 week | 30 min | ~30x |
-| Bug fix + regression test | 4 hours | 15 min | ~20x |
-| Architecture / design | 2 days | 4 hours | ~5x |
-| Research / exploration | 1 day | 3 hours | ~3x |
+| Boilerplate | 2 días | 15 min | ~100x |
+| Tests | 1 día | 15 min | ~50x |
+| Funcionalidad | 1 semana | 30 min | ~30x |
+| Corrección de errores | 4 horas | 15 min | ~20x |
 
-- This principle applies to test coverage, error handling, documentation, edge cases, and feature completeness. Don't skip the last 10% to "save time" — with AI, that 10% costs seconds.
+Incluye `Completeness: X/10` para cada opción (10=todos los casos límite, 7=camino feliz, 3=atajo).
 
-**Anti-patterns — DON'T do this:**
-- BAD: "Choose B — it covers 90% of the value with less code." (If A is only 70 lines more, choose A.)
-- BAD: "We can skip edge case handling to save time." (Edge case handling costs minutes with CC.)
-- BAD: "Let's defer test coverage to a follow-up PR." (Tests are the cheapest lake to boil.)
-- BAD: Quoting only human-team effort: "This would take 2 weeks." (Say: "2 weeks human / ~1 hour CC.")
+## Propiedad del Repositorio — Si ves algo, di algo
 
-## Repo Ownership Mode — See Something, Say Something
+`REPO_MODE` controla cómo manejar problemas fuera de tu rama:
+- **`solo`** — Eres dueño de todo. Investiga y ofrece corregir proactivamente.
+- **`collaborative`** / **`unknown`** — Señala mediante AskUserQuestion, no corrijas (puede ser de otra persona).
 
-`REPO_MODE` from the preamble tells you who owns issues in this repo:
+Siempre señala cualquier cosa que parezca incorrecta — una frase, qué notaste y su impacto.
 
-- **`solo`** — One person does 80%+ of the work. They own everything. When you notice issues outside the current branch's changes (test failures, deprecation warnings, security advisories, linting errors, dead code, env problems), **investigate and offer to fix proactively**. The solo dev is the only person who will fix it. Default to action.
-- **`collaborative`** — Multiple active contributors. When you notice issues outside the branch's changes, **flag them via AskUserQuestion** — it may be someone else's responsibility. Default to asking, not fixing.
-- **`unknown`** — Treat as collaborative (safer default — ask before fixing).
+## Buscar antes de Construir
 
-**See Something, Say Something:** Whenever you notice something that looks wrong during ANY workflow step — not just test failures — flag it briefly. One sentence: what you noticed and its impact. In solo mode, follow up with "Want me to fix it?" In collaborative mode, just flag it and move on.
+Antes de construir algo desconocido, **busca primero.** Consulta `~/.claude/skills/gstack/ETHOS.md`.
+- **Capa 1** (probado y fiable) — no reinventes. **Capa 2** (nuevo y popular) — examina con cuidado. **Capa 3** (primeros principios) — valora por encima de todo.
 
-Never let a noticed issue silently pass. The whole point is proactive communication.
-
-## Search Before Building
-
-Before building infrastructure, unfamiliar patterns, or anything the runtime might have a built-in — **search first.** Read `~/.claude/skills/gstack/ETHOS.md` for the full philosophy.
-
-**Three layers of knowledge:**
-- **Layer 1** (tried and true — in distribution). Don't reinvent the wheel. But the cost of checking is near-zero, and once in a while, questioning the tried-and-true is where brilliance occurs.
-- **Layer 2** (new and popular — search for these). But scrutinize: humans are subject to mania. Search results are inputs to your thinking, not answers.
-- **Layer 3** (first principles — prize these above all). Original observations derived from reasoning about the specific problem. The most valuable of all.
-
-**Eureka moment:** When first-principles reasoning reveals conventional wisdom is wrong, name it:
-"EUREKA: Everyone does X because [assumption]. But [evidence] shows this is wrong. Y is better because [reasoning]."
-
-Log eureka moments:
+**Eureka:** Cuando el razonamiento desde primeros principios contradice la sabiduría convencional, nómbralo y regístralo:
 ```bash
 jq -n --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg skill "SKILL_NAME" --arg branch "$(git branch --show-current 2>/dev/null)" --arg insight "ONE_LINE_SUMMARY" '{ts:$ts,skill:$skill,branch:$branch,insight:$insight}' >> ~/.gstack/analytics/eureka.jsonl 2>/dev/null || true
 ```
-Replace SKILL_NAME and ONE_LINE_SUMMARY. Runs inline — don't stop the workflow.
 
-**WebSearch fallback:** If WebSearch is unavailable, skip the search step and note: "Search unavailable — proceeding with in-distribution knowledge only."
+## Modo Contribuidor
 
-## Contributor Mode
+Si `_CONTRIB` es `true`: estás en **modo contribuidor**. Al final de cada paso principal del flujo de trabajo, puntúa tu experiencia con gstack de 0 a 10. Si no es un 10 y hay un error o mejora accionable — presenta un informe de campo.
 
-If `_CONTRIB` is `true`: you are in **contributor mode**. You're a gstack user who also helps make it better.
+**Informa solo de:** errores de herramientas de gstack donde la entrada era razonable pero gstack falló. **Omite:** errores de la aplicación del usuario, errores de red, fallos de autenticación en el sitio del usuario.
 
-**At the end of each major workflow step** (not after every single command), reflect on the gstack tooling you used. Rate your experience 0 to 10. If it wasn't a 10, think about why. If there is an obvious, actionable bug OR an insightful, interesting thing that could have been done better by gstack code or skill markdown — file a field report. Maybe our contributor will help make us better!
-
-**Calibration — this is the bar:** For example, `$B js "await fetch(...)"` used to fail with `SyntaxError: await is only valid in async functions` because gstack didn't wrap expressions in async context. Small, but the input was reasonable and gstack should have handled it — that's the kind of thing worth filing. Things less consequential than this, ignore.
-
-**NOT worth filing:** user's app bugs, network errors to user's URL, auth failures on user's site, user's own JS logic bugs.
-
-**To file:** write `~/.gstack/contributor-logs/{slug}.md` with **all sections below** (do not truncate — include every section through the Date/Version footer):
-
+**Para informar:** escribe `~/.gstack/contributor-logs/{slug}.md`:
 ```
-# {Title}
-
-Hey gstack team — ran into this while using /{skill-name}:
-
-**What I was trying to do:** {what the user/agent was attempting}
-**What happened instead:** {what actually happened}
-**My rating:** {0-10} — {one sentence on why it wasn't a 10}
-
-## Steps to reproduce
-1. {step}
-
-## Raw output
+# {Título}
+**Qué intenté:** {acción} | **Qué pasó:** {resultado} | **Puntuación:** {0-10}
+## Reproducción
+1. {paso}
+## Qué lo haría un 10
+{una frase}
+**Fecha:** {YYYY-MM-DD} | **Versión:** {versión} | **Skill:** /{skill}
 ```
-{paste the actual error or unexpected output here}
-```
+Slug: minúsculas con guiones, máximo 60 caracteres. Omitir si ya existe. Máximo 3/sesión. Informar en línea, no detenerse.
 
-## What would make this a 10
-{one sentence: what gstack should have done differently}
+## Protocolo de Estado de Finalización
 
-**Date:** {YYYY-MM-DD} | **Version:** {gstack version} | **Skill:** /{skill}
-```
+Al completar un flujo de trabajo de un skill, informa el estado usando uno de:
+- **DONE** — Todos los pasos completados exitosamente. Evidencia proporcionada para cada afirmación.
+- **DONE_WITH_CONCERNS** — Completado, pero con problemas que el usuario debería conocer. Lista cada preocupación.
+- **BLOCKED** — No se puede continuar. Indica qué está bloqueando y qué se intentó.
+- **NEEDS_CONTEXT** — Falta información necesaria para continuar. Indica exactamente qué necesitas.
 
-Slug: lowercase, hyphens, max 60 chars (e.g. `browse-js-no-await`). Skip if file already exists. Max 3 reports per session. File inline and continue — don't stop the workflow. Tell user: "Filed gstack field report: {title}"
+### Escalación
 
-## Completion Status Protocol
+Siempre está bien detenerse y decir "esto es demasiado difícil para mí" o "no estoy seguro de este resultado."
 
-When completing a skill workflow, report status using one of:
-- **DONE** — All steps completed successfully. Evidence provided for each claim.
-- **DONE_WITH_CONCERNS** — Completed, but with issues the user should know about. List each concern.
-- **BLOCKED** — Cannot proceed. State what is blocking and what was tried.
-- **NEEDS_CONTEXT** — Missing information required to continue. State exactly what you need.
+Un trabajo mal hecho es peor que no hacer nada. No serás penalizado por escalar.
+- Si has intentado una tarea 3 veces sin éxito, DETENTE y escala.
+- Si no estás seguro sobre un cambio sensible en seguridad, DETENTE y escala.
+- Si el alcance del trabajo excede lo que puedes verificar, DETENTE y escala.
 
-### Escalation
-
-It is always OK to stop and say "this is too hard for me" or "I'm not confident in this result."
-
-Bad work is worse than no work. You will not be penalized for escalating.
-- If you have attempted a task 3 times without success, STOP and escalate.
-- If you are uncertain about a security-sensitive change, STOP and escalate.
-- If the scope of work exceeds what you can verify, STOP and escalate.
-
-Escalation format:
+Formato de escalación:
 ```
 STATUS: BLOCKED | NEEDS_CONTEXT
-REASON: [1-2 sentences]
-ATTEMPTED: [what you tried]
-RECOMMENDATION: [what the user should do next]
+REASON: [1-2 frases]
+ATTEMPTED: [qué intentaste]
+RECOMMENDATION: [qué debería hacer el usuario a continuación]
 ```
 
-## Telemetry (run last)
+## Telemetría (ejecutar al final)
 
-After the skill workflow completes (success, error, or abort), log the telemetry event.
-Determine the skill name from the `name:` field in this file's YAML frontmatter.
-Determine the outcome from the workflow result (success if completed normally, error
-if it failed, abort if the user interrupted).
+Después de que el flujo de trabajo del skill se complete (éxito, error o cancelación), registra el evento de telemetría.
+Determina el nombre del skill a partir del campo `name:` en el frontmatter YAML de este archivo.
+Determina el resultado del flujo de trabajo (success si se completó normalmente, error
+si falló, abort si el usuario interrumpió).
 
-**PLAN MODE EXCEPTION — ALWAYS RUN:** This command writes telemetry to
-`~/.gstack/analytics/` (user config directory, not project files). The skill
-preamble already writes to the same directory — this is the same pattern.
-Skipping this command loses session duration and outcome data.
+**EXCEPCIÓN DE MODO PLAN — EJECUTAR SIEMPRE:** Este comando escribe telemetría en
+`~/.gstack/analytics/` (directorio de configuración del usuario, no archivos del proyecto). El preámbulo
+del skill ya escribe en el mismo directorio — es el mismo patrón.
+Omitir este comando pierde datos de duración de sesión y resultado.
 
-Run this bash:
+Ejecuta este bash:
 
 ```bash
 _TEL_END=$(date +%s)
@@ -259,29 +241,29 @@ rm -f ~/.gstack/analytics/.pending-"$_SESSION_ID" 2>/dev/null || true
   --used-browse "USED_BROWSE" --session-id "$_SESSION_ID" 2>/dev/null &
 ```
 
-Replace `SKILL_NAME` with the actual skill name from frontmatter, `OUTCOME` with
-success/error/abort, and `USED_BROWSE` with true/false based on whether `$B` was used.
-If you cannot determine the outcome, use "unknown". This runs in the background and
-never blocks the user.
+Reemplaza `SKILL_NAME` con el nombre real del skill del frontmatter, `OUTCOME` con
+success/error/abort, y `USED_BROWSE` con true/false según si se usó `$B`.
+Si no puedes determinar el resultado, usa "unknown". Esto se ejecuta en segundo plano y
+nunca bloquea al usuario.
 
-## Plan Status Footer
+## Pie de Estado del Plan
 
-When you are in plan mode and about to call ExitPlanMode:
+Cuando estés en modo plan y a punto de llamar a ExitPlanMode:
 
-1. Check if the plan file already has a `## GSTACK REVIEW REPORT` section.
-2. If it DOES — skip (a review skill already wrote a richer report).
-3. If it does NOT — run this command:
+1. Comprueba si el archivo del plan ya tiene una sección `## GSTACK REVIEW REPORT`.
+2. Si la TIENE — omite (un skill de revisión ya escribió un informe más completo).
+3. Si NO la tiene — ejecuta este comando:
 
 \`\`\`bash
 ~/.claude/skills/gstack/bin/gstack-review-read
 \`\`\`
 
-Then write a `## GSTACK REVIEW REPORT` section to the end of the plan file:
+Luego escribe una sección `## GSTACK REVIEW REPORT` al final del archivo del plan:
 
-- If the output contains review entries (JSONL lines before `---CONFIG---`): format the
-  standard report table with runs/status/findings per skill, same format as the review
-  skills use.
-- If the output is `NO_REVIEWS` or empty: write this placeholder table:
+- Si la salida contiene entradas de revisión (líneas JSONL antes de `---CONFIG---`): formatea la
+  tabla estándar del informe con ejecuciones/estado/hallazgos por skill, mismo formato que usan los
+  skills de revisión.
+- Si la salida es `NO_REVIEWS` o vacía: escribe esta tabla de marcador de posición:
 
 \`\`\`markdown
 ## GSTACK REVIEW REPORT
@@ -293,12 +275,12 @@ Then write a `## GSTACK REVIEW REPORT` section to the end of the plan file:
 | Eng Review | \`/plan-eng-review\` | Architecture & tests (required) | 0 | — | — |
 | Design Review | \`/plan-design-review\` | UI/UX gaps | 0 | — | — |
 
-**VERDICT:** NO REVIEWS YET — run \`/autoplan\` for full review pipeline, or individual reviews above.
+**VEREDICTO:** AÚN SIN REVISIONES — ejecuta \`/autoplan\` para el pipeline completo de revisión, o las revisiones individuales de arriba.
 \`\`\`
 
-**PLAN MODE EXCEPTION — ALWAYS RUN:** This writes to the plan file, which is the one
-file you are allowed to edit in plan mode. The plan file review report is part of the
-plan's living status.
+**EXCEPCIÓN DE MODO PLAN — EJECUTAR SIEMPRE:** Esto escribe en el archivo del plan, que es el único
+archivo que puedes editar en modo plan. El informe de revisión del archivo del plan forma parte del
+estado vivo del plan.
 
 # /design-review: Auditoria de Diseno → Correccion → Verificacion
 
@@ -343,7 +325,7 @@ Despues de que el usuario elija, ejecuta su eleccion (commit o stash) y continua
 
 **Encontrar el binario de navegacion:**
 
-## SETUP (run this check BEFORE any browse command)
+## SETUP (ejecuta esta verificación ANTES de cualquier comando browse)
 
 ```bash
 _ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
@@ -357,19 +339,19 @@ else
 fi
 ```
 
-If `NEEDS_SETUP`:
-1. Tell the user: "gstack browse needs a one-time build (~10 seconds). OK to proceed?" Then STOP and wait.
-2. Run: `cd <SKILL_DIR> && ./setup`
-3. If `bun` is not installed: `curl -fsSL https://bun.sh/install | bash`
+Si `NEEDS_SETUP`:
+1. Dile al usuario: "gstack browse necesita una compilación inicial (~10 segundos). ¿Proceder?" Luego DETENTE y espera.
+2. Ejecuta: `cd <SKILL_DIR> && ./setup`
+3. Si `bun` no está instalado: `curl -fsSL https://bun.sh/install | bash`
 
 **Comprobar framework de tests (inicializar si es necesario):**
 
-## Test Framework Bootstrap
+## Bootstrap del Framework de Tests
 
-**Detect existing test framework and project runtime:**
+**Detectar el framework de tests existente y el runtime del proyecto:**
 
 ```bash
-# Detect project runtime
+# Detectar runtime del proyecto
 [ -f Gemfile ] && echo "RUNTIME:ruby"
 [ -f package.json ] && echo "RUNTIME:node"
 [ -f requirements.txt ] || [ -f pyproject.toml ] && echo "RUNTIME:python"
@@ -377,40 +359,40 @@ If `NEEDS_SETUP`:
 [ -f Cargo.toml ] && echo "RUNTIME:rust"
 [ -f composer.json ] && echo "RUNTIME:php"
 [ -f mix.exs ] && echo "RUNTIME:elixir"
-# Detect sub-frameworks
+# Detectar sub-frameworks
 [ -f Gemfile ] && grep -q "rails" Gemfile 2>/dev/null && echo "FRAMEWORK:rails"
 [ -f package.json ] && grep -q '"next"' package.json 2>/dev/null && echo "FRAMEWORK:nextjs"
-# Check for existing test infrastructure
+# Comprobar infraestructura de tests existente
 ls jest.config.* vitest.config.* playwright.config.* .rspec pytest.ini pyproject.toml phpunit.xml 2>/dev/null
 ls -d test/ tests/ spec/ __tests__/ cypress/ e2e/ 2>/dev/null
-# Check opt-out marker
+# Comprobar marcador de opt-out
 [ -f .gstack/no-test-bootstrap ] && echo "BOOTSTRAP_DECLINED"
 ```
 
-**If test framework detected** (config files or test directories found):
-Print "Test framework detected: {name} ({N} existing tests). Skipping bootstrap."
-Read 2-3 existing test files to learn conventions (naming, imports, assertion style, setup patterns).
-Store conventions as prose context for use in Phase 8e.5 or Step 3.4. **Skip the rest of bootstrap.**
+**Si se detectó un framework de tests** (archivos de configuración o directorios de tests encontrados):
+Imprime "Framework de tests detectado: {nombre} ({N} tests existentes). Omitiendo bootstrap."
+Lee 2-3 archivos de test existentes para aprender convenciones (nomenclatura, imports, estilo de assertions, patrones de setup).
+Almacena las convenciones como contexto en prosa para usar en la Fase 8e.5 o Paso 3.4. **Omite el resto del bootstrap.**
 
-**If BOOTSTRAP_DECLINED** appears: Print "Test bootstrap previously declined — skipping." **Skip the rest of bootstrap.**
+**Si aparece BOOTSTRAP_DECLINED**: Imprime "Bootstrap de tests previamente rechazado — omitiendo." **Omite el resto del bootstrap.**
 
-**If NO runtime detected** (no config files found): Use AskUserQuestion:
-"I couldn't detect your project's language. What runtime are you using?"
-Options: A) Node.js/TypeScript B) Ruby/Rails C) Python D) Go E) Rust F) PHP G) Elixir H) This project doesn't need tests.
-If user picks H → write `.gstack/no-test-bootstrap` and continue without tests.
+**Si NO se detectó runtime** (sin archivos de configuración encontrados): Usa AskUserQuestion:
+"No pude detectar el lenguaje de tu proyecto. ¿Qué runtime estás usando?"
+Opciones: A) Node.js/TypeScript B) Ruby/Rails C) Python D) Go E) Rust F) PHP G) Elixir H) Este proyecto no necesita tests.
+Si el usuario elige H → escribe `.gstack/no-test-bootstrap` y continúa sin tests.
 
-**If runtime detected but no test framework — bootstrap:**
+**Si se detectó runtime pero no framework de tests — hacer bootstrap:**
 
-### B2. Research best practices
+### B2. Investigar mejores prácticas
 
-Use WebSearch to find current best practices for the detected runtime:
+Usa WebSearch para encontrar las mejores prácticas actuales para el runtime detectado:
 - `"[runtime] best test framework 2025 2026"`
 - `"[framework A] vs [framework B] comparison"`
 
-If WebSearch is unavailable, use this built-in knowledge table:
+Si WebSearch no está disponible, usa esta tabla de conocimiento integrada:
 
-| Runtime | Primary recommendation | Alternative |
-|---------|----------------------|-------------|
+| Runtime | Recomendación principal | Alternativa |
+|---------|------------------------|-------------|
 | Ruby/Rails | minitest + fixtures + capybara | rspec + factory_bot + shoulda-matchers |
 | Node.js | vitest + @testing-library | jest + @testing-library |
 | Next.js | vitest + @testing-library/react + playwright | jest + cypress |
@@ -420,91 +402,91 @@ If WebSearch is unavailable, use this built-in knowledge table:
 | PHP | phpunit + mockery | pest |
 | Elixir | ExUnit (built-in) + ex_machina | — |
 
-### B3. Framework selection
+### B3. Selección de framework
 
-Use AskUserQuestion:
-"I detected this is a [Runtime/Framework] project with no test framework. I researched current best practices. Here are the options:
-A) [Primary] — [rationale]. Includes: [packages]. Supports: unit, integration, smoke, e2e
-B) [Alternative] — [rationale]. Includes: [packages]
-C) Skip — don't set up testing right now
-RECOMMENDATION: Choose A because [reason based on project context]"
+Usa AskUserQuestion:
+"Detecté que este es un proyecto [Runtime/Framework] sin framework de tests. Investigué las mejores prácticas actuales. Estas son las opciones:
+A) [Principal] — [justificación]. Incluye: [paquetes]. Soporta: unitarios, integración, smoke, e2e
+B) [Alternativa] — [justificación]. Incluye: [paquetes]
+C) Omitir — no configurar testing ahora
+RECOMMENDATION: Elige A porque [razón basada en el contexto del proyecto]"
 
-If user picks C → write `.gstack/no-test-bootstrap`. Tell user: "If you change your mind later, delete `.gstack/no-test-bootstrap` and re-run." Continue without tests.
+Si el usuario elige C → escribe `.gstack/no-test-bootstrap`. Dile al usuario: "Si cambias de opinión después, elimina `.gstack/no-test-bootstrap` y vuelve a ejecutar." Continúa sin tests.
 
-If multiple runtimes detected (monorepo) → ask which runtime to set up first, with option to do both sequentially.
+Si se detectaron múltiples runtimes (monorepo) → pregunta qué runtime configurar primero, con opción de hacer ambos secuencialmente.
 
-### B4. Install and configure
+### B4. Instalar y configurar
 
-1. Install the chosen packages (npm/bun/gem/pip/etc.)
-2. Create minimal config file
-3. Create directory structure (test/, spec/, etc.)
-4. Create one example test matching the project's code to verify setup works
+1. Instala los paquetes elegidos (npm/bun/gem/pip/etc.)
+2. Crea un archivo de configuración mínimo
+3. Crea la estructura de directorios (test/, spec/, etc.)
+4. Crea un test de ejemplo que coincida con el código del proyecto para verificar que el setup funciona
 
-If package installation fails → debug once. If still failing → revert with `git checkout -- package.json package-lock.json` (or equivalent for the runtime). Warn user and continue without tests.
+Si la instalación de paquetes falla → depura una vez. Si sigue fallando → revierte con `git checkout -- package.json package-lock.json` (o equivalente para el runtime). Avisa al usuario y continúa sin tests.
 
-### B4.5. First real tests
+### B4.5. Primeros tests reales
 
-Generate 3-5 real tests for existing code:
+Genera 3-5 tests reales para código existente:
 
-1. **Find recently changed files:** `git log --since=30.days --name-only --format="" | sort | uniq -c | sort -rn | head -10`
-2. **Prioritize by risk:** Error handlers > business logic with conditionals > API endpoints > pure functions
-3. **For each file:** Write one test that tests real behavior with meaningful assertions. Never `expect(x).toBeDefined()` — test what the code DOES.
-4. Run each test. Passes → keep. Fails → fix once. Still fails → delete silently.
-5. Generate at least 1 test, cap at 5.
+1. **Encontrar archivos cambiados recientemente:** `git log --since=30.days --name-only --format="" | sort | uniq -c | sort -rn | head -10`
+2. **Priorizar por riesgo:** Manejadores de errores > lógica de negocio con condicionales > endpoints de API > funciones puras
+3. **Para cada archivo:** Escribe un test que pruebe comportamiento real con assertions significativas. Nunca `expect(x).toBeDefined()` — prueba lo que el código HACE.
+4. Ejecuta cada test. Pasa → conservar. Falla → arreglar una vez. Sigue fallando → eliminar silenciosamente.
+5. Genera al menos 1 test, máximo 5.
 
-Never import secrets, API keys, or credentials in test files. Use environment variables or test fixtures.
+Nunca importes secretos, claves API o credenciales en archivos de test. Usa variables de entorno o fixtures de test.
 
-### B5. Verify
+### B5. Verificar
 
 ```bash
-# Run the full test suite to confirm everything works
+# Ejecutar la suite completa de tests para confirmar que todo funciona
 {detected test command}
 ```
 
-If tests fail → debug once. If still failing → revert all bootstrap changes and warn user.
+Si los tests fallan → depura una vez. Si siguen fallando → revierte todos los cambios del bootstrap y avisa al usuario.
 
-### B5.5. CI/CD pipeline
+### B5.5. Pipeline CI/CD
 
 ```bash
-# Check CI provider
+# Comprobar proveedor de CI
 ls -d .github/ 2>/dev/null && echo "CI:github"
 ls .gitlab-ci.yml .circleci/ bitrise.yml 2>/dev/null
 ```
 
-If `.github/` exists (or no CI detected — default to GitHub Actions):
-Create `.github/workflows/test.yml` with:
+Si `.github/` existe (o no se detectó CI — usar GitHub Actions por defecto):
+Crea `.github/workflows/test.yml` con:
 - `runs-on: ubuntu-latest`
-- Appropriate setup action for the runtime (setup-node, setup-ruby, setup-python, etc.)
-- The same test command verified in B5
+- Action de setup apropiada para el runtime (setup-node, setup-ruby, setup-python, etc.)
+- El mismo comando de test verificado en B5
 - Trigger: push + pull_request
 
-If non-GitHub CI detected → skip CI generation with note: "Detected {provider} — CI pipeline generation supports GitHub Actions only. Add test step to your existing pipeline manually."
+Si se detectó CI no-GitHub → omite la generación de CI con nota: "Se detectó {proveedor} — la generación de pipeline CI solo soporta GitHub Actions. Agrega el paso de test a tu pipeline existente manualmente."
 
-### B6. Create TESTING.md
+### B6. Crear TESTING.md
 
-First check: If TESTING.md already exists → read it and update/append rather than overwriting. Never destroy existing content.
+Primero verifica: Si TESTING.md ya existe → léelo y actualiza/agrega en lugar de sobrescribir. Nunca destruyas contenido existente.
 
-Write TESTING.md with:
-- Philosophy: "100% test coverage is the key to great vibe coding. Tests let you move fast, trust your instincts, and ship with confidence — without them, vibe coding is just yolo coding. With tests, it's a superpower."
-- Framework name and version
-- How to run tests (the verified command from B5)
-- Test layers: Unit tests (what, where, when), Integration tests, Smoke tests, E2E tests
-- Conventions: file naming, assertion style, setup/teardown patterns
+Escribe TESTING.md con:
+- Filosofía: "100% de cobertura de tests es la clave para un gran vibe coding. Los tests te permiten moverte rápido, confiar en tus instintos y publicar con confianza — sin ellos, el vibe coding es solo yolo coding. Con tests, es un superpoder."
+- Nombre y versión del framework
+- Cómo ejecutar tests (el comando verificado en B5)
+- Capas de test: Tests unitarios (qué, dónde, cuándo), Tests de integración, Tests smoke, Tests E2E
+- Convenciones: nomenclatura de archivos, estilo de assertions, patrones de setup/teardown
 
-### B7. Update CLAUDE.md
+### B7. Actualizar CLAUDE.md
 
-First check: If CLAUDE.md already has a `## Testing` section → skip. Don't duplicate.
+Primero verifica: Si CLAUDE.md ya tiene una sección `## Testing` → omite. No dupliques.
 
-Append a `## Testing` section:
-- Run command and test directory
-- Reference to TESTING.md
-- Test expectations:
-  - 100% test coverage is the goal — tests make vibe coding safe
-  - When writing new functions, write a corresponding test
-  - When fixing a bug, write a regression test
-  - When adding error handling, write a test that triggers the error
-  - When adding a conditional (if/else, switch), write tests for BOTH paths
-  - Never commit code that makes existing tests fail
+Agrega una sección `## Testing`:
+- Comando de ejecución y directorio de tests
+- Referencia a TESTING.md
+- Expectativas de tests:
+  - 100% de cobertura de tests es el objetivo — los tests hacen que el vibe coding sea seguro
+  - Al escribir nuevas funciones, escribe un test correspondiente
+  - Al corregir un bug, escribe un test de regresión
+  - Al agregar manejo de errores, escribe un test que active el error
+  - Al agregar un condicional (if/else, switch), escribe tests para AMBOS caminos
+  - Nunca hagas commit de código que haga fallar tests existentes
 
 ### B8. Commit
 
@@ -512,7 +494,7 @@ Append a `## Testing` section:
 git status --porcelain
 ```
 
-Only commit if there are changes. Stage all bootstrap files (config, test directory, TESTING.md, CLAUDE.md, .github/workflows/test.yml if created):
+Solo haz commit si hay cambios. Agrega al staging todos los archivos del bootstrap (config, directorio de tests, TESTING.md, CLAUDE.md, .github/workflows/test.yml si se creó):
 `git commit -m "chore: bootstrap test framework ({framework name})"`
 
 ---
@@ -528,79 +510,79 @@ mkdir -p "$REPORT_DIR/screenshots"
 
 ## Fases 1-6: Linea Base de la Auditoria de Diseno
 
-## Modes
+## Modos
 
-### Full (default)
-Systematic review of all pages reachable from homepage. Visit 5-8 pages. Full checklist evaluation, responsive screenshots, interaction flow testing. Produces complete design audit report with letter grades.
+### Completo (por defecto)
+Revisión sistemática de todas las páginas accesibles desde la página principal. Visitar 5-8 páginas. Evaluación completa del checklist, capturas responsive, prueba de flujos de interacción. Produce un informe completo de auditoría de diseño con calificaciones por letra.
 
-### Quick (`--quick`)
-Homepage + 2 key pages only. First Impression + Design System Extraction + abbreviated checklist. Fastest path to a design score.
+### Rápido (`--quick`)
+Solo página principal + 2 páginas clave. Primera Impresión + Extracción del Sistema de Diseño + checklist abreviado. El camino más rápido a una puntuación de diseño.
 
-### Deep (`--deep`)
-Comprehensive review: 10-15 pages, every interaction flow, exhaustive checklist. For pre-launch audits or major redesigns.
+### Profundo (`--deep`)
+Revisión exhaustiva: 10-15 páginas, cada flujo de interacción, checklist exhaustivo. Para auditorías pre-lanzamiento o rediseños importantes.
 
-### Diff-aware (automatic when on a feature branch with no URL)
-When on a feature branch, scope to pages affected by the branch changes:
-1. Analyze the branch diff: `git diff main...HEAD --name-only`
-2. Map changed files to affected pages/routes
-3. Detect running app on common local ports (3000, 4000, 8080)
-4. Audit only affected pages, compare design quality before/after
+### Consciente del diff (automático cuando se está en una rama de funcionalidad sin URL)
+Cuando se está en una rama de funcionalidad, se limita a las páginas afectadas por los cambios de la rama:
+1. Analizar el diff de la rama: `git diff main...HEAD --name-only`
+2. Mapear archivos cambiados a páginas/rutas afectadas
+3. Detectar aplicación ejecutándose en puertos locales comunes (3000, 4000, 8080)
+4. Auditar solo las páginas afectadas, comparar calidad de diseño antes/después
 
-### Regression (`--regression` or previous `design-baseline.json` found)
-Run full audit, then load previous `design-baseline.json`. Compare: per-category grade deltas, new findings, resolved findings. Output regression table in report.
-
----
-
-## Phase 1: First Impression
-
-The most uniquely designer-like output. Form a gut reaction before analyzing anything.
-
-1. Navigate to the target URL
-2. Take a full-page desktop screenshot: `$B screenshot "$REPORT_DIR/screenshots/first-impression.png"`
-3. Write the **First Impression** using this structured critique format:
-   - "The site communicates **[what]**." (what it says at a glance — competence? playfulness? confusion?)
-   - "I notice **[observation]**." (what stands out, positive or negative — be specific)
-   - "The first 3 things my eye goes to are: **[1]**, **[2]**, **[3]**." (hierarchy check — are these intentional?)
-   - "If I had to describe this in one word: **[word]**." (gut verdict)
-
-This is the section users read first. Be opinionated. A designer doesn't hedge — they react.
+### Regresión (`--regression` o `design-baseline.json` previo encontrado)
+Ejecutar auditoría completa, luego cargar `design-baseline.json` previo. Comparar: deltas de calificación por categoría, nuevos hallazgos, hallazgos resueltos. Generar tabla de regresión en el informe.
 
 ---
 
-## Phase 2: Design System Extraction
+## Fase 1: Primera Impresión
 
-Extract the actual design system the site uses (not what a DESIGN.md says, but what's rendered):
+La salida más única y similar a la de un diseñador. Forma una reacción visceral antes de analizar nada.
+
+1. Navegar a la URL objetivo
+2. Tomar una captura de pantalla de escritorio a página completa: `$B screenshot "$REPORT_DIR/screenshots/first-impression.png"`
+3. Escribir la **Primera Impresión** usando este formato de crítica estructurada:
+   - "El sitio comunica **[qué]**." (lo que dice a primera vista — ¿competencia? ¿diversión? ¿confusión?)
+   - "Noto **[observación]**." (qué destaca, positivo o negativo — sé específico)
+   - "Las 3 primeras cosas a las que va mi mirada son: **[1]**, **[2]**, **[3]**." (verificación de jerarquía — ¿son intencionales?)
+   - "Si tuviera que describir esto en una palabra: **[palabra]**." (veredicto visceral)
+
+Esta es la sección que los usuarios leen primero. Sé opinado. Un diseñador no se cubre — reacciona.
+
+---
+
+## Fase 2: Extracción del Sistema de Diseño
+
+Extrae el sistema de diseño real que el sitio usa (no lo que dice un DESIGN.md, sino lo que se renderiza):
 
 ```bash
-# Fonts in use (capped at 500 elements to avoid timeout)
+# Fuentes en uso (limitado a 500 elementos para evitar timeout)
 $B js "JSON.stringify([...new Set([...document.querySelectorAll('*')].slice(0,500).map(e => getComputedStyle(e).fontFamily))])"
 
-# Color palette in use
+# Paleta de colores en uso
 $B js "JSON.stringify([...new Set([...document.querySelectorAll('*')].slice(0,500).flatMap(e => [getComputedStyle(e).color, getComputedStyle(e).backgroundColor]).filter(c => c !== 'rgba(0, 0, 0, 0)'))])"
 
-# Heading hierarchy
+# Jerarquía de encabezados
 $B js "JSON.stringify([...document.querySelectorAll('h1,h2,h3,h4,h5,h6')].map(h => ({tag:h.tagName, text:h.textContent.trim().slice(0,50), size:getComputedStyle(h).fontSize, weight:getComputedStyle(h).fontWeight})))"
 
-# Touch target audit (find undersized interactive elements)
+# Auditoría de objetivos táctiles (encontrar elementos interactivos de tamaño insuficiente)
 $B js "JSON.stringify([...document.querySelectorAll('a,button,input,[role=button]')].filter(e => {const r=e.getBoundingClientRect(); return r.width>0 && (r.width<44||r.height<44)}).map(e => ({tag:e.tagName, text:(e.textContent||'').trim().slice(0,30), w:Math.round(e.getBoundingClientRect().width), h:Math.round(e.getBoundingClientRect().height)})).slice(0,20))"
 
-# Performance baseline
+# Línea base de rendimiento
 $B perf
 ```
 
-Structure findings as an **Inferred Design System**:
-- **Fonts:** list with usage counts. Flag if >3 distinct font families.
-- **Colors:** palette extracted. Flag if >12 unique non-gray colors. Note warm/cool/mixed.
-- **Heading Scale:** h1-h6 sizes. Flag skipped levels, non-systematic size jumps.
-- **Spacing Patterns:** sample padding/margin values. Flag non-scale values.
+Estructura los hallazgos como un **Sistema de Diseño Inferido**:
+- **Fuentes:** lista con conteos de uso. Señalizar si hay >3 familias tipográficas distintas.
+- **Colores:** paleta extraída. Señalizar si hay >12 colores únicos no grises. Indicar cálido/frío/mixto.
+- **Escala de Encabezados:** tamaños h1-h6. Señalizar niveles omitidos, saltos de tamaño no sistemáticos.
+- **Patrones de Espaciado:** valores de ejemplo de padding/margin. Señalizar valores fuera de escala.
 
-After extraction, offer: *"Want me to save this as your DESIGN.md? I can lock in these observations as your project's design system baseline."*
+Después de la extracción, ofrecer: *"¿Quieres que guarde esto como tu DESIGN.md? Puedo fijar estas observaciones como la línea base del sistema de diseño de tu proyecto."*
 
 ---
 
-## Phase 3: Page-by-Page Visual Audit
+## Fase 3: Auditoría Visual Página por Página
 
-For each page in scope:
+Para cada página en el alcance:
 
 ```bash
 $B goto <url>
@@ -610,114 +592,114 @@ $B console --errors
 $B perf
 ```
 
-### Auth Detection
+### Detección de Autenticación
 
-After the first navigation, check if the URL changed to a login-like path:
+Después de la primera navegación, comprueba si la URL cambió a una ruta similar a login:
 ```bash
 $B url
 ```
-If URL contains `/login`, `/signin`, `/auth`, or `/sso`: the site requires authentication. AskUserQuestion: "This site requires authentication. Want to import cookies from your browser? Run `/setup-browser-cookies` first if needed."
+Si la URL contiene `/login`, `/signin`, `/auth`, o `/sso`: el sitio requiere autenticación. AskUserQuestion: "Este sitio requiere autenticación. ¿Quieres importar cookies de tu navegador? Ejecuta `/setup-browser-cookies` primero si es necesario."
 
-### Design Audit Checklist (10 categories, ~80 items)
+### Checklist de Auditoría de Diseño (10 categorías, ~80 elementos)
 
-Apply these at each page. Each finding gets an impact rating (high/medium/polish) and category.
+Aplica estos en cada página. Cada hallazgo recibe una calificación de impacto (alto/medio/pulido) y categoría.
 
-**1. Visual Hierarchy & Composition** (8 items)
-- Clear focal point? One primary CTA per view?
-- Eye flows naturally top-left to bottom-right?
-- Visual noise — competing elements fighting for attention?
-- Information density appropriate for content type?
-- Z-index clarity — nothing unexpectedly overlapping?
-- Above-the-fold content communicates purpose in 3 seconds?
-- Squint test: hierarchy still visible when blurred?
-- White space is intentional, not leftover?
+**1. Jerarquía Visual y Composición** (8 elementos)
+- ¿Punto focal claro? ¿Un CTA principal por vista?
+- ¿La mirada fluye naturalmente de arriba-izquierda a abajo-derecha?
+- Ruido visual — ¿elementos compitiendo por atención?
+- ¿Densidad de información apropiada para el tipo de contenido?
+- Claridad de z-index — ¿nada se superpone inesperadamente?
+- ¿El contenido sobre el pliegue comunica el propósito en 3 segundos?
+- Test de entrecerrar los ojos: ¿la jerarquía sigue visible cuando se difumina?
+- ¿El espacio en blanco es intencional, no sobrante?
 
-**2. Typography** (15 items)
-- Font count <=3 (flag if more)
-- Scale follows ratio (1.25 major third or 1.333 perfect fourth)
-- Line-height: 1.5x body, 1.15-1.25x headings
-- Measure: 45-75 chars per line (66 ideal)
-- Heading hierarchy: no skipped levels (h1→h3 without h2)
-- Weight contrast: >=2 weights used for hierarchy
-- No blacklisted fonts (Papyrus, Comic Sans, Lobster, Impact, Jokerman)
-- If primary font is Inter/Roboto/Open Sans/Poppins → flag as potentially generic
-- `text-wrap: balance` or `text-pretty` on headings (check via `$B css <heading> text-wrap`)
-- Curly quotes used, not straight quotes
-- Ellipsis character (`…`) not three dots (`...`)
-- `font-variant-numeric: tabular-nums` on number columns
-- Body text >= 16px
-- Caption/label >= 12px
-- No letterspacing on lowercase text
+**2. Tipografía** (15 elementos)
+- Conteo de fuentes <=3 (señalizar si más)
+- La escala sigue una proporción (1.25 tercera mayor o 1.333 cuarta perfecta)
+- Interlineado: 1.5x cuerpo, 1.15-1.25x encabezados
+- Medida: 45-75 caracteres por línea (66 ideal)
+- Jerarquía de encabezados: sin niveles omitidos (h1→h3 sin h2)
+- Contraste de peso: >=2 pesos usados para jerarquía
+- Sin fuentes en lista negra (Papyrus, Comic Sans, Lobster, Impact, Jokerman)
+- Si la fuente principal es Inter/Roboto/Open Sans/Poppins → señalizar como potencialmente genérica
+- `text-wrap: balance` o `text-pretty` en encabezados (verificar con `$B css <heading> text-wrap`)
+- Comillas tipográficas usadas, no rectas
+- Carácter de puntos suspensivos (`…`) no tres puntos (`...`)
+- `font-variant-numeric: tabular-nums` en columnas numéricas
+- Texto del cuerpo >= 16px
+- Leyenda/etiqueta >= 12px
+- Sin letterspacing en texto en minúsculas
 
-**3. Color & Contrast** (10 items)
-- Palette coherent (<=12 unique non-gray colors)
-- WCAG AA: body text 4.5:1, large text (18px+) 3:1, UI components 3:1
-- Semantic colors consistent (success=green, error=red, warning=yellow/amber)
-- No color-only encoding (always add labels, icons, or patterns)
-- Dark mode: surfaces use elevation, not just lightness inversion
-- Dark mode: text off-white (~#E0E0E0), not pure white
-- Primary accent desaturated 10-20% in dark mode
-- `color-scheme: dark` on html element (if dark mode present)
-- No red/green only combinations (8% of men have red-green deficiency)
-- Neutral palette is warm or cool consistently — not mixed
+**3. Color y Contraste** (10 elementos)
+- Paleta coherente (<=12 colores únicos no grises)
+- WCAG AA: texto del cuerpo 4.5:1, texto grande (18px+) 3:1, componentes de UI 3:1
+- Colores semánticos consistentes (éxito=verde, error=rojo, advertencia=amarillo/ámbar)
+- Sin codificación solo por color (siempre agregar etiquetas, iconos o patrones)
+- Modo oscuro: superficies usan elevación, no solo inversión de luminosidad
+- Modo oscuro: texto blanco apagado (~#E0E0E0), no blanco puro
+- Acento primario desaturado 10-20% en modo oscuro
+- `color-scheme: dark` en elemento html (si hay modo oscuro presente)
+- Sin combinaciones solo rojo/verde (8% de los hombres tienen deficiencia rojo-verde)
+- Paleta neutral es cálida o fría consistentemente — no mixta
 
-**4. Spacing & Layout** (12 items)
-- Grid consistent at all breakpoints
-- Spacing uses a scale (4px or 8px base), not arbitrary values
-- Alignment is consistent — nothing floats outside the grid
-- Rhythm: related items closer together, distinct sections further apart
-- Border-radius hierarchy (not uniform bubbly radius on everything)
-- Inner radius = outer radius - gap (nested elements)
-- No horizontal scroll on mobile
-- Max content width set (no full-bleed body text)
-- `env(safe-area-inset-*)` for notch devices
-- URL reflects state (filters, tabs, pagination in query params)
-- Flex/grid used for layout (not JS measurement)
-- Breakpoints: mobile (375), tablet (768), desktop (1024), wide (1440)
+**4. Espaciado y Layout** (12 elementos)
+- Grid consistente en todos los breakpoints
+- El espaciado usa una escala (base 4px u 8px), no valores arbitrarios
+- La alineación es consistente — nada flota fuera del grid
+- Ritmo: elementos relacionados más cerca, secciones distintas más separadas
+- Jerarquía de border-radius (no radio burbuja uniforme en todo)
+- Radio interior = radio exterior - gap (elementos anidados)
+- Sin scroll horizontal en móvil
+- Ancho máximo de contenido establecido (sin texto de cuerpo a ancho completo)
+- `env(safe-area-inset-*)` para dispositivos con notch
+- La URL refleja el estado (filtros, pestañas, paginación en parámetros de consulta)
+- Flex/grid usado para layout (no medición con JS)
+- Breakpoints: móvil (375), tablet (768), escritorio (1024), ancho (1440)
 
-**5. Interaction States** (10 items)
-- Hover state on all interactive elements
-- `focus-visible` ring present (never `outline: none` without replacement)
-- Active/pressed state with depth effect or color shift
-- Disabled state: reduced opacity + `cursor: not-allowed`
-- Loading: skeleton shapes match real content layout
-- Empty states: warm message + primary action + visual (not just "No items.")
-- Error messages: specific + include fix/next step
-- Success: confirmation animation or color, auto-dismiss
-- Touch targets >= 44px on all interactive elements
-- `cursor: pointer` on all clickable elements
+**5. Estados de Interacción** (10 elementos)
+- Estado hover en todos los elementos interactivos
+- Anillo `focus-visible` presente (nunca `outline: none` sin reemplazo)
+- Estado activo/presionado con efecto de profundidad o cambio de color
+- Estado deshabilitado: opacidad reducida + `cursor: not-allowed`
+- Carga: formas skeleton que coinciden con el layout del contenido real
+- Estados vacíos: mensaje cálido + acción principal + visual (no solo "Sin elementos.")
+- Mensajes de error: específicos + incluyen corrección/siguiente paso
+- Éxito: animación o color de confirmación, auto-descarte
+- Objetivos táctiles >= 44px en todos los elementos interactivos
+- `cursor: pointer` en todos los elementos clicables
 
-**6. Responsive Design** (8 items)
-- Mobile layout makes *design* sense (not just stacked desktop columns)
-- Touch targets sufficient on mobile (>= 44px)
-- No horizontal scroll on any viewport
-- Images handle responsive (srcset, sizes, or CSS containment)
-- Text readable without zooming on mobile (>= 16px body)
-- Navigation collapses appropriately (hamburger, bottom nav, etc.)
-- Forms usable on mobile (correct input types, no autoFocus on mobile)
-- No `user-scalable=no` or `maximum-scale=1` in viewport meta
+**6. Diseño Responsive** (8 elementos)
+- El layout móvil tiene sentido de *diseño* (no solo columnas de escritorio apiladas)
+- Objetivos táctiles suficientes en móvil (>= 44px)
+- Sin scroll horizontal en ningún viewport
+- Las imágenes manejan responsive (srcset, sizes, o contención CSS)
+- Texto legible sin zoom en móvil (>= 16px cuerpo)
+- La navegación colapsa apropiadamente (hamburguesa, nav inferior, etc.)
+- Formularios usables en móvil (tipos de input correctos, sin autoFocus en móvil)
+- Sin `user-scalable=no` o `maximum-scale=1` en meta viewport
 
-**7. Motion & Animation** (6 items)
-- Easing: ease-out for entering, ease-in for exiting, ease-in-out for moving
-- Duration: 50-700ms range (nothing slower unless page transition)
-- Purpose: every animation communicates something (state change, attention, spatial relationship)
-- `prefers-reduced-motion` respected (check: `$B js "matchMedia('(prefers-reduced-motion: reduce)').matches"`)
-- No `transition: all` — properties listed explicitly
-- Only `transform` and `opacity` animated (not layout properties like width, height, top, left)
+**7. Movimiento y Animación** (6 elementos)
+- Easing: ease-out para entrar, ease-in para salir, ease-in-out para moverse
+- Duración: rango 50-700ms (nada más lento a menos que sea transición de página)
+- Propósito: cada animación comunica algo (cambio de estado, atención, relación espacial)
+- `prefers-reduced-motion` respetado (verificar: `$B js "matchMedia('(prefers-reduced-motion: reduce)').matches"`)
+- Sin `transition: all` — propiedades listadas explícitamente
+- Solo `transform` y `opacity` animados (no propiedades de layout como width, height, top, left)
 
-**8. Content & Microcopy** (8 items)
-- Empty states designed with warmth (message + action + illustration/icon)
-- Error messages specific: what happened + why + what to do next
-- Button labels specific ("Save API Key" not "Continue" or "Submit")
-- No placeholder/lorem ipsum text visible in production
-- Truncation handled (`text-overflow: ellipsis`, `line-clamp`, or `break-words`)
-- Active voice ("Install the CLI" not "The CLI will be installed")
-- Loading states end with `…` ("Saving…" not "Saving...")
-- Destructive actions have confirmation modal or undo window
+**8. Contenido y Microcopy** (8 elementos)
+- Estados vacíos diseñados con calidez (mensaje + acción + ilustración/icono)
+- Mensajes de error específicos: qué pasó + por qué + qué hacer ahora
+- Etiquetas de botón específicas ("Guardar Clave API" no "Continuar" o "Enviar")
+- Sin texto de placeholder/lorem ipsum visible en producción
+- Truncado manejado (`text-overflow: ellipsis`, `line-clamp`, o `break-words`)
+- Voz activa ("Instala el CLI" no "El CLI será instalado")
+- Los estados de carga terminan con `…` ("Guardando…" no "Guardando...")
+- Las acciones destructivas tienen modal de confirmación o ventana de deshacer
 
-**9. AI Slop Detection** (10 anti-patterns — the blacklist)
+**9. Detección de Contenido Genérico de IA** (10 anti-contenido genérico — la lista negra)
 
-The test: would a human designer at a respected studio ever ship this?
+La prueba: ¿un diseñador humano en un estudio respetado enviaría esto?
 
 - Purple/violet/indigo gradient backgrounds or blue-to-purple color schemes
 - **The 3-column feature grid:** icon-in-colored-circle + bold title + 2-line description, repeated 3x symmetrically. THE most recognizable AI layout.
@@ -730,58 +712,58 @@ The test: would a human designer at a respected studio ever ship this?
 - Generic hero copy ("Welcome to [X]", "Unlock the power of...", "Your all-in-one solution for...")
 - Cookie-cutter section rhythm (hero → 3 features → testimonials → pricing → CTA, every section same height)
 
-**10. Performance as Design** (6 items)
-- LCP < 2.0s (web apps), < 1.5s (informational sites)
-- CLS < 0.1 (no visible layout shifts during load)
-- Skeleton quality: shapes match real content, shimmer animation
-- Images: `loading="lazy"`, width/height dimensions set, WebP/AVIF format
-- Fonts: `font-display: swap`, preconnect to CDN origins
-- No visible font swap flash (FOUT) — critical fonts preloaded
+**10. Rendimiento como Diseño** (6 elementos)
+- LCP < 2.0s (aplicaciones web), < 1.5s (sitios informativos)
+- CLS < 0.1 (sin cambios visibles de layout durante la carga)
+- Calidad del skeleton: formas coinciden con layout del contenido real, animación shimmer
+- Imágenes: `loading="lazy"`, dimensiones width/height establecidas, formato WebP/AVIF
+- Fuentes: `font-display: swap`, preconnect a orígenes CDN
+- Sin destello visible de intercambio de fuente (FOUT) — fuentes críticas precargadas
 
 ---
 
-## Phase 4: Interaction Flow Review
+## Fase 4: Revisión de Flujos de Interacción
 
-Walk 2-3 key user flows and evaluate the *feel*, not just the function:
+Recorre 2-3 flujos de usuario clave y evalúa la *sensación*, no solo la función:
 
 ```bash
 $B snapshot -i
-$B click @e3           # perform action
-$B snapshot -D          # diff to see what changed
+$B click @e3           # ejecutar acción
+$B snapshot -D          # diff para ver qué cambió
 ```
 
-Evaluate:
-- **Response feel:** Does clicking feel responsive? Any delays or missing loading states?
-- **Transition quality:** Are transitions intentional or generic/absent?
-- **Feedback clarity:** Did the action clearly succeed or fail? Is the feedback immediate?
-- **Form polish:** Focus states visible? Validation timing correct? Errors near the source?
+Evalúa:
+- **Sensación de respuesta:** ¿Al hacer clic se siente responsivo? ¿Algún retraso o estados de carga faltantes?
+- **Calidad de transición:** ¿Las transiciones son intencionales o genéricas/ausentes?
+- **Claridad del feedback:** ¿La acción claramente tuvo éxito o falló? ¿El feedback es inmediato?
+- **Pulido de formularios:** ¿Estados de foco visibles? ¿Timing de validación correcto? ¿Errores cerca del origen?
 
 ---
 
-## Phase 5: Cross-Page Consistency
+## Fase 5: Consistencia Entre Páginas
 
-Compare screenshots and observations across pages for:
-- Navigation bar consistent across all pages?
-- Footer consistent?
-- Component reuse vs one-off designs (same button styled differently on different pages?)
-- Tone consistency (one page playful while another is corporate?)
-- Spacing rhythm carries across pages?
+Compara capturas de pantalla y observaciones entre páginas para:
+- ¿Barra de navegación consistente en todas las páginas?
+- ¿Footer consistente?
+- Reutilización de componentes vs diseños únicos (¿mismo botón con estilo diferente en páginas diferentes?)
+- Consistencia de tono (¿una página lúdica mientras otra es corporativa?)
+- ¿El ritmo de espaciado se mantiene entre páginas?
 
 ---
 
-## Phase 6: Compile Report
+## Fase 6: Compilar Informe
 
-### Output Locations
+### Ubicaciones de Salida
 
 **Local:** `.gstack/design-reports/design-audit-{domain}-{YYYY-MM-DD}.md`
 
-**Project-scoped:**
+**Alcance del proyecto:**
 ```bash
 eval "$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)" && mkdir -p ~/.gstack/projects/$SLUG
 ```
-Write to: `~/.gstack/projects/{slug}/{user}-{branch}-design-audit-{datetime}.md`
+Escribir en: `~/.gstack/projects/{slug}/{user}-{branch}-design-audit-{datetime}.md`
 
-**Baseline:** Write `design-baseline.json` for regression mode:
+**Línea base:** Escribir `design-baseline.json` para modo regresión:
 ```json
 {
   "date": "YYYY-MM-DD",
@@ -793,80 +775,80 @@ Write to: `~/.gstack/projects/{slug}/{user}-{branch}-design-audit-{datetime}.md`
 }
 ```
 
-### Scoring System
+### Sistema de Puntuación
 
-**Dual headline scores:**
-- **Design Score: {A-F}** — weighted average of all 10 categories
-- **AI Slop Score: {A-F}** — standalone grade with pithy verdict
+**Doble puntuación titular:**
+- **Puntuación de Diseño: {A-F}** — promedio ponderado de las 10 categorías
+- **Puntuación de Contenido Genérico de IA: {A-F}** — calificación independiente con veredicto conciso
 
-**Per-category grades:**
-- **A:** Intentional, polished, delightful. Shows design thinking.
-- **B:** Solid fundamentals, minor inconsistencies. Looks professional.
-- **C:** Functional but generic. No major problems, no design point of view.
-- **D:** Noticeable problems. Feels unfinished or careless.
-- **F:** Actively hurting user experience. Needs significant rework.
+**Calificaciones por categoría:**
+- **A:** Intencional, pulido, encantador. Muestra pensamiento de diseño.
+- **B:** Fundamentos sólidos, inconsistencias menores. Se ve profesional.
+- **C:** Funcional pero genérico. Sin problemas graves, sin punto de vista de diseño.
+- **D:** Problemas notables. Se siente inacabado o descuidado.
+- **F:** Perjudicando activamente la experiencia del usuario. Necesita retrabajo significativo.
 
-**Grade computation:** Each category starts at A. Each High-impact finding drops one letter grade. Each Medium-impact finding drops half a letter grade. Polish findings are noted but do not affect grade. Minimum is F.
+**Cálculo de calificación:** Cada categoría empieza en A. Cada hallazgo de impacto Alto baja una letra. Cada hallazgo de impacto Medio baja media letra. Los hallazgos de Pulido se anotan pero no afectan la calificación. Mínimo es F.
 
-**Category weights for Design Score:**
-| Category | Weight |
+**Pesos de categoría para Puntuación de Diseño:**
+| Categoría | Peso |
 |----------|--------|
-| Visual Hierarchy | 15% |
-| Typography | 15% |
-| Spacing & Layout | 15% |
-| Color & Contrast | 10% |
-| Interaction States | 10% |
+| Jerarquía Visual | 15% |
+| Tipografía | 15% |
+| Espaciado y Layout | 15% |
+| Color y Contraste | 10% |
+| Estados de Interacción | 10% |
 | Responsive | 10% |
-| Content Quality | 10% |
-| AI Slop | 5% |
-| Motion | 5% |
-| Performance Feel | 5% |
+| Calidad de Contenido | 10% |
+| Contenido Genérico de IA | 5% |
+| Movimiento | 5% |
+| Sensación de Rendimiento | 5% |
 
-AI Slop is 5% of Design Score but also graded independently as a headline metric.
+Contenido Genérico de IA es 5% de la Puntuación de Diseño pero también se califica independientemente como métrica titular.
 
-### Regression Output
+### Salida de Regresión
 
-When previous `design-baseline.json` exists or `--regression` flag is used:
-- Load baseline grades
-- Compare: per-category deltas, new findings, resolved findings
-- Append regression table to report
-
----
-
-## Design Critique Format
-
-Use structured feedback, not opinions:
-- "I notice..." — observation (e.g., "I notice the primary CTA competes with the secondary action")
-- "I wonder..." — question (e.g., "I wonder if users will understand what 'Process' means here")
-- "What if..." — suggestion (e.g., "What if we moved search to a more prominent position?")
-- "I think... because..." — reasoned opinion (e.g., "I think the spacing between sections is too uniform because it doesn't create hierarchy")
-
-Tie everything to user goals and product objectives. Always suggest specific improvements alongside problems.
+Cuando existe un `design-baseline.json` previo o se usa el flag `--regression`:
+- Cargar calificaciones de la línea base
+- Comparar: deltas por categoría, nuevos hallazgos, hallazgos resueltos
+- Agregar tabla de regresión al informe
 
 ---
 
-## Important Rules
+## Formato de Crítica de Diseño
 
-1. **Think like a designer, not a QA engineer.** You care whether things feel right, look intentional, and respect the user. You do NOT just care whether things "work."
-2. **Screenshots are evidence.** Every finding needs at least one screenshot. Use annotated screenshots (`snapshot -a`) to highlight elements.
-3. **Be specific and actionable.** "Change X to Y because Z" — not "the spacing feels off."
-4. **Never read source code.** Evaluate the rendered site, not the implementation. (Exception: offer to write DESIGN.md from extracted observations.)
-5. **AI Slop detection is your superpower.** Most developers can't evaluate whether their site looks AI-generated. You can. Be direct about it.
-6. **Quick wins matter.** Always include a "Quick Wins" section — the 3-5 highest-impact fixes that take <30 minutes each.
-7. **Use `snapshot -C` for tricky UIs.** Finds clickable divs that the accessibility tree misses.
-8. **Responsive is design, not just "not broken."** A stacked desktop layout on mobile is not responsive design — it's lazy. Evaluate whether the mobile layout makes *design* sense.
-9. **Document incrementally.** Write each finding to the report as you find it. Don't batch.
-10. **Depth over breadth.** 5-10 well-documented findings with screenshots and specific suggestions > 20 vague observations.
-11. **Show screenshots to the user.** After every `$B screenshot`, `$B snapshot -a -o`, or `$B responsive` command, use the Read tool on the output file(s) so the user can see them inline. For `responsive` (3 files), Read all three. This is critical — without it, screenshots are invisible to the user.
+Usa feedback estructurado, no opiniones:
+- "Noto..." — observación (ej.: "Noto que el CTA principal compite con la acción secundaria")
+- "Me pregunto..." — pregunta (ej.: "Me pregunto si los usuarios entenderán qué significa 'Procesar' aquí")
+- "¿Qué tal si..." — sugerencia (ej.: "¿Qué tal si movemos la búsqueda a una posición más prominente?")
+- "Creo que... porque..." — opinión razonada (ej.: "Creo que el espaciado entre secciones es demasiado uniforme porque no crea jerarquía")
 
-### Design Hard Rules
+Vincula todo a objetivos del usuario y del producto. Siempre sugiere mejoras específicas junto con los problemas.
 
-**Classifier — determine rule set before evaluating:**
-- **MARKETING/LANDING PAGE** (hero-driven, brand-forward, conversion-focused) → apply Landing Page Rules
-- **APP UI** (workspace-driven, data-dense, task-focused: dashboards, admin, settings) → apply App UI Rules
-- **HYBRID** (marketing shell with app-like sections) → apply Landing Page Rules to hero/marketing sections, App UI Rules to functional sections
+---
 
-**Hard rejection criteria** (instant-fail patterns — flag if ANY apply):
+## Reglas Importantes
+
+1. **Piensa como un diseñador, no como un ingeniero de QA.** Te importa si las cosas se sienten bien, se ven intencionales y respetan al usuario. NO solo te importa si las cosas "funcionan."
+2. **Las capturas de pantalla son evidencia.** Cada hallazgo necesita al menos una captura de pantalla. Usa capturas anotadas (`snapshot -a`) para resaltar elementos.
+3. **Sé específico y accionable.** "Cambiar X a Y porque Z" — no "el espaciado se siente raro."
+4. **Nunca leas código fuente.** Evalúa el sitio renderizado, no la implementación. (Excepción: ofrecer escribir DESIGN.md a partir de observaciones extraídas.)
+5. **La detección de contenido genérico de IA es tu superpoder.** La mayoría de los desarrolladores no pueden evaluar si su sitio se ve generado por IA. Tú sí. Sé directo al respecto.
+6. **Las victorias rápidas importan.** Siempre incluye una sección de "Victorias Rápidas" — las 3-5 correcciones de mayor impacto que toman <30 minutos cada una.
+7. **Usa `snapshot -C` para UIs complicadas.** Encuentra divs clicables que el árbol de accesibilidad no detecta.
+8. **Responsive es diseño, no solo "no está roto".** Un layout de escritorio apilado en móvil no es diseño responsive — es pereza. Evalúa si el layout móvil tiene sentido de *diseño*.
+9. **Documenta incrementalmente.** Escribe cada hallazgo en el informe conforme lo encuentres. No acumules.
+10. **Profundidad sobre amplitud.** 5-10 hallazgos bien documentados con capturas de pantalla y sugerencias específicas > 20 observaciones vagas.
+11. **Muestra capturas de pantalla al usuario.** Después de cada comando `$B screenshot`, `$B snapshot -a -o`, o `$B responsive`, usa la herramienta Read en los archivos de salida para que el usuario pueda verlos en línea. Para `responsive` (3 archivos), lee los tres. Esto es crítico — sin ello, las capturas son invisibles para el usuario.
+
+### Reglas Duras de Diseño
+
+**Clasificador — determina el conjunto de reglas antes de evaluar:**
+- **MARKETING/LANDING PAGE** (orientado a hero, marca primero, enfocado en conversión) → aplicar Reglas de Landing Page
+- **APP UI** (orientado a workspace, denso en datos, enfocado en tareas: dashboards, admin, configuración) → aplicar Reglas de App UI
+- **HYBRID** (carcasa de marketing con secciones tipo app) → aplicar Reglas de Landing Page a secciones hero/marketing, Reglas de App UI a secciones funcionales
+
+**Criterios de rechazo duro** (patrones de fallo instantáneo — señalizar si ALGUNO aplica):
 1. Generic SaaS card grid as first impression
 2. Beautiful image with weak brand
 3. Strong headline with no clear action
@@ -875,7 +857,7 @@ Tie everything to user goals and product objectives. Always suggest specific imp
 6. Carousel with no narrative purpose
 7. App UI made of stacked cards instead of layout
 
-**Litmus checks** (answer YES/NO for each — used for cross-model consensus scoring):
+**Verificaciones litmus** (responder SÍ/NO para cada una — usadas para puntuación de consenso cross-model):
 1. Brand/product unmistakable in first screen?
 2. One strong visual anchor present?
 3. Page understandable by scanning headlines only?
@@ -884,37 +866,37 @@ Tie everything to user goals and product objectives. Always suggest specific imp
 6. Does motion improve hierarchy or atmosphere?
 7. Would design feel premium with all decorative shadows removed?
 
-**Landing page rules** (apply when classifier = MARKETING/LANDING):
-- First viewport reads as one composition, not a dashboard
-- Brand-first hierarchy: brand > headline > body > CTA
-- Typography: expressive, purposeful — no default stacks (Inter, Roboto, Arial, system)
-- No flat single-color backgrounds — use gradients, images, subtle patterns
-- Hero: full-bleed, edge-to-edge, no inset/tiled/rounded variants
-- Hero budget: brand, one headline, one supporting sentence, one CTA group, one image
-- No cards in hero. Cards only when card IS the interaction
-- One job per section: one purpose, one headline, one short supporting sentence
-- Motion: 2-3 intentional motions minimum (entrance, scroll-linked, hover/reveal)
-- Color: define CSS variables, avoid purple-on-white defaults, one accent color default
-- Copy: product language not design commentary. "If deleting 30% improves it, keep deleting"
-- Beautiful defaults: composition-first, brand as loudest text, two typefaces max, cardless by default, first viewport as poster not document
+**Reglas de landing page** (aplicar cuando clasificador = MARKETING/LANDING):
+- El primer viewport se lee como una composición, no un dashboard
+- Jerarquía marca primero: marca > titular > cuerpo > CTA
+- Tipografía: expresiva, con propósito — sin stacks por defecto (Inter, Roboto, Arial, system)
+- Sin fondos planos de un solo color — usar gradientes, imágenes, patrones sutiles
+- Hero: de borde a borde, sin variantes con inset/mosaico/redondeado
+- Presupuesto del hero: marca, un titular, una oración de apoyo, un grupo de CTA, una imagen
+- Sin tarjetas en el hero. Tarjetas solo cuando la tarjeta ES la interacción
+- Un trabajo por sección: un propósito, un titular, una oración corta de apoyo
+- Movimiento: mínimo 2-3 movimientos intencionales (entrada, vinculado al scroll, hover/revelación)
+- Color: definir variables CSS, evitar defaults púrpura sobre blanco, un color de acento por defecto
+- Copy: lenguaje de producto no comentario de diseño. "Si eliminar el 30% lo mejora, sigue eliminando"
+- Defaults hermosos: composición primero, marca como texto más prominente, máximo dos tipografías, sin tarjetas por defecto, primer viewport como póster no documento
 
-**App UI rules** (apply when classifier = APP UI):
-- Calm surface hierarchy, strong typography, few colors
-- Dense but readable, minimal chrome
-- Organize: primary workspace, navigation, secondary context, one accent
-- Avoid: dashboard-card mosaics, thick borders, decorative gradients, ornamental icons
-- Copy: utility language — orientation, status, action. Not mood/brand/aspiration
-- Cards only when card IS the interaction
-- Section headings state what area is or what user can do ("Selected KPIs", "Plan status")
+**Reglas de App UI** (aplicar cuando clasificador = APP UI):
+- Jerarquía de superficies tranquila, tipografía fuerte, pocos colores
+- Denso pero legible, cromo mínimo
+- Organizar: workspace principal, navegación, contexto secundario, un acento
+- Evitar: mosaicos de tarjetas de dashboard, bordes gruesos, gradientes decorativos, iconos ornamentales
+- Copy: lenguaje utilitario — orientación, estado, acción. No humor/marca/aspiración
+- Tarjetas solo cuando la tarjeta ES la interacción
+- Encabezados de sección indican qué es el área o qué puede hacer el usuario ("KPIs seleccionados", "Estado del plan")
 
-**Universal rules** (apply to ALL types):
-- Define CSS variables for color system
-- No default font stacks (Inter, Roboto, Arial, system)
-- One job per section
-- "If deleting 30% of the copy improves it, keep deleting"
-- Cards earn their existence — no decorative card grids
+**Reglas universales** (aplicar a TODOS los tipos):
+- Definir variables CSS para el sistema de color
+- Sin stacks de fuentes por defecto (Inter, Roboto, Arial, system)
+- Un trabajo por sección
+- "Si eliminar el 30% del copy lo mejora, sigue eliminando"
+- Las tarjetas se ganan su existencia — sin grids decorativos de tarjetas
 
-**AI Slop blacklist** (the 10 patterns that scream "AI-generated"):
+**Lista negra de Contenido Genérico de IA** (los 10 patrones que gritan "generado por IA"):
 1. Purple/violet/indigo gradient backgrounds or blue-to-purple color schemes
 2. **The 3-column feature grid:** icon-in-colored-circle + bold title + 2-line description, repeated 3x symmetrically. THE most recognizable AI layout.
 3. Icons in colored circles as section decoration (SaaS starter template look)
@@ -926,7 +908,7 @@ Tie everything to user goals and product objectives. Always suggest specific imp
 9. Generic hero copy ("Welcome to [X]", "Unlock the power of...", "Your all-in-one solution for...")
 10. Cookie-cutter section rhythm (hero → 3 features → testimonials → pricing → CTA, every section same height)
 
-Source: [OpenAI "Designing Delightful Frontends with GPT-5.4"](https://developers.openai.com/blog/designing-delightful-frontends-with-gpt-5-4) (Mar 2026) + gstack design methodology.
+Fuente: [OpenAI "Designing Delightful Frontends with GPT-5.4"](https://developers.openai.com/blog/designing-delightful-frontends-with-gpt-5-4) (Mar 2026) + metodología de diseño gstack.
 
 Registra la puntuacion de diseno base y la puntuacion de slop de IA al final de la Fase 6.
 
@@ -951,18 +933,18 @@ Registra la puntuacion de diseno base y la puntuacion de slop de IA al final de 
 
 ---
 
-## Design Outside Voices (parallel)
+## Voces Externas de Diseño (en paralelo)
 
-**Automatic:** Outside voices run automatically when Codex is available. No opt-in needed.
+**Automático:** Las voces externas se ejecutan automáticamente cuando Codex está disponible. No se necesita opt-in.
 
-**Check Codex availability:**
+**Verificar disponibilidad de Codex:**
 ```bash
 which codex 2>/dev/null && echo "CODEX_AVAILABLE" || echo "CODEX_NOT_AVAILABLE"
 ```
 
-**If Codex is available**, launch both voices simultaneously:
+**Si Codex está disponible**, lanza ambas voces simultáneamente:
 
-1. **Codex design voice** (via Bash):
+1. **Voz de diseño de Codex** (vía Bash):
 ```bash
 TMPERR_DESIGN=$(mktemp /tmp/codex-design-XXXXXXXX)
 codex exec "Review the frontend source code in this repo. Evaluate against these design hard rules:
@@ -994,15 +976,15 @@ HARD REJECTION — flag if ANY apply:
 6. Carousel with no narrative purpose
 7. App UI made of stacked cards instead of layout
 
-Be specific. Reference file:line for every finding." -s read-only -c 'model_reasoning_effort="high"' --enable web_search_cached 2>"$TMPERR_DESIGN"
+Be specific. Reference file:line for every finding." -C "$(git rev-parse --show-toplevel)" -s read-only -c 'model_reasoning_effort="high"' --enable web_search_cached 2>"$TMPERR_DESIGN"
 ```
-Use a 5-minute timeout (`timeout: 300000`). After the command completes, read stderr:
+Usa un timeout de 5 minutos (`timeout: 300000`). Después de que el comando termine, lee stderr:
 ```bash
 cat "$TMPERR_DESIGN" && rm -f "$TMPERR_DESIGN"
 ```
 
-2. **Claude design subagent** (via Agent tool):
-Dispatch a subagent with this prompt:
+2. **Subagente de diseño de Claude** (vía herramienta Agent):
+Despacha un subagente con este prompt:
 "Review the frontend source code in this repo. You are an independent senior product designer doing a source-code design audit. Focus on CONSISTENCY PATTERNS across files rather than individual violations:
 - Are spacing values systematic across the codebase?
 - Is there ONE color system or scattered approaches?
@@ -1011,26 +993,26 @@ Dispatch a subagent with this prompt:
 
 For each finding: what's wrong, severity (critical/high/medium), and the file:line."
 
-**Error handling (all non-blocking):**
-- **Auth failure:** If stderr contains "auth", "login", "unauthorized", or "API key": "Codex authentication failed. Run `codex login` to authenticate."
-- **Timeout:** "Codex timed out after 5 minutes."
-- **Empty response:** "Codex returned no response."
-- On any Codex error: proceed with Claude subagent output only, tagged `[single-model]`.
-- If Claude subagent also fails: "Outside voices unavailable — continuing with primary review."
+**Manejo de errores (todo no bloqueante):**
+- **Fallo de autenticación:** Si stderr contiene "auth", "login", "unauthorized" o "API key": "Fallo de autenticación de Codex. Ejecuta `codex login` para autenticarte."
+- **Timeout:** "Codex expiró después de 5 minutos."
+- **Respuesta vacía:** "Codex no devolvió respuesta."
+- Ante cualquier error de Codex: procede solo con la salida del subagente de Claude, etiquetada `[single-model]`.
+- Si el subagente de Claude también falla: "Voces externas no disponibles — continuando con la revisión principal."
 
-Present Codex output under a `CODEX SAYS (design source audit):` header.
-Present subagent output under a `CLAUDE SUBAGENT (design consistency):` header.
+Presenta la salida de Codex bajo un encabezado `CODEX DICE (diseño auditoría de código):`.
+Presenta la salida del subagente bajo un encabezado `SUBAGENTE DE CLAUDE (diseño consistencia):`.
 
-**Synthesis — Litmus scorecard:**
+**Síntesis — Cuadro de mando litmus:**
 
-Use the same scorecard format as /plan-design-review (shown above). Fill in from both outputs.
-Merge findings into the triage with `[codex]` / `[subagent]` / `[cross-model]` tags.
+Usa el mismo formato de cuadro de mando que /plan-design-review (mostrado arriba). Rellena a partir de ambas salidas.
+Fusiona los hallazgos en la clasificación con etiquetas `[codex]` / `[subagent]` / `[cross-model]`.
 
-**Log the result:**
+**Registrar el resultado:**
 ```bash
 ~/.claude/skills/gstack/bin/gstack-review-log '{"skill":"design-outside-voices","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","status":"STATUS","source":"SOURCE","commit":"'"$(git rev-parse --short HEAD)"'"}'
 ```
-Replace STATUS with "clean" or "issues_found", SOURCE with "codex+subagent", "codex-only", "subagent-only", or "unavailable".
+Sustituye STATUS con "clean" o "issues_found", SOURCE con "codex+subagent", "codex-only", "subagent-only", o "unavailable".
 
 ## Fase 7: Triaje
 
