@@ -627,7 +627,7 @@ El agente escribe un **único archivo HTML autocontenido** (sin dependencias de 
    - **Dashboard / aplicación web:** tabla de datos de ejemplo con métricas, navegación lateral, encabezado con avatar de usuario, tarjetas de estadísticas
    - **Sitio de marketing:** sección héroe con texto real, destacados de funcionalidades, bloque de testimonios, CTA
    - **Configuración / administración:** formulario con campos etiquetados, interruptores toggle, desplegables, botón de guardar
-   - **Autenticación / onboarding:** formulario de inicio de sesión con botones sociales, branding, estados de validación de campos
+   - **Autenticación / incorporación:** formulario de inicio de sesión con botones sociales, branding, estados de validación de campos
    - Usa el nombre del producto, contenido realista para el dominio y el espaciado/maquetación/border-radius propuestos. El usuario debería ver su producto (aproximadamente) antes de escribir código.
 7. **Alternador de modo claro/oscuro** usando CSS custom properties y un botón JS de alternancia
 8. **Maquetación limpia y profesional** — la página de previsualización ES una señal de buen gusto de la habilidad

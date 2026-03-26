@@ -11,7 +11,7 @@ Reflejan lo que creemos sobre construir software en 2026.
 ## La Edad de Oro
 
 Una sola persona con IA puede construir ahora lo que antes requería un equipo de veinte.
-La barrera de la ingeniería ha desaparecido. Lo que queda es gusto, criterio y la
+La barrera de la ingeniería ha desaparecido. Lo que queda es buen criterio, buen ojo y la
 voluntad de hacer las cosas completas.
 
 Esto no es una predicción — está pasando ahora mismo. 10.000+ líneas de código
@@ -24,7 +24,7 @@ tiempo de equipo humano y tiempo asistido por IA va de 3x (investigación) a 100
 |--------------------------------|--------------|------------|------------|
 | Boilerplate / scaffolding      | 2 días       | 15 min     | ~100x      |
 | Escritura de tests             | 1 día        | 15 min     | ~50x       |
-| Implementación de feature      | 1 semana     | 30 min     | ~30x       |
+| Implementación de funcionalidad      | 1 semana     | 30 min     | ~30x       |
 | Bug fix + test de regresión    | 4 horas      | 15 min     | ~20x       |
 | Arquitectura / diseño          | 2 días       | 4 horas    | ~5x        |
 | Investigación / exploración    | 1 día        | 3 horas    | ~3x        |
@@ -41,7 +41,7 @@ cercano a cero. Cuando la implementación completa cuesta minutos más que el at
 — haz la cosa completa. Siempre.
 
 **Abarcable vs. inabarcable:** Lo abarcable es completable — 100% de cobertura de
-tests para un módulo, implementación completa de un feature, todos los casos límite,
+tests para un módulo, implementación completa de una funcionalidad, todos los casos límite,
 todas las rutas de error. Lo inabarcable no lo es — reescribir un sistema entero
 desde cero, migraciones de plataforma de varios trimestres. Completa todo lo que
 sea abarcable. Marca lo inabarcable como fuera de alcance.
@@ -105,7 +105,7 @@ de estos momentos — zigzaguear mientras otros van en línea recta. Cuando
 encuentres uno, dale nombre. Celébralo. Construye sobre él.
 
 **Anti-patrones:**
-- Hacer una solución custom cuando el runtime tiene algo built-in. (Fallo de Capa 1)
+- Hacer una solución a medida cuando el runtime tiene algo integrado. (Fallo de Capa 1)
 - Aceptar posts de blog sin crítica en territorio nuevo. (Manía de Capa 2)
 - Asumir que lo probado es correcto sin cuestionar las premisas. (Ceguera de Capa 3)
 
@@ -117,8 +117,8 @@ Completar sin Atajos dice: **haz la cosa completa.**
 Buscar Antes de Construir dice: **sabe qué existe antes de decidir qué construir.**
 
 Juntos: busca primero, luego construye la versión completa de lo correcto.
-El peor resultado es construir una versión completa de algo que ya existe como
-un one-liner. El mejor resultado es construir una versión completa de algo que
+El peor resultado es construir una versión completa de algo que ya existe
+en una sola línea de código. El mejor resultado es construir una versión completa de algo que
 nadie ha pensado todavía — porque buscaste, entendiste el panorama y viste lo
 que todos los demás pasaron por alto.
 
@@ -127,7 +127,7 @@ que todos los demás pasaron por alto.
 ## Construye para Ti Mismo
 
 Las mejores herramientas resuelven tu propio problema. gstack existe porque
-su creador lo necesitaba. Cada feature se construyó porque hacía falta, no
+su creador lo necesitaba. Cada funcionalidad se construyó porque hacía falta, no
 porque se pidió. Si estás construyendo algo para ti mismo, confía en ese
 instinto. La especificidad de un problema real supera la generalidad de uno
 hipotético cada vez.

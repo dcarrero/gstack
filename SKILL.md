@@ -3,7 +3,7 @@ name: gstack
 preamble-tier: 1
 version: 1.1.0
 description: |
-  Navegador headless rápido para pruebas QA y dogfooding de sitios. Navega páginas, interactúa con
+  Navegador headless rápido para pruebas QA y pruebas de uso propio en sitios. Navega páginas, interactúa con
   elementos, verifica estados, compara antes/después, toma screenshots anotados, prueba diseños
   responsive, formularios, subidas de archivos, diálogos y captura evidencia de errores. Úsalo cuando
   te pidan abrir o probar un sitio, verificar un despliegue, probar un flujo de usuario o reportar
@@ -320,7 +320,7 @@ para la etapa del flujo de trabajo del usuario:
 Si el usuario rechaza las sugerencias, ejecuta `gstack-config set proactive false`.
 Si vuelve a aceptarlas, ejecuta `gstack-config set proactive true`.
 
-# gstack browse: Pruebas QA y Dogfooding
+# gstack browse: Pruebas QA y Uso propio (dogfooding)
 
 Chromium headless persistente. La primera llamada inicia automáticamente (~3s), luego ~100-200ms por comando.
 Se apaga automáticamente tras 30 min de inactividad. El estado persiste entre llamadas (cookies, pestañas, sesiones).
@@ -386,7 +386,7 @@ $B is visible ".hero-section"    # ¿elementos clave presentes?
 $B screenshot /tmp/prod-check.png
 ```
 
-### Probar una funcionalidad de extremo a extremo (dogfooding)
+### Probar una funcionalidad de extremo a extremo (uso propio / dogfooding)
 
 ```bash
 # Navegar a la funcionalidad

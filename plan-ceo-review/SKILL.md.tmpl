@@ -40,7 +40,7 @@ NO hagas ningún cambio de código. NO empieces la implementación. Tu único tr
 
 ## Directivas Principales
 1. Cero fallos silenciosos. Cada modo de fallo debe ser visible — para el sistema, para el equipo, para el usuario. Si un fallo puede ocurrir silenciosamente, es un defecto crítico en el plan.
-2. Cada error tiene un nombre. No digas "manejar errores." Nombra la clase de excepción específica, qué la provoca, qué la captura, qué ve el usuario, y si está testeada. El manejo genérico de errores (ej., catch Exception, rescue StandardError, except Exception) es un code smell — señálalo.
+2. Cada error tiene un nombre. No digas "manejar errores." Nombra la clase de excepción específica, qué la provoca, qué la captura, qué ve el usuario, y si está testeada. El manejo genérico de errores (ej., catch Exception, rescue StandardError, except Exception) es un code smell (olor de código) — señálalo.
 3. Los flujos de datos tienen caminos sombra. Cada flujo de datos tiene un camino feliz y tres caminos sombra: entrada nil, entrada vacía/longitud cero, y error del origen. Traza los cuatro para cada nuevo flujo.
 4. Las interacciones tienen casos límite. Cada interacción visible al usuario tiene casos límite: doble clic, navegar fuera a mitad de acción, conexión lenta, estado obsoleto, botón atrás. Mapéalos.
 5. La observabilidad es alcance, no una ocurrencia tardía. Nuevos dashboards, alertas y runbooks son entregables de primera clase, no elementos de limpieza post-lanzamiento.
@@ -240,7 +240,7 @@ Reglas:
 ### 0D. Análisis Específico por Modo
 **Para SCOPE EXPANSION** — ejecuta los tres, luego la ceremonia de aceptación:
 1. Verificación 10x: ¿Cuál es la versión que es 10x más ambiciosa y entrega 10x más valor por 2x el esfuerzo? Descríbela concretamente.
-2. Ideal platónico: Si el mejor ingeniero del mundo tuviera tiempo ilimitado y gusto perfecto, ¿cómo se vería este sistema? ¿Qué sentiría el usuario al usarlo? Empieza por la experiencia, no por la arquitectura.
+2. Ideal platónico: Si el mejor ingeniero del mundo tuviera tiempo ilimitado y criterio impecable, ¿cómo se vería este sistema? ¿Qué sentiría el usuario al usarlo? Empieza por la experiencia, no por la arquitectura.
 3. Oportunidades de deleite: ¿Qué mejoras adyacentes de 30 minutos harían que esta funcionalidad brille? Cosas donde un usuario pensaría "oh qué bien, pensaron en eso." Lista al menos 5.
 4. **Ceremonia de aceptación de expansión:** Describe la visión primero (verificación 10x, ideal platónico). Luego destila propuestas concretas de alcance a partir de esas visiones — funcionalidades individuales, componentes o mejoras. Presenta cada propuesta como su propio AskUserQuestion. Recomienda con entusiasmo — explica por qué vale la pena hacerlo. Pero el usuario decide. Opciones: **A)** Añadir al alcance de este plan **B)** Diferir a TODOS.md **C)** Omitir. Los elementos aceptados pasan a ser alcance del plan para todas las secciones restantes de la revisión. Los elementos rechazados van a "FUERA de alcance."
 
@@ -339,7 +339,7 @@ Presenta cuatro opciones:
 4. **SCOPE REDUCTION:** El plan está sobredimensionado o mal enfocado. Propón una versión mínima que logre el objetivo central, luego revisa esa.
 
 Valores predeterminados según contexto:
-* Funcionalidad greenfield → predeterminado EXPANSION
+* Funcionalidad nueva (greenfield) → predeterminado EXPANSION
 * Mejora de funcionalidad o iteración sobre sistema existente → predeterminado SELECTIVE EXPANSION
 * Corrección de bug o hotfix → predeterminado HOLD SCOPE
 * Refactorización → predeterminado HOLD SCOPE
@@ -795,7 +795,7 @@ Si se promociona, copia el contenido del plan CEO a `docs/designs/{FEATURE}.md` 
   │             │ grande?"     │ qué más      │ complejo?"   │                    │
   │             │              │ tienta?"     │              │                    │
   │ Calibración │ Sí           │ Sí           │ No           │ No                 │
-  │ de gusto    │              │              │              │                    │
+  │ de criterio    │              │              │              │                    │
   │ Interrogat. │ Completo     │ Completo     │ Solo decis.  │ Omitir             │
   │ temporal    │ (hr 1-6)     │ (hr 1-6)     │ clave        │                    │
   │ Estándar de │ "Placer      │ "Placer      │ "¿Podemos    │ "¿Podemos ver si   │

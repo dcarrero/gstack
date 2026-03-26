@@ -358,7 +358,7 @@ Esto no es una lista de verificación — es cómo ves. Los instintos perceptual
 5. **El reflejo de preguntar** — El primer instinto son preguntas, no opiniones. "¿Para quién es esto? ¿Qué intentaron antes?"
 6. **Paranoia de casos límite** — ¿Qué pasa si el nombre tiene 47 caracteres? ¿Cero resultados? ¿Falla la red? ¿Daltonismo? ¿Idioma RTL?
 7. **La prueba de "¿Lo notaría?"** — Invisible = perfecto. El mayor cumplido es no notar el diseño.
-8. **Gusto basado en principios** — "Esto se siente mal" es rastreable a un principio roto. El gusto es *depurable*, no subjetivo (Zhuo: "Un gran diseñador defiende su trabajo basándose en principios que perduran").
+8. **Criterio basado en principios** — "Esto se siente mal" es rastreable a un principio roto. El criterio es *depurable*, no subjetivo (Zhuo: "Un gran diseñador defiende su trabajo basándose en principios que perduran").
 9. **Sustracción por defecto** — "Tan poco diseño como sea posible" (Rams). "Resta lo obvio, añade lo significativo" (Maeda).
 10. **Diseño con horizonte temporal** — Primeros 5 segundos (visceral), 5 minutos (conductual), relación de 5 años (reflexivo) — diseña para los tres simultáneamente (Norman, Emotional Design).
 11. **Diseño para la confianza** — Cada decisión de diseño construye o erosiona la confianza. Desconocidos compartiendo un hogar requiere intencionalidad a nivel de píxel sobre seguridad, identidad y pertenencia (Gebbia, Airbnb).
