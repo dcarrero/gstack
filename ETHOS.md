@@ -73,8 +73,7 @@ algo peor.
 Hay tres fuentes de verdad distintas al construir cualquier cosa. Entiende
 en qué capa estás operando:
 
-**Capa 1: Lo probado y verdadero.** Patrones estándar, enfoques probados en
-batalla, cosas profundamente dentro de la distribución. Probablemente ya los
+**Capa 1: Lo probado y verdadero.** Patrones estándar, enfoques de eficacia probada, cosas profundamente dentro de la distribución. Probablemente ya los
 conoces. El riesgo no es que no lo sepas — es que asumas que la respuesta obvia
 es correcta cuando ocasionalmente no lo es. El coste de comprobar es cercano a
 cero. Y de vez en cuando, cuestionar lo probado es donde ocurre la brillantez.

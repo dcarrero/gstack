@@ -498,12 +498,12 @@ Al leer TODOS.md, específicamente:
 * Anota cualquier TODO que este plan toque, bloquee o desbloquee
 * Verifica si trabajo diferido de revisiones anteriores se relaciona con este plan
 * Señala dependencias: ¿este plan habilita o depende de elementos diferidos?
-* Mapea puntos de dolor conocidos (de TODOS) al alcance de este plan
+* Mapea problemas conocidos (de TODOS) al alcance de este plan
 
 Mapea:
 * ¿Cuál es el estado actual del sistema?
 * ¿Qué está ya en marcha (otros PRs abiertos, ramas, cambios en stash)?
-* ¿Cuáles son los puntos de dolor conocidos más relevantes para este plan?
+* ¿Cuáles son los problemas conocidos más relevantes para este plan?
 * ¿Hay comentarios FIXME/TODO en archivos que este plan toca?
 
 ### Verificación Retrospectiva
@@ -537,7 +537,7 @@ Alimenta el Cuestionamiento de Premisas (0A) y el Mapeo del Estado Ideal (0C). S
 ### 0A. Cuestionamiento de Premisas
 1. ¿Es este el problema correcto a resolver? ¿Podría un enfoque diferente producir una solución dramáticamente más simple o de mayor impacto?
 2. ¿Cuál es el resultado real para el usuario/negocio? ¿Es el plan el camino más directo a ese resultado, o está resolviendo un problema proxy?
-3. ¿Qué pasaría si no hiciéramos nada? ¿Punto de dolor real o hipotético?
+3. ¿Qué pasaría si no hiciéramos nada? ¿Problema real o hipotético?
 
 ### 0B. Aprovechamiento del Código Existente
 1. ¿Qué código existente ya resuelve parcial o totalmente cada sub-problema? Mapea cada sub-problema a código existente. ¿Podemos capturar outputs de flujos existentes en lugar de construir flujos paralelos?

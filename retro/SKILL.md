@@ -734,7 +734,7 @@ Narrativa que cubra:
 - Tests anadidos en este periodo: M (del comando 12 — archivos de test modificados)
 - Commits de tests de regresion: listar commits `test(qa):` y `test(design):` y `test: coverage` del comando 11
 - Si existe retro previa y tiene `test_health`: mostrar delta "Conteo de tests: {anterior} → {ahora} (+{delta})"
-- Si el ratio de tests < 20%: marcar como area de crecimiento — "El 100% de cobertura de tests es el objetivo. Los tests hacen seguro el vibe coding."
+- Si el ratio de tests < 20%: marcar como area de crecimiento — "El 100% de cobertura de tests es el objetivo. Los tests hacen segura la programación exploratoria."
 
 ### Completitud de Plan
 Verifica los logs de revision JSONL para datos de completitud de plan de ejecuciones de /ship en este periodo:

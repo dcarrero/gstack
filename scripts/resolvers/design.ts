@@ -253,7 +253,7 @@ Aplica estos en cada página. Cada hallazgo recibe una calificación de impacto 
 - Los estados de carga terminan con \`…\` ("Guardando…" no "Guardando...")
 - Las acciones destructivas tienen modal de confirmación o ventana de deshacer
 
-**9. Detección de AI Slop** (10 anti-patrones — la lista negra)
+**9. Detección de Contenido Genérico de IA** (10 anti-contenido genérico — la lista negra)
 
 La prueba: ¿un diseñador humano en un estudio respetado enviaría esto?
 
@@ -326,7 +326,7 @@ Escribir en: \`~/.gstack/projects/{slug}/{user}-{branch}-design-audit-{datetime}
 
 **Doble puntuación titular:**
 - **Puntuación de Diseño: {A-F}** — promedio ponderado de las 10 categorías
-- **Puntuación de AI Slop: {A-F}** — calificación independiente con veredicto conciso
+- **Puntuación de Contenido Genérico de IA: {A-F}** — calificación independiente con veredicto conciso
 
 **Calificaciones por categoría:**
 - **A:** Intencional, pulido, encantador. Muestra pensamiento de diseño.
@@ -347,11 +347,11 @@ Escribir en: \`~/.gstack/projects/{slug}/{user}-{branch}-design-audit-{datetime}
 | Estados de Interacción | 10% |
 | Responsive | 10% |
 | Calidad de Contenido | 10% |
-| AI Slop | 5% |
+| Contenido Genérico de IA | 5% |
 | Movimiento | 5% |
 | Sensación de Rendimiento | 5% |
 
-AI Slop es 5% de la Puntuación de Diseño pero también se califica independientemente como métrica titular.
+Contenido Genérico de IA es 5% de la Puntuación de Diseño pero también se califica independientemente como métrica titular.
 
 ### Salida de Regresión
 
@@ -380,7 +380,7 @@ Vincula todo a objetivos del usuario y del producto. Siempre sugiere mejoras esp
 2. **Las capturas de pantalla son evidencia.** Cada hallazgo necesita al menos una captura de pantalla. Usa capturas anotadas (\`snapshot -a\`) para resaltar elementos.
 3. **Sé específico y accionable.** "Cambiar X a Y porque Z" — no "el espaciado se siente raro."
 4. **Nunca leas código fuente.** Evalúa el sitio renderizado, no la implementación. (Excepción: ofrecer escribir DESIGN.md a partir de observaciones extraídas.)
-5. **La detección de AI Slop es tu superpoder.** La mayoría de los desarrolladores no pueden evaluar si su sitio se ve generado por IA. Tú sí. Sé directo al respecto.
+5. **La detección de contenido genérico de IA es tu superpoder.** La mayoría de los desarrolladores no pueden evaluar si su sitio se ve generado por IA. Tú sí. Sé directo al respecto.
 6. **Las victorias rápidas importan.** Siempre incluye una sección de "Victorias Rápidas" — las 3-5 correcciones de mayor impacto que toman <30 minutos cada una.
 7. **Usa \`snapshot -C\` para UIs complicadas.** Encuentra divs clicables que el árbol de accesibilidad no detecta.
 8. **Responsive es diseño, no solo "no está roto".** Un layout de escritorio apilado en móvil no es diseño responsive — es pereza. Evalúa si el layout móvil tiene sentido de *diseño*.
@@ -714,7 +714,7 @@ ${litmusItems}
 - "Si eliminar el 30% del copy lo mejora, sigue eliminando"
 - Las tarjetas se ganan su existencia — sin grids decorativos de tarjetas
 
-**Lista negra de AI Slop** (los 10 patrones que gritan "generado por IA"):
+**Lista negra de Contenido Genérico de IA** (los 10 patrones que gritan "generado por IA"):
 ${slopItems}
 
 Fuente: [OpenAI "Designing Delightful Frontends with GPT-5.4"](https://developers.openai.com/blog/designing-delightful-frontends-with-gpt-5-4) (Mar 2026) + metodología de diseño gstack.`;

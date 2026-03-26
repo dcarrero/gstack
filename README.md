@@ -98,7 +98,7 @@ Tú:     /ship
         Tests: 42 → 51 (+9 nuevos). PR: github.com/you/app/pull/42
 ```
 
-Dijiste "app de briefing diario." El agente dijo "estás construyendo un asistente personal con IA" — porque escuchó tu dolor, no tu petición de feature. Ocho comandos, de principio a fin. Eso no es un copiloto. Es un equipo.
+Dijiste "app de briefing diario." El agente dijo "estás construyendo un asistente personal con IA" — porque entendió tu necesidad real, no tu petición de feature. Ocho comandos, de principio a fin. Eso no es un copiloto. Es un equipo.
 
 ## El sprint
 

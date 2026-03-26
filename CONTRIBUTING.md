@@ -47,7 +47,7 @@ Los logs son **para ti**. Cuando algo te moleste lo suficiente como para arregla
 6. **Prueba usando gstack realmente** — haz lo que te molestó, verifica que está corregido
 7. **Abre un PR desde tu fork**
 
-Esta es la mejor forma de contribuir: arregla gstack mientras haces tu trabajo real, en el proyecto donde realmente sentiste el dolor.
+Esta es la mejor forma de contribuir: arregla gstack mientras haces tu trabajo real, en el proyecto donde realmente experimentaste el problema.
 
 ### Consciencia de sesiones
 

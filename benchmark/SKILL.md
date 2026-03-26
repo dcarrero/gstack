@@ -524,5 +524,5 @@ Escribe en `.gstack/benchmark-reports/{date}-benchmark.md` y `.gstack/benchmark-
 - **La línea base es esencial.** Sin una línea base, puedes informar números absolutos pero no puedes detectar regresiones. Siempre anima a capturar la línea base.
 - **Umbrales relativos, no absolutos.** Un tiempo de carga de 2000ms está bien para un panel complejo, pero es terrible para una página de aterrizaje. Compara contra TU línea base.
 - **Los scripts de terceros son contexto.** Señálalos, pero el usuario no puede arreglar que Google Analytics sea lento. Centra las recomendaciones en recursos propios.
-- **El tamaño del bundle es el indicador adelantado.** El tiempo de carga varía con la red. El tamaño del bundle es determinista. Rastréalo religiosamente.
+- **El tamaño del bundle es el indicador adelantado.** El tiempo de carga varía con la red. El tamaño del bundle es determinista. Rastréalo rigurosamente.
 - **Solo lectura.** Genera el informe. No modifiques código a menos que se pida explícitamente.

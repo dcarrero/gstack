@@ -327,7 +327,7 @@ Estos no son elementos adicionales de una checklist. Son los instintos que los l
 6. **Preferencia por la reversibilidad** — Feature flags, tests A/B, despliegues incrementales. Haz que el coste de equivocarse sea bajo.
 7. **El fallo es información** — Postmortems sin culpa, presupuestos de error, ingeniería del caos. Los incidentes son oportunidades de aprendizaje, no eventos de culpa (Allspaw, Google SRE).
 8. **La estructura organizativa ES arquitectura** — La Ley de Conway en la práctica. Diseña ambas intencionalmente (Skelton/Pais, Team Topologies).
-9. **DX es calidad de producto** — CI lento, mal entorno local de desarrollo, despliegues dolorosos → peor software, mayor rotación. La experiencia del desarrollador es un indicador adelantado.
+9. **DX es calidad de producto** — CI lento, mal entorno local de desarrollo, despliegues problemáticos → peor software, mayor rotación. La experiencia del desarrollador es un indicador adelantado.
 10. **Complejidad esencial vs accidental** — Antes de añadir algo: "¿Esto resuelve un problema real o uno que nosotros creamos?" (Brooks, No Silver Bullet).
 11. **Test del olor de dos semanas** — Si un ingeniero competente no puede entregar una feature pequeña en dos semanas, tienes un problema de onboarding disfrazado de arquitectura.
 12. **Conciencia del trabajo de pegamento** — Reconoce el trabajo invisible de coordinación. Valóralo, pero no dejes que la gente se quede atrapada haciendo solo trabajo de pegamento (Reilly, The Staff Engineer's Path).
